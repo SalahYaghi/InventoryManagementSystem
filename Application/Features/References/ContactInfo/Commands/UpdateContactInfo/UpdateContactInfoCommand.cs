@@ -1,0 +1,17 @@
+using MediatR;
+using MechanicShop.Domain.Common.Results;
+using Contract.Features.References.ContactInfos.DTOs;
+
+namespace Contract.Features.References.ContactInfos.Commands.UpdateContactInfo
+{
+    public sealed record UpdateContactInfoCommand : IRequest<Result<ContactInfoDto>>
+    {
+        public Guid? Id { get; init; }
+        public string Email { get; init; } = string.Empty;
+        public string PhoneNumber { get; init; } = string.Empty;
+        public string AlternitavePhoneNumber { get; init; } = string.Empty;
+        public string? FaxNumber { get; init; }
+        public string? WebsiteUrl { get; init; }
+    }
+}
+

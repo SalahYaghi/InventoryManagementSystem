@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B2D74D6A-AD0C-482B-81CB-3DA955363052}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ContracOldCompatibile</RootNamespace>
+    <AssemblyName>ContracOldCompatibile</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Annotations, Version=4.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ComponentModel.Annotations.5.0.0\lib\net461\System.ComponentModel.Annotations.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Common\AdjustmentReason.cs" />
+    <Compile Include="Common\AdjustmentStatus.cs" />
+    <Compile Include="Common\AdjustmentType.cs" />
+    <Compile Include="Common\DocumentType.cs" />
+    <Compile Include="Common\InvoiceStatus.cs" />
+    <Compile Include="Common\InvoiceType.cs" />
+    <Compile Include="Common\OrderStatus.cs" />
+    <Compile Include="Common\OrderType.cs" />
+    <Compile Include="Common\PageRequest.cs" />
+    <Compile Include="Common\PaginatedList.cs" />
+    <Compile Include="Common\Role.cs" />
+    <Compile Include="Common\Unit.cs" />
+    <Compile Include="Common\WarehouseStatus.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Requests\AddressesTop\CreateAddressTopRequest.cs" />
+    <Compile Include="Requests\AddressesTop\UpdateAddressTopRequest.cs" />
+    <Compile Include="Requests\Addresses\CreateAddressEntryRequest.cs" />
+    <Compile Include="Requests\Addresses\CreateAddressRequest.cs" />
+    <Compile Include="Requests\Addresses\UpdateAddressEntryRequest.cs" />
+    <Compile Include="Requests\Addresses\UpdateAddressRequest.cs" />
+    <Compile Include="Requests\Adjustments\CreateAdjustmentDetailRequest.cs" />
+    <Compile Include="Requests\Adjustments\CreateAdjustmentRequest.cs" />
+    <Compile Include="Requests\Adjustments\UpdateAdjustmentDetailQuantityRequest.cs" />
+    <Compile Include="Requests\Adjustments\UpdateAdjustmentRequest.cs" />
+    <Compile Include="Requests\Adjustments\UpdateAdjustmentStatusRequest.cs" />
+    <Compile Include="Requests\Categories\CreateCategoryRequest.cs" />
+    <Compile Include="Requests\Categories\UpdateCategoryRequest.cs" />
+    <Compile Include="Requests\Cities\CreateCityRequest.cs" />
+    <Compile Include="Requests\Cities\UpdateCityRequest.cs" />
+    <Compile Include="Requests\ContactInfos\CreateContactInfoEntryRequest.cs" />
+    <Compile Include="Requests\ContactInfos\CreateContactInfoRequest.cs" />
+    <Compile Include="Requests\ContactInfos\UpdateContactInfoEntryRequest.cs" />
+    <Compile Include="Requests\ContactInfos\UpdateContactInfoRequest.cs" />
+    <Compile Include="Requests\Countries\CreateCountryRequest.cs" />
+    <Compile Include="Requests\Countries\UpdateCountryRequest.cs" />
+    <Compile Include="Requests\Customers\CreateCustomerRequest.cs" />
+    <Compile Include="Requests\Customers\UpdateCustomerRequest.cs" />
+    <Compile Include="Requests\Documents\CreateDocumentRequest.cs" />
+    <Compile Include="Requests\Documents\CreatePersonDocumentRequest.cs" />
+    <Compile Include="Requests\Documents\UpdateDocumentRequest.cs" />
+    <Compile Include="Requests\Employees\CreateEmployeeWithPersonIdRequest.cs" />
+    <Compile Include="Requests\Employees\UpdateEmployeeRequest.cs" />
+    <Compile Include="Requests\Identity\JwtGenerateByRefreshTokenCommand.cs" />
+    <Compile Include="Requests\Identity\JwtGenerateCommand.cs" />
+    <Compile Include="Requests\Invoices\CreateInvoiceRequest.cs" />
+    <Compile Include="Requests\Orders\CreateOrderDetailRequest.cs" />
+    <Compile Include="Requests\Orders\CreateOrderRequest.cs" />
+    <Compile Include="Requests\Orders\UpdateOrderDetailQuantityRequest.cs" />
+    <Compile Include="Requests\Orders\UpdateOrderRequest.cs" />
+    <Compile Include="Requests\Orders\UpdateOrderStatusRequest.cs" />
+    <Compile Include="Requests\People\CreatePersonRequest.cs" />
+    <Compile Include="Requests\People\CreateProductImageRequest.cs" />
+    <Compile Include="Requests\People\UpdatePersonImageRequest.cs" />
+    <Compile Include="Requests\People\UpdatePersonRequest.cs" />
+    <Compile Include="Requests\Products\CreateProductRequest.cs" />
+    <Compile Include="Requests\Products\UpdateProductRequest.cs" />
+    <Compile Include="Requests\SupplierProducts\CreateSupplierProductRequest.cs" />
+    <Compile Include="Requests\SupplierProducts\UpdateSupplierProductRequest.cs" />
+    <Compile Include="Requests\Suppliers\CreateSupplierRequest.cs" />
+    <Compile Include="Requests\Suppliers\UpdateSupplierRequest.cs" />
+    <Compile Include="Requests\Users\CreateUserRequest.cs" />
+    <Compile Include="Requests\Users\UpdateUserPasswordRequest.cs" />
+    <Compile Include="Requests\Users\UpdateUserRequest.cs" />
+    <Compile Include="Requests\Warehouses\AddWarehouseProductRequest.cs" />
+    <Compile Include="Requests\Warehouses\CreateWarehouseRequest.cs" />
+    <Compile Include="Requests\Warehouses\UpdateWarehouseRequest.cs" />
+    <Compile Include="Requests\Warehouses\UpdateWarehouseStockMinimumLevelRequest.cs" />
+    <Compile Include="Responses\AddressDto.cs" />
+    <Compile Include="Responses\AdjustmentDetailDto.cs" />
+    <Compile Include="Responses\AdjustmentDetailForListDto.cs" />
+    <Compile Include="Responses\AdjustmentDto.cs" />
+    <Compile Include="Responses\AdjustmentForListDto.cs" />
+    <Compile Include="Responses\CategoryDto.cs" />
+    <Compile Include="Responses\CityDto.cs" />
+    <Compile Include="Responses\ContactInfoDto.cs" />
+    <Compile Include="Responses\CountryDto.cs" />
+    <Compile Include="Responses\CustomerDto.cs" />
+    <Compile Include="Responses\DashboardDto.cs" />
+    <Compile Include="Responses\DocumentDto.cs" />
+    <Compile Include="Responses\JwtDto.cs" />
+    <Compile Include="Responses\EmployeeDto.cs" />
+    <Compile Include="Responses\InvoiceDto.cs" />
+    <Compile Include="Responses\InvoiceLineItemDto.cs" />
+    <Compile Include="Responses\OrderDetailDto.cs" />
+    <Compile Include="Responses\OrderDetailForListDto.cs" />
+    <Compile Include="Responses\OrderDto.cs" />
+    <Compile Include="Responses\OrderForListDto.cs" />
+    <Compile Include="Responses\PersonDto.cs" />
+    <Compile Include="Responses\PersonForListDto.cs" />
+    <Compile Include="Responses\ProductDto.cs" />
+    <Compile Include="Responses\ProductDtoForList.cs" />
+    <Compile Include="Responses\SupplierDto.cs" />
+    <Compile Include="Responses\SupplierProductDto.cs" />
+    <Compile Include="Responses\SupplierProductDtoForList.cs" />
+    <Compile Include="Responses\UserDto.cs" />
+    <Compile Include="Responses\UserForListDto.cs" />
+    <Compile Include="Responses\WarehouseDto.cs" />
+    <Compile Include="Responses\WarehouseForListDto.cs" />
+    <Compile Include="Responses\WarehouseStockDto.cs" />
+    <Compile Include="Responses\WarehouseStockDtoForList.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

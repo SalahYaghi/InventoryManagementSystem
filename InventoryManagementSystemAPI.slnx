@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="Application/Application.csproj" />
+    <Project Path="ContracOldCompatibile/ContractOldCompatibile.csproj" Id="b2d74d6a-ad0c-482b-81cb-3da955363052" />
+    <Project Path="Contracts/Contracts.csproj" Id="0490d5ef-32cb-451c-81e8-366cbb91d1ab" />
+    <Project Path="Domain/Domain.csproj" />
+    <Project Path="Infrastructure/Infrastructure.csproj" />
+    <Project Path="InventoryManagementSystemAPI/InventoryManagementSystemAPI.csproj" />
+    <Project Path="UI/UI.csproj" Id="cd808c27-01a4-4aec-8760-7cd9b207888c" />
+  </Folder>
+  <Folder Name="/testing/">
+    <Project Path="ApplicationTesting/InventoryManagement.Application.UnitTests.csproj" />
+    <Project Path="CommonTesting/InventoryManagement.CommonTesting.csproj" Id="51e3aaae-3672-40fc-9fda-d9da0b69c6e7" />
+    <Project Path="DomainTesting/InventoryManagement.Application.DomainTesting.csproj" Id="18a5b377-1680-4075-b2dd-b7106bd956c0" />
+    <Project Path="SubcutaneousTests/InventoryManagement.SubcutaneousTests.csproj" Id="2c850405-1930-436b-b80b-f722b254ed36" />
+  </Folder>
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
+</Solution>

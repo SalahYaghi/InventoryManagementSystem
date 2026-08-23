@@ -1,0 +1,77 @@
+services:
+  inventorymanagementsystemapi:
+    build:
+      context: .
+      dockerfile: ./InventoryManagementSystemAPI/Dockerfile
+      target: final
+    ports:
+      - "5001:7174"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:7174
+      ConnectionStrings__DefaultConnection: Server=sqlserver;User Id=sa;Password=Your_strong_password123!;TrustServerCertificate=true;Database=InventoryManagementSystem
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://seq:5341/ingest/otlp
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+    depends_on:
+      - sqlserver
+      - seq
+      - redis
+    restart: on-failure
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Your_strong_password123!"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    restart: always
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  seq:
+    image: datalust/seq:latest
+    volumes:
+      - seq-data:/data
+    environment:
+      ACCEPT_EULA: "Y"
+      SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
+    ports:
+      - "5341:80"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus-data:/prometheus
+  
+    depends_on:
+      - inventorymanagementsystemapi
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "YourStrongPwd"
+    ports:
+      - "8049:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  sqlserver-data:
+  grafana-data:
+  seq-data:
+  prometheus-data:
