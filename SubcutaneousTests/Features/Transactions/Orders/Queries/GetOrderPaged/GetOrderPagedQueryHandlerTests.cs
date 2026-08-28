@@ -111,7 +111,7 @@ public class GetOrderPagedQueryHandlerTests
     {
         var purchase = await SeedPurchaseOrderEntityAsync();
         var sale = await SeedSaleOrderEntityAsync();
-        var result = await _mediator.Send(new GetOrderPagedQuery { PageNumber = 1, PageSize = 10 }, CancellationToken.None);
+        var result = await _mediator.Send(new GetOrderPagedQuery { PageNumber = 1, PageSize = 100 }, CancellationToken.None);
         Assert.True(result.IsSuccess);
         Assert.Contains(result.Value.Items, x => x.Id == purchase.Order.Id);
         Assert.Contains(result.Value.Items, x => x.Id == sale.Order.Id);

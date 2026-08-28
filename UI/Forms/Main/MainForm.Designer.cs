@@ -94,7 +94,6 @@
             this.panelSidebar.Name = "panelSidebar";
             this.panelSidebar.Size = new System.Drawing.Size(245, 820);
             this.panelSidebar.TabIndex = 0;
-            this.panelSidebar.Paint += new System.Windows.Forms.PaintEventHandler(this.panelSidebar_Paint);
             // 
             // btnAdjustments
             // 
@@ -174,7 +173,7 @@
             this.btnTransferOrders.TabIndex = 7;
             this.btnTransferOrders.Text = "Transfer Orders";
             this.btnTransferOrders.UseVisualStyleBackColor = true;
-            this.btnTransferOrders.Click += new System.EventHandler(this.btnTrasnfer_Click);
+            this.btnTransferOrders.Click += new System.EventHandler(this.btnTransferOrders_Click);
             // 
             // btnWarehouses
             // 
@@ -524,7 +523,6 @@
             this.Name = "MainForm";
             this.Text = "Inventory Management System";
             this.Load += new System.EventHandler(this.MainForm_Load);
-            this.Resize += new System.EventHandler(this.MainForm_Resize);
             this.panelSidebar.ResumeLayout(false);
             this.panelSidebar.PerformLayout();
             this.panelHeader.ResumeLayout(false);

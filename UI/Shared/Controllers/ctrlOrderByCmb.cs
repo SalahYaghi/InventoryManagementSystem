@@ -14,6 +14,11 @@ namespace UI.Shared.Controllers
     {
         public event Action IndexChanged;
 
+        public string Title
+        {
+            set => lblTitle.Text = value; get => lblTitle.Text;
+        }
+
         public ctrlOrderByCmb()
         {
             InitializeComponent();

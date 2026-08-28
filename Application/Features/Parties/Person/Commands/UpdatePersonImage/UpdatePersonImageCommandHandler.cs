@@ -13,7 +13,7 @@ namespace Contract.Features.Parties.Person.Commands.UpdatePersonImage
     public class UpdatePersonImageCommandHandler(IAppDbContext context ,
         IFileStorage fileStorage,
         ILogger<UpdatePersonImageCommandHandler> logger,
-        ICachingService cache) :   // [FIX 1.12] this handler did no cache invalidation at all
+        ICachingService cache) :   
         IRequestHandler<UpdatePersonImageCommand, Result<Updated>>
     {
         private readonly ILogger<UpdatePersonImageCommandHandler> _logger = logger;

@@ -13,7 +13,7 @@ namespace Contract.Features.Transactions.Order.Commands.DeleteOrderDetail
     {
         private readonly IAppDbContext _context;
         private readonly ICachingService _cache;
-        private readonly ILogger<DeleteAdjustmentDetailCommandHandler> _logger; // [FIX 3.8] logger was typed to the COMMAND, not the handler
+        private readonly ILogger<DeleteAdjustmentDetailCommandHandler> _logger; 
 
         public DeleteAdjustmentDetailCommandHandler(
             IAppDbContext context,

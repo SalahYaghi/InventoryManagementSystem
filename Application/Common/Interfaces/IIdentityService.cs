@@ -9,9 +9,9 @@ namespace Contract.Common.Interfaces
 {
     public interface IIdentityService
     {
-        ClaimsPrincipal? GetPrincipalFromToken(string token);
+         ClaimsPrincipal? GetPrincipalFromToken(string token);
          Task<Result<User>> AuthenticateAsync(string email , string password);
-
+         Task<Result<Updated>> UpdateLastLoginAt(Guid userId, CancellationToken ct);
     }
 }
 

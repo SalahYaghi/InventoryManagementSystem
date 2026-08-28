@@ -51,7 +51,7 @@ namespace Domain.Identity.Employee
             if (warehouseId == Guid.Empty)
                 return EmployeeErrors.WarehouseIsRequired;
 
-            if (string.IsNullOrEmpty(jobTitle))
+            if (string.IsNullOrWhiteSpace(jobTitle))
                 return EmployeeErrors.JobTitleIsRequired;
 
             JobTitle = jobTitle;

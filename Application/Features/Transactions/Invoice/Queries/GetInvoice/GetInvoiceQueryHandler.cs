@@ -36,7 +36,7 @@ namespace Contract.Features.Transactions.Invoice.Queries.GetInvoice
                 .ThenInclude(o => o.DestinationWarehouse)
                 .Include(i => i.Order)
                 .ThenInclude(o => o.SourceWarehouse)
-                .AsSplitQuery() // [FIX 4.5] avoid the cartesian explosion from the Include chain
+                .AsSplitQuery() 
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 

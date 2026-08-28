@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using UI.Forms.Products;
 using UI.Services;
+using UI.Shared.Helpers.UI_Helpers;
 
 namespace UI.Forms.Suppliers
 {
@@ -50,9 +51,7 @@ namespace UI.Forms.Suppliers
             txtSelectedProduct.Enabled = false;
             chkIsActive.Checked = true;
 
-            numPurchasePrice.DecimalPlaces = 2;
-            numPurchasePrice.Minimum = 0;
-            numPurchasePrice.Maximum = 999999999;
+            NumericInputHelper.ConfigureMoney(numPurchasePrice);
 
             lblStatus.Text = "Ready";
         }
@@ -79,8 +78,8 @@ namespace UI.Forms.Suppliers
             button.Width = 36;
             button.Height = 30;
 
-            button.BackColor = Color.FromArgb(248, 250, 252); // same as textbox
-            button.ForeColor = Color.FromArgb(80, 95, 110);   // soft dark gray
+            button.BackColor = Color.FromArgb(248, 250, 252);
+            button.ForeColor = Color.FromArgb(80, 95, 110);
 
             button.FlatStyle = FlatStyle.Flat;
             button.FlatAppearance.BorderColor = Color.FromArgb(220, 226, 232);
@@ -112,8 +111,13 @@ namespace UI.Forms.Suppliers
             }
 
             _supplier = result.Data;
+
             lblTitle.Text = "Supplier Products";
-            lblSubtitle.Text = $"Supplier: {_supplier.SupplierName}  |  Code: {_supplier.SupplierCode}";
+
+            lblSubtitle.Text = _supplier == null
+                ? "Supplier details are unavailable."
+                : "Supplier: " + DisplayFormatter.Text(_supplier.SupplierName) +
+                  "  |  Code: " + DisplayFormatter.Text(_supplier.SupplierCode);
         }
          private async Task LoadSupplierProducts()
         {
@@ -127,7 +131,7 @@ namespace UI.Forms.Suppliers
             }
             _allSupplierProducts = result.Data ?? new List<SupplierProductDtoForList>();
 
-            dgvSupplierProducts.SetData(result.Data ?? new List<SupplierProductDtoForList>());
+            dgvSupplierProducts.SetData(_allSupplierProducts);
 
             dgvSupplierProducts.HideColumn("Id");
             dgvSupplierProducts.HideColumn("BarCode");
@@ -141,6 +145,12 @@ namespace UI.Forms.Suppliers
             dgvSupplierProducts.SetColumnHeader("IsActive", "Active");
             dgvSupplierProducts.SetColumnHeader("Unit", "Unit");
             dgvSupplierProducts.SetColumnHeader("Category", "Category");
+            dgvSupplierProducts.FormatColumnAsCurrency("SellingPrice");
+            dgvSupplierProducts.SetColumnHeader("PurchasePrice", "Purchase Price");
+            dgvSupplierProducts.SetColumnHeader("CreatedAt", "Created");
+            dgvSupplierProducts.SetColumnHeader("UpdatedAt", "Updated");
+            dgvSupplierProducts.FormatColumnsAsCurrency("SellingPrice", "PurchasePrice");
+            dgvSupplierProducts.FormatColumnsAsDateTime("CreatedAt", "UpdatedAt");
         }
 
         private SupplierProductDtoForList SelectedGridProduct =>
@@ -281,9 +291,10 @@ namespace UI.Forms.Suppliers
             lblStatus.Text = "Product removed";
         }
 
-        private List<Guid> GetSupplierProducts() { 
-        
-            return _allSupplierProducts.Select(p => p.Id).ToList();        }
+        private List<Guid> GetSupplierProducts()
+        {
+            return _allSupplierProducts.Select(p => p.ProductId).ToList();
+        }
  
         private void dgvSupplierProducts_Click(object sender, EventArgs e)
         {
@@ -294,7 +305,7 @@ namespace UI.Forms.Suppliers
 
             txtSelectedProduct.Text = selected.ProductName;
             chkIsActive.Checked = selected.IsActive;
-            numPurchasePrice.Value = selected.PurchasePrice;
+            NumericInputHelper.SetValue(numPurchasePrice, selected.PurchasePrice);
         }
 
         private async void btnRefresh_Click(object sender, EventArgs e)
@@ -314,23 +325,26 @@ namespace UI.Forms.Suppliers
 
             _selectedProduct = null;
             txtSelectedProduct.Text = "";
-            numPurchasePrice.Value = 0;
+            NumericInputHelper.SetValue(numPurchasePrice, 0m);
             chkIsActive.Checked = true;
         }
 
         private void btnChooseProduct_Click(object sender, EventArgs e)
         {
 
-            var supplierProductIds = GetSupplierProducts(); 
-
             using (var frm = new frmProductSelector(_supplierId))
             {
-                //frm.ExcludeProducts(supplierProductIds);
-                if (frm.ShowDialog() != DialogResult.OK)
+                frm.ExcludeProducts(GetSupplierProducts());
+
+                if (frm.ShowDialog(this) != DialogResult.OK || frm.SelectedProduct == null)
                     return;
 
                 _selectedProduct = frm.SelectedProduct;
-                txtSelectedProduct.Text = $"{_selectedProduct.SKU} - {_selectedProduct.ProductName}";
+
+                txtSelectedProduct.Text = DisplayFormatter.Text(_selectedProduct.SKU) +
+                    " - " + DisplayFormatter.Text(_selectedProduct.ProductName);
+
+                errorProvider.SetError(txtSelectedProduct, string.Empty);
             }
         
     }
@@ -347,10 +361,6 @@ namespace UI.Forms.Suppliers
 
         }
 
-        private void txtSelectedProduct_TextChanged(object sender, EventArgs e)
-        {
-
-        }
 
         private void txtSelectedProduct_Click(object sender, EventArgs e)
         {

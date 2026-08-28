@@ -18,7 +18,7 @@ namespace Contract.Features.Transactions.Order.Commands.UpdateOrderDetail
     {
         private readonly IAppDbContext _context;
         private readonly ICachingService _cache;
-        private readonly ILogger<UpdateAdjustmentDetailQuantityCommandHandler> _logger; // [FIX 3.8] was typed to the COMMAND
+        private readonly ILogger<UpdateAdjustmentDetailQuantityCommandHandler> _logger; 
         private readonly IOrderPolicies _orderPolicies;
 
         public UpdateAdjustmentDetailQuantityCommandHandler(

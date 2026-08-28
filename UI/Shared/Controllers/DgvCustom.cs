@@ -123,7 +123,7 @@ namespace UI.Shared.Controllers
         }
         public void SetAsSelected(int index) {
 
-            if (dgvData.Rows.Count - 1 < index) return;
+            if (index < 0 || dgvData.Rows.Count - 1 < index) return;
 
             dgvData.Rows[index].Selected = true;
 
@@ -162,8 +162,30 @@ namespace UI.Shared.Controllers
                     dgvData.Columns[columnName].Width = width;
                 }
             }
-        
-        
+
+            public void FormatColumnAsCurrency(string columnName)
+            {
+                if (dgvData.Columns.Contains(columnName))
+                    dgvData.Columns[columnName].DefaultCellStyle.Format = "$#,##0.00";
+            }
+
+        public void SetDefaultValueForNulls(string columnName, object defaultValue)
+        {
+            if (!dgvData.Columns.Contains(columnName))
+                return;
+
+            foreach (DataGridViewRow row in dgvData.Rows)
+            {
+                if (row.IsNewRow)
+                    continue;
+
+                var cell = row.Cells[columnName];
+
+                if (cell.Value == null || cell.Value == DBNull.Value)
+                    cell.Value = defaultValue;
+            }
+        }
+
         public List<string> GetColumnNames()
         {
             return this.dgvData.Columns

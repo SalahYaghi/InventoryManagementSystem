@@ -23,10 +23,6 @@ namespace InventoryManagementSystemAPI.Controllers
     [EndpointName("GenerateRefreshTokenIdentity")]
     [MapToApiVersion("1.0")]
         [EnableRateLimiting("AuthLimiter")]
-
-        
-
-
     public async Task<ActionResult> GenerateRefreshToken([FromBody] JwtGenerateByRefreshTokenCommand request, CancellationToken ct)
         {
             var result = await sender.Send(request);
@@ -53,17 +49,8 @@ namespace InventoryManagementSystemAPI.Controllers
         
     public async Task<ActionResult> Generate([FromBody] JwtGeneratCommand request, CancellationToken ct)
         {
-
-
             var result = await sender.Send(request);
-
-            //if (result.IsError)
-            //{
-            //    result.Errors.Clear();
-            //    result.Errors.Add(Error.Validation("Invalid credentials", "The provided credentials are invalid."));
-            //}
-
-
+ 
             return result.Match(
                 response => Ok(response), Problem);
         }

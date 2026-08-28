@@ -624,7 +624,6 @@
             this.lblTypeBadge.TabIndex = 2;
             this.lblTypeBadge.Text = "Type";
             this.lblTypeBadge.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.lblTypeBadge.Click += new System.EventHandler(this.lblTypeBadge_Click);
             // 
             // lblStatusBadge
             // 

@@ -46,8 +46,6 @@ namespace HotelSystemUI.HttpClients
                     public static string UpdatePassword(Guid userId) =>
                                             $"{UserRoute}/{userId}/password";
 
-
-
                     public static string GetByEmail(string email ) =>
                         $"{UserRoute}/{email}";
 

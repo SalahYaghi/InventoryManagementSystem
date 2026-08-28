@@ -1,11 +1,9 @@
-﻿using Contract.Responses;
+﻿using Contract.Requests.Orders;
+using Contract.Responses;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using UI.HttpClient;
@@ -13,443 +11,467 @@ using UI.Services;
 
 namespace UI.Forms.Orders
 {
-    
-        public partial class frmShowOrders : Form
+    public partial class frmShowOrders : Form
+    {
+        private readonly OrderType? _orderType;
+
+        private List<OrderForListDto> _allOrders = new List<OrderForListDto>();
+        private bool _filtersInitialised;
+        private bool _suppressFilterEvents;
+
+        public frmShowOrders(OrderType? orderType = null)
         {
-            private List<OrderForListDto> _allOrders = new List<OrderForListDto>();
-            private bool _isLoadingFilters = false;
+            InitializeComponent();
+            _orderType = orderType;
+            SetupUI();
+        }
 
-            private OrderType? orderType = null;
-            public frmShowOrders(OrderType?  orderType = null)
+        #region Setup
+
+        private void SetupUI()
+        {
+            FormBorderStyle = FormBorderStyle.None;
+            TopLevel = false;
+            Dock = DockStyle.Fill;
+            BackColor = Color.FromArgb(243, 246, 249);
+
+            StyleButton(btnAdd, Color.FromArgb(74, 112, 139), Color.White);
+            StyleButton(btnView, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
+            StyleButton(btnEdit, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
+            StyleButton(btnCancel, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
+            StyleButton(btnDelete, Color.FromArgb(220, 53, 69), Color.White);
+            StyleButton(btnRefresh, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
+            StyleButton(btnComplete, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
+
+            StyleTextBox(txtSearch);
+
+            cmbOrderBy.Title = "Order By";
+            cmbOrderStatus.Title = "Status";
+
+
+            Text = BuildSectionTitle();
+        }
+
+        private string BuildSectionTitle()
+        {
+            if (_orderType == null)
+                return "Transactions";
+
+            switch (_orderType.Value)
             {
-                InitializeComponent();
-            this.orderType = orderType;
-                SetupUI();
+                case OrderType.Purchase:
+                    return "Purchase Orders";
+                case OrderType.Sale:
+                    return "Sales Orders";
+                case OrderType.Transfer:
+                    return "Warehouse Transfers";
+                case OrderType.ReturnIn:
+                    return "Returns In";
+                case OrderType.ReturnOut:
+                    return "Returns Out";
+                default:
+                    return "Transactions";
+            }
+        }
+
+        private void StyleButton(Button button, Color backColor, Color foreColor)
+        {
+            button.BackColor = backColor;
+            button.ForeColor = foreColor;
+            button.FlatStyle = FlatStyle.Flat;
+            button.FlatAppearance.BorderSize = 0;
+            button.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
+            button.Cursor = Cursors.Hand;
+        }
+
+        private void StyleTextBox(TextBox textBox)
+        {
+            textBox.BackColor = Color.FromArgb(248, 250, 252);
+            textBox.BorderStyle = BorderStyle.FixedSingle;
+            textBox.Font = new Font("Segoe UI", 10F);
+            textBox.ForeColor = Color.FromArgb(24, 33, 45);
+        }
+
+        #endregion
+
+        #region Loading
+
+        private async void frmShowOrders_Load(object sender, EventArgs e)
+        {
+            dgvOrders.SubscribeToLoadData(LoadData);
+            await dgvOrders.LoadDataGridViewData();
+        }
+
+        private async Task<ApiResult<PaginatedList>> LoadData(int pageNo, int pageSize)
+        {
+            var result = await OrdersServices.GetAll(pageNo, pageSize, _orderType);
+
+            if (!result.IsSuccess || result.Data == null)
+            {
+                MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return "Failed to load transactions";
             }
 
-            private async void frmShowOrders_Load(object sender, EventArgs e)
+            _allOrders = result.Data.Items ?? new List<OrderForListDto>();
+
+            dgvOrders.SetData(_allOrders);
+
+            LoadFilterSources();
+            ApplyCurrentView();
+
+            return result.Data;
+        }
+
+        private void LoadFilterSources()
+        {
+            _suppressFilterEvents = true;
+
+            try
             {
-                dgvOrders.SubscribeToLoadData(LoadData);
-                await dgvOrders.LoadDataGridViewData();
+                cmbOrderBy.LoadData(dgvOrders.DgvCustom.GetColumnNamesExcept(BuildExcludedSortColumns()));
+                cmbOrderStatus.LoadData<OrderForListDto>(_allOrders, o => o.OrderStatus);
+
+                if (_filtersInitialised)
+                    return;
+
+                cmbOrderStatus.IndexChanged += ApplyCurrentView;
+                cmbOrderBy.IndexChanged += ApplyCurrentView;
+
+                _filtersInitialised = true;
+            }
+            finally
+            {
+                _suppressFilterEvents = false;
+            }
+        }
+
+        private HashSet<string> BuildExcludedSortColumns()
+        {
+            var excluded = new HashSet<string>
+            {
+                "Id",
+                "OrderType",
+                "InvoiceId",
+                "SourceWarehouseId",
+                "DestinationWarehouseId",
+                "CustomerId",
+                "SupplierId"
+            };
+
+            if (_orderType != OrderType.Sale && _orderType != OrderType.ReturnIn)
+                excluded.Add("CustomerName");
+
+            if (_orderType != OrderType.Purchase && _orderType != OrderType.ReturnOut)
+                excluded.Add("SupplierName");
+
+            if (_orderType != OrderType.Transfer)
+                excluded.Add("DestinationWarehouseName");
+
+            if (_orderType == OrderType.Transfer)
+            {
+                excluded.Add("SubTotalAmount");
+                excluded.Add("DiscountAmount");
+                excluded.Add("NetAmount");
             }
 
-            private void SetupUI()
-            {
-                FormBorderStyle = FormBorderStyle.None;
-                TopLevel = false;
-                Dock = DockStyle.Fill;
-                BackColor = Color.FromArgb(243, 246, 249);
+            return excluded;
+        }
 
+        #endregion
 
-                StyleButton(btnAdd, Color.FromArgb(74, 112, 139), Color.White);
-                StyleButton(btnView, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
-                StyleButton(btnEdit, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
-                StyleButton(btnCancel, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
-                StyleButton(btnDelete, Color.FromArgb(220, 53, 69), Color.White);
-                StyleButton(btnRefresh, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
-                StyleButton(btnCompeleted, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
-                StyleTextBox(txtSearch);
-                //StyleComboBox(cmbOrderType);
-                //StyleComboBox(cmbOrderStatus);
-                //StyleComboBox(cmbOrderBy);
+        #region Filtering
 
-                //cmbOrderType.Items.Clear();
-                //cmbOrderType.Items.AddRange(new object[]
-                //{
-                //"All",
-                //"Purchase",
-                //"Sale",
-                //"Transfer"
-                //});
-                //cmbOrderType.SelectedIndex = 0;
+        private List<OrderForListDto> ApplyLocalFilters()
+        {
+            IEnumerable<OrderForListDto> query = _allOrders;
 
-                //cmbOrderStatus.Items.Clear();
-                //cmbOrderStatus.Items.AddRange(new object[]
-                //{
-                //"All",
-                //"Pending",
-                //"Completed",
-                //"Cancelled"
-                //});
-                //cmbOrderStatus.SelectedIndex = 0;
+            string search = txtSearch.Text.Trim().ToLowerInvariant();
 
-                //cmbOrderBy.Items.Clear();
-                //cmbOrderBy.Items.AddRange(new object[]
-                //{
-                //"DueDate",
-                //"OrderType",
-                //"OrderStatus",
-                //"SupplierName",
-                //"CustomerName",
-                //"SourceWarehouseName",
-                //"DestinationWarehouseName",
-                //"SubTotalAmount",
-                //"DiscountAmount",
-                //"NetAmount"
-                //});
-                //cmbOrderBy.SelectedIndex = 0;
-            }
+            if (!string.IsNullOrWhiteSpace(search))
+                query = query.Where(o => MatchesSearch(o, search));
 
-            private void StyleButton(Button button, Color backColor, Color foreColor)
-            {
-                button.BackColor = backColor;
-                button.ForeColor = foreColor;
-                button.FlatStyle = FlatStyle.Flat;
-                button.FlatAppearance.BorderSize = 0;
-                button.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
-                button.Cursor = Cursors.Hand;
-            }
+            query = ApplySorting(query);
 
-            private void StyleTextBox(TextBox textBox)
-            {
-                textBox.BackColor = Color.FromArgb(248, 250, 252);
-                textBox.BorderStyle = BorderStyle.FixedSingle;
-                textBox.Font = new Font("Segoe UI", 10F);
-                textBox.ForeColor = Color.FromArgb(24, 33, 45);
-            }
+            query = cmbOrderStatus.FilterData<OrderForListDto>(
+                query,
+                o => o.OrderStatus == cmbOrderStatus.GetSelectedItemName());
 
+            return query.ToList();
+        }
 
-            private async Task<ApiResult<PaginatedList>> LoadData(int pageNo, int pageSize)
-            {
-                var result = await OrdersServices.GetAll(pageNo, pageSize ,orderType);
+        private bool MatchesSearch(OrderForListDto order, string search)
+        {
+            return (order.OrderType ?? string.Empty).ToLowerInvariant().Contains(search) ||
+                   (order.OrderStatus ?? string.Empty).ToLowerInvariant().Contains(search) ||
+                   (order.SupplierName ?? string.Empty).ToLowerInvariant().Contains(search) ||
+                   (order.CustomerName ?? string.Empty).ToLowerInvariant().Contains(search) ||
+                   (order.SourceWarehouseName ?? string.Empty).ToLowerInvariant().Contains(search) ||
+                   (order.DestinationWarehouseName ?? string.Empty).ToLowerInvariant().Contains(search) ||
+                   order.SubTotalAmount.ToString().Contains(search) ||
+                   order.DiscountAmount.ToString().Contains(search) ||
+                   order.NetAmount.ToString().Contains(search);
+        }
 
-                if (!result.IsSuccess)
-                {
-                    MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return "Failed to load orders";
-                }
-
-                var data = result.Data;
-
-                _allOrders = data == null
-                    ? new List<OrderForListDto>()
-                    : data.Items.Cast<OrderForListDto>().ToList();
-            dgvOrders.SetData<OrderForListDto>(_allOrders);
-                LoadFilterSources();
-                ApplyCurrentView();
-
-                return data;
-            }
-
-            private void LoadFilterSources()
-            {
-
-        string excludedDestinationWarehouseName = OrderType.Transfer != orderType ? "DestinationWarehouseName" : "" ;
-
-            string excludedSupplierName = OrderType.Purchase != orderType ? "SupplierName" : "";
-
-            string excludedCustomerName = OrderType.Sale != orderType ? "CustomerName" : "";
-
-
-            cmbOrderBy.LoadData(dgvOrders.DgvCustom.GetColumnNamesExcept(new HashSet<string>() { 
-                           "OrderType" ,"InvoiceId" , "SourceWarehouseId" ,"DestinationWarehouseId",
-            "CustomerId"  , "SupplierId","Id" , excludedCustomerName   
-            , excludedSupplierName , excludedDestinationWarehouseName ,
-            }));
-
-
-            cmbOrderStatus.LoadData<OrderForListDto>(_allOrders , o => o.OrderStatus);
-
-            cmbOrderStatus.IndexChanged += ApplyCurrentView;
-            cmbOrderBy.IndexChanged += ApplyCurrentView;
-
-            _isLoadingFilters = false;
-            }
-
-            private List<OrderForListDto> ApplyLocalFilters()
-            {
-                IEnumerable<OrderForListDto> query = _allOrders;
-
-                string search = txtSearch.Text.Trim().ToLower();
-
-                if (!string.IsNullOrWhiteSpace(search))
-                {
-                query = query.Where(o =>
-                    (o.SubTotalAmount.ToString() ?? "").ToLower().Contains(search) ||
-                    (o.DiscountAmount.ToString() ?? "").ToLower().Contains(search) ||
-                    (o.NetAmount.ToString() ?? "").ToLower().Contains(search) ||
-                    (o.OrderType ?? "").ToLower().Contains(search) ||
-                    (o.OrderStatus ?? "").ToLower().Contains(search) ||
-                    (o.SupplierName ?? "").ToLower().Contains(search) ||
-                    (o.CustomerName ?? "").ToLower().Contains(search) ||
-                    (o.SourceWarehouseName ?? "").ToLower().Contains(search) ||
-                    (o.DestinationWarehouseName ?? "").ToLower().Contains(search));
-                }
-
-        
+        private IEnumerable<OrderForListDto> ApplySorting(IEnumerable<OrderForListDto> query)
+        {
             switch (cmbOrderBy.GetSelectedItemName())
             {
                 case "OrderType":
-                    query = cmbOrderBy.SortData<OrderForListDto>(query, o => o.OrderType);
-                    break;
+                    return cmbOrderBy.SortData<OrderForListDto>(query, o => o.OrderType);
 
                 case "OrderStatus":
-                    query = cmbOrderBy.SortData<OrderForListDto>(query, o => o.OrderStatus);
-                    break;
+                    return cmbOrderBy.SortData<OrderForListDto>(query, o => o.OrderStatus);
 
                 case "SupplierName":
-                    query = cmbOrderBy.SortData<OrderForListDto>(query, o => o.SupplierName);
-                    break;
+                    return cmbOrderBy.SortData<OrderForListDto>(query, o => o.SupplierName ?? string.Empty);
 
                 case "CustomerName":
-                    query = cmbOrderBy.SortData<OrderForListDto>(query, o => o.CustomerName);
-                    break;
+                    return cmbOrderBy.SortData<OrderForListDto>(query, o => o.CustomerName ?? string.Empty);
 
                 case "SourceWarehouseName":
-                    query = cmbOrderBy.SortData<OrderForListDto>(query, o => o.SourceWarehouseName);
-                    break;
+                    return cmbOrderBy.SortData<OrderForListDto>(query, o => o.SourceWarehouseName ?? string.Empty);
 
                 case "DestinationWarehouseName":
-                    query = cmbOrderBy.SortData<OrderForListDto>(query, o => o.DestinationWarehouseName);
-                    break;
+                    return cmbOrderBy.SortData<OrderForListDto>(query, o => o.DestinationWarehouseName ?? string.Empty);
 
                 case "SubTotalAmount":
-                    query = cmbOrderBy.SortData<OrderForListDto>(query, o => o.SubTotalAmount);
-                    break;
+                    return cmbOrderBy.SortData<OrderForListDto>(query, o => o.SubTotalAmount);
 
                 case "DiscountAmount":
-                    query = cmbOrderBy.SortData<OrderForListDto>(query, o => o.DiscountAmount);
-                    break;
+                    return cmbOrderBy.SortData<OrderForListDto>(query, o => o.DiscountAmount);
 
                 case "NetAmount":
-                    query = cmbOrderBy.SortData<OrderForListDto>(query, o => o.NetAmount);
-                    break;
+                    return cmbOrderBy.SortData<OrderForListDto>(query, o => o.NetAmount);
+
+                case "CreatedAt":
+                    return cmbOrderBy.SortData<OrderForListDto>(query, o => o.CreatedAt);
+
+                case "UpdatedAt":
+                    return cmbOrderBy.SortData<OrderForListDto>(query, o => o.UpdatedAt);
 
                 default:
-                    query = cmbOrderBy.SortData<OrderForListDto>(query, o => o.DueDate);
-                    break;
-            }
-
-
-            query = cmbOrderStatus.FilterData<OrderForListDto>(query , o => o.OrderStatus == cmbOrderStatus.GetSelectedItemName());
-
-                return query.ToList();
-            }
-
-            private void ApplyCurrentView()
-            {
-                var orders = ApplyLocalFilters();
-
-                dgvOrders.SetData(orders);
-
-                dgvOrders.DgvCustom.HideColumn("Id");
-                dgvOrders.DgvCustom.HideColumn("SupplierId");
-                dgvOrders.DgvCustom.HideColumn("CustomerId");
-                dgvOrders.DgvCustom.HideColumn("InvoiceId");
-                dgvOrders.DgvCustom.HideColumn("SourceWarehouseId");
-                dgvOrders.DgvCustom.HideColumn("DestinationWarehouseId");
-          
-            if(orderType!= null)
-            dgvOrders.DgvCustom.HideColumn("OrderType");
-
-            if (orderType == OrderType.Sale || orderType == OrderType.ReturnIn)
-            {
-                dgvOrders.DgvCustom.HideColumn("SupplierName");
-                dgvOrders.DgvCustom.HideColumn("DestinationWarehouseName");
-
-            }
-            else if(orderType == OrderType.Purchase || orderType == OrderType.ReturnOut){
-                dgvOrders.DgvCustom.HideColumn("CustomerName");
-                dgvOrders.DgvCustom.HideColumn("DestinationWarehouseName");
-
-            }
-            else if (orderType == OrderType.Transfer)
-            {
-                dgvOrders.DgvCustom.HideColumn("CustomerName");
-                dgvOrders.DgvCustom.HideColumn("SupplierName");
-                dgvOrders.DgvCustom.HideColumn("NetAmount");
-                dgvOrders.DgvCustom.HideColumn("DiscountAmount");
-                dgvOrders.DgvCustom.HideColumn("SubTotalAmount");
-
-
-            }
-
-            dgvOrders.DgvCustom.SetColumnHeader("OrderStatus", "Status");
-                dgvOrders.DgvCustom.SetColumnHeader("SourceWarehouseName", "Source Warehouse");
-                dgvOrders.DgvCustom.SetColumnHeader("SubTotalAmount", "Sub Total");
-                dgvOrders.DgvCustom.SetColumnHeader("DiscountAmount", "Discount");
-                dgvOrders.DgvCustom.SetColumnHeader("NetAmount", "Net");
-                dgvOrders.DgvCustom.SetColumnHeader("DueDate", "Due Date");
-            }
-
-            private OrderForListDto GetSelectedOrder()
-            {
-                return dgvOrders.DgvCustom.GetSelectedItem<OrderForListDto>();
-            }
-
-            private void txtSearch_TextChanged(object sender, EventArgs e)
-            {
-                ApplyCurrentView();
-            }
-
-            private void cmbOrderType_SelectedIndexChanged(object sender, EventArgs e)
-            {
-                if (_isLoadingFilters) return;
-                ApplyCurrentView();
-            }
-
-            private void cmbOrderStatus_SelectedIndexChanged(object sender, EventArgs e)
-            {
-                if (_isLoadingFilters) return;
-                ApplyCurrentView();
-            }
-
-            private void cmbOrderBy_SelectedIndexChanged(object sender, EventArgs e)
-            {
-                ApplyCurrentView();
-            }
-
-            private void btnAdd_Click(object sender, EventArgs e)
-            {
-                using (var frm = new frmTransactionEditor())
-                {
-                if(orderType != null)
-                frm.SetOrderType(orderType.Value);
-                    if (frm.ShowDialog() == DialogResult.OK)
-                        _ = dgvOrders.LoadDataGridViewData();
-                }
-            }
-
-            private void btnView_Click(object sender, EventArgs e)
-            {
-                var selected = GetSelectedOrder();
-
-                if (selected == null)
-                {
-                    MessageBox.Show("Please select an order first.");
-                    return;
-                }
-
-            using (var frm = new frmTransactionDetails(selected.Id))
-            {
-                frm.ShowDialog();
+                    return cmbOrderBy.SortData<OrderForListDto>(query, o => o.DueDate);
             }
         }
 
-            private void btnEdit_Click(object sender, EventArgs e)
-            {
-                var selected = GetSelectedOrder();
+        #endregion
 
-                if (selected == null)
-                {
-                    MessageBox.Show("Please select an order first.");
-                    return;
-                }
+        #region View
 
-                using (var frm = new frmTransactionEditor(selected.Id))
-                {
-                    if (frm.ShowDialog() == DialogResult.OK)
-                        _ = dgvOrders.LoadDataGridViewData();
-                }
-            }
-
-            private async void btnStatus_Click(object sender, EventArgs e)
-            {
-                var selected = GetSelectedOrder();
-
-                if (selected == null)
-                {
-                    MessageBox.Show("Please select an order first.");
-                    return;
-                }
-           
-
-            var confirm = MessageBox.Show(
-                   "Are you sure you want to cancel this order?",
-                   "Confirm Cancelation",
-                   MessageBoxButtons.YesNo,
-                   MessageBoxIcon.Warning);
-
-            if (confirm != DialogResult.Yes)
+        private void ApplyCurrentView()
+        {
+            if (_suppressFilterEvents)
                 return;
 
-            btnDelete.Enabled = false;
+            dgvOrders.SetData(ApplyLocalFilters());
 
-            var result = await OrdersServices.UpdateStatus(selected.Id, new Contract.Requests.Orders.UpdateOrderStatusRequest()
+            var grid = dgvOrders.DgvCustom;
+
+            grid.HideColumns("Id", "SupplierId", "CustomerId", "InvoiceId",
+                             "SourceWarehouseId", "DestinationWarehouseId");
+
+            ApplyOrderTypeColumns(grid);
+
+            grid.SetColumnHeaders(new Dictionary<string, string>
             {
-                Id = selected.Id,
-                OrderStatus = OrderStatus.Cancelled
+                { "OrderType", "Type" },
+                { "OrderStatus", "Status" },
+                { "SupplierName", "Supplier" },
+                { "CustomerName", "Customer" },
+                { "SourceWarehouseName", "Source Warehouse" },
+                { "DestinationWarehouseName", "Destination Warehouse" },
+                { "SubTotalAmount", "Sub Total" },
+                { "DiscountAmount", "Discount" },
+                { "NetAmount", "Net" },
+                { "DueDate", "Due Date" },
+                { "CreatedAt", "Created" },
+                { "UpdatedAt", "Updated" }
             });
 
-            btnDelete.Enabled = true;
+            grid.FormatColumnsAsCurrency("SubTotalAmount", "DiscountAmount", "NetAmount");
+            grid.FormatColumnsAsDateTime("DueDate", "CreatedAt", "UpdatedAt");
+        }
 
-            if (!result.IsSuccess)
+        private void ApplyOrderTypeColumns(UI.Shared.Controllers.DgvCustom grid)
+        {
+            if (_orderType != null)
+                grid.HideColumn("OrderType");
+
+            if (_orderType == OrderType.Sale || _orderType == OrderType.ReturnIn)
             {
-                MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                grid.HideColumns("SupplierName", "DestinationWarehouseName");
                 return;
             }
 
-            await dgvOrders.LoadDataGridViewData();
+            if (_orderType == OrderType.Purchase || _orderType == OrderType.ReturnOut)
+            {
+                grid.HideColumns("CustomerName", "DestinationWarehouseName");
+                return;
+            }
 
+            if (_orderType == OrderType.Transfer)
+                grid.HideColumns("CustomerName", "SupplierName",
+                                 "NetAmount", "DiscountAmount", "SubTotalAmount");
         }
 
-        private async void btnDelete_Click(object sender, EventArgs e)
-            {
-                var selected = GetSelectedOrder();
-
-                if (selected == null)
-                {
-                    MessageBox.Show("Please select an order first.");
-                    return;
-                }
-
-                var confirm = MessageBox.Show(
-                    "Are you sure you want to delete this order?",
-                    "Confirm Delete",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning);
-
-                if (confirm != DialogResult.Yes)
-                    return;
-
-                btnDelete.Enabled = false;
-
-                var result = await OrdersServices.Delete(selected.Id);
-
-                btnDelete.Enabled = true;
-
-                if (!result.IsSuccess)
-                {
-                    MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                await dgvOrders.LoadDataGridViewData();
-            }
-
-            private async void btnRefresh_Click(object sender, EventArgs e)
-            {
-                await dgvOrders.LoadDataGridViewData();
-            }
-
-        private async void btnCompeleted_Click(object sender, EventArgs e)
+        private OrderForListDto GetSelectedOrder()
         {
+            return dgvOrders.DgvCustom.GetSelectedItem<OrderForListDto>();
+        }
 
+        private OrderForListDto RequireSelectedOrder()
+        {
             var selected = GetSelectedOrder();
 
             if (selected == null)
+                MessageBox.Show("Please select a transaction first.", "No Selection",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            return selected;
+        }
+
+        private void txtSearch_TextChanged(object sender, EventArgs e)
+        {
+            ApplyCurrentView();
+        }
+
+        #endregion
+
+        #region Actions
+
+        private void btnAdd_Click(object sender, EventArgs e)
+        {
+            using (var frm = new frmTransactionEditor())
             {
-                MessageBox.Show("Please select an order first.");
+                if (_orderType != null)
+                    frm.SetOrderType(_orderType.Value);
+
+                if (frm.ShowDialog(this) == DialogResult.OK)
+                    _ = dgvOrders.LoadDataGridViewData();
+            }
+        }
+
+        private void btnView_Click(object sender, EventArgs e)
+        {
+            var selected = RequireSelectedOrder();
+
+            if (selected == null)
+                return;
+
+            using (var frm = new frmTransactionDetails(selected.Id))
+            {
+                frm.ShowDialog(this);
+            }
+
+            _ = dgvOrders.LoadDataGridViewData();
+        }
+
+        private void btnEdit_Click(object sender, EventArgs e)
+        {
+            var selected = RequireSelectedOrder();
+
+            if (selected == null)
+                return;
+
+            using (var frm = new frmTransactionEditor(selected.Id))
+            {
+                if (frm.ShowDialog(this) == DialogResult.OK)
+                    _ = dgvOrders.LoadDataGridViewData();
+            }
+        }
+
+        private async void btnCancelOrder_Click(object sender, EventArgs e)
+        {
+            var selected = RequireSelectedOrder();
+
+            if (selected == null)
+                return;
+
+            if (selected.OrderStatus == OrderStatus.Cancelled.ToString())
+            {
+                MessageBox.Show("This transaction is already cancelled.", "Not Allowed",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
+            var confirm = MessageBox.Show(
+                "Are you sure you want to cancel this transaction?",
+                "Confirm Cancellation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (confirm != DialogResult.Yes)
+                return;
+
+            await ChangeStatus(btnCancel, selected.Id, OrderStatus.Cancelled);
+        }
+
+        private async void btnCompleteOrder_Click(object sender, EventArgs e)
+        {
+            var selected = RequireSelectedOrder();
+
+            if (selected == null)
+                return;
+
+            if (selected.OrderStatus == OrderStatus.Completed.ToString())
+            {
+                MessageBox.Show("This transaction is already completed.", "Not Allowed",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
 
             var confirm = MessageBox.Show(
-                   "Are you sure you want to compelete this order?",
-                   "Confirm Compeletion",
-                   MessageBoxButtons.YesNo,
-                   MessageBoxIcon.Question);
+                "Are you sure you want to complete this transaction?",
+                "Confirm Completion",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (confirm != DialogResult.Yes)
+                return;
+
+            await ChangeStatus(btnComplete, selected.Id, OrderStatus.Completed);
+        }
+
+        private async Task ChangeStatus(Button trigger, Guid orderId, OrderStatus status)
+        {
+            trigger.Enabled = false;
+
+            var result = await OrdersServices.UpdateStatus(orderId, new UpdateOrderStatusRequest
+            {
+                Id = orderId,
+                OrderStatus = status
+            });
+
+            trigger.Enabled = true;
+
+            if (!result.IsSuccess)
+            {
+                MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            await dgvOrders.LoadDataGridViewData();
+        }
+
+        private async void btnDelete_Click(object sender, EventArgs e)
+        {
+            var selected = RequireSelectedOrder();
+
+            if (selected == null)
+                return;
+
+            var confirm = MessageBox.Show(
+                "Are you sure you want to delete this transaction?",
+                "Confirm Delete",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
 
             if (confirm != DialogResult.Yes)
                 return;
 
             btnDelete.Enabled = false;
 
-            var result = await OrdersServices.UpdateStatus(selected.Id, new Contract.Requests.Orders.UpdateOrderStatusRequest()
-            {
-                Id = selected.Id,
-                OrderStatus = OrderStatus.Completed
-            });
+            var result = await OrdersServices.Delete(selected.Id);
 
             btnDelete.Enabled = true;
 
@@ -461,6 +483,12 @@ namespace UI.Forms.Orders
 
             await dgvOrders.LoadDataGridViewData();
         }
-    }
-    }
 
+        private async void btnRefresh_Click(object sender, EventArgs e)
+        {
+            await dgvOrders.LoadDataGridViewData();
+        }
+
+        #endregion
+    }
+}

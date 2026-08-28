@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using UI.Shared.Helpers.IO_Helper;
+using UI.Shared.Helpers.UI_Helpers;
 using static HotelSystemUI.HttpClients.InventorySystemUI.HttpClients.Routes.Entities;
 namespace UI.Forms.Invoices
 {
@@ -72,6 +73,12 @@ namespace UI.Forms.Invoices
                     return;
                 }
 
+                if (result.Data == null)
+                {
+                    lblStatus.Text = "Failed to load invoice";
+                    return;
+                }
+
                 _invoice = result.Data;
 
                 BindInvoice();
@@ -82,48 +89,53 @@ namespace UI.Forms.Invoices
         private void DeterminePartiyCaptionData()
         {
 
-            string caption = "Partie";
+            string caption = "Party";
             string value = "-";
-            switch (this._invoice.Order.OrderType)
+
+            if (_invoice.Order != null)
             {
+                switch (this._invoice.Order.OrderType)
+                {
 
-                case OrderType.Purchase:
-                    caption = "Supplier";
-                    value = _invoice.Order.Supplier.SupplierName;
-                    break;
-                case OrderType.Sale:
-                    caption = "Customer";
-                    value = _invoice.Order.Customer.CustomerName;
-                    break;
-                case OrderType.Transfer:
-                    caption = "Destination Warehouse";
-                    value = _invoice.Order.DestinationWarehouseDto.Name;
-                    break;
+                    case OrderType.Purchase:
+                    case OrderType.ReturnOut:
+                        caption = "Supplier";
+                        value = _invoice.Order.Supplier == null ? "-" : _invoice.Order.Supplier.SupplierName;
+                        break;
+                    case OrderType.Sale:
+                    case OrderType.ReturnIn:
+                        caption = "Customer";
+                        value = _invoice.Order.Customer == null ? "-" : _invoice.Order.Customer.CustomerName;
+                        break;
+                    case OrderType.Transfer:
+                        caption = "Destination Warehouse";
+                        value = _invoice.Order.DestinationWarehouseDto == null ? "-" : _invoice.Order.DestinationWarehouseDto.Name;
+                        break;
 
+                }
             }
             this.lblPartieCaption.Text = caption;
-            this.lblPartieValue.Text = value;
+            this.lblPartieValue.Text = DisplayFormatter.Text(value, DisplayFormatter.NotSetPlaceholder);
 
         }
         private void BindOverviewCard()
         {
 
-            lblDueDateValue.Text = _invoice.Order.DueDate.ToString("dd MMM yyyy HH:mm");
+            lblDueDateValue.Text = _invoice.Order == null
+                ? DisplayFormatter.EmptyPlaceholder
+                : DisplayFormatter.DateTimeValue(_invoice.Order.DueDate);
 
-            string type = GetOrderTypeName();
-
-            lblSourceWarehouseValue.Text = HandleIfNull(_invoice.Order == null ? "" :
-                _invoice.Order.SourceWarehouseDto.Name);
+            lblSourceWarehouseValue.Text = DisplayFormatter.Text(
+                _invoice.Order == null || _invoice.Order.SourceWarehouseDto == null
+                    ? null
+                    : _invoice.Order.SourceWarehouseDto.Name,
+                DisplayFormatter.NotSetPlaceholder);
             DeterminePartiyCaptionData();
-        }
-        private string HandleIfNull(string value)
-        {
-            return string.IsNullOrWhiteSpace(value) ? "-" : value.Trim();
         }
         private string GetOrderTypeName()
         {
 
-            return _invoice.Order.OrderType.ToString();
+            return _invoice.Order == null ? "-" : _invoice.Order.OrderType.ToString();
         }
 
         private void BindInvoice()
@@ -133,8 +145,8 @@ namespace UI.Forms.Invoices
 
                 lblInvoiceTitle.Text = "INVOICE";
              
-                lblInvoiceTypeBadge.Text = _invoice.InvoiceType;
-                lblInvoiceStatusBadge.Text = _invoice.Status;
+                lblInvoiceTypeBadge.Text = DisplayFormatter.Text(_invoice.InvoiceType);
+                lblInvoiceStatusBadge.Text = DisplayFormatter.Text(_invoice.Status);
 
                 ApplyStatusBadgeStyle(_invoice.Status);
                 ApplyTypeBadgeStyle(_invoice.InvoiceType);
@@ -179,7 +191,7 @@ namespace UI.Forms.Invoices
                 Label lblQtyCaption = CreateCaption("Qty", 450, 12, 70);
                 card.Controls.Add(lblQtyCaption);
 
-                Label lblQty = CreateValue(item.Quantity.ToString("0.##"), 450, 36, 70);
+                Label lblQty = CreateValue(DisplayFormatter.Quantity(item.Quantity), 450, 36, 70);
                 card.Controls.Add(lblQty);
 
                 Label lblUnitCaption = CreateCaption("Unit Price", 530, 12, 100);
@@ -194,8 +206,6 @@ namespace UI.Forms.Invoices
 
             Label lblTax = CreateValue(FormatMoney(item.Tax), 630, 36, 100);
             card.Controls.Add(lblTax);
-
-
 
             Label lblTotalCaption = CreateCaption("Total", 705, 12, 100);
                 lblTotalCaption.TextAlign = ContentAlignment.MiddleRight;
@@ -235,11 +245,11 @@ namespace UI.Forms.Invoices
 
                 lblItemsCountValue.Text = _invoice.InvoiceLineItems == null
                     ? "0"
-                    : _invoice.InvoiceLineItems.Count.ToString();
+                    : DisplayFormatter.Count(_invoice.InvoiceLineItems.Count);
 
                 lblTotalQuantityValue.Text = _invoice.InvoiceLineItems == null
                     ? "0"
-                    : _invoice.InvoiceLineItems.Sum(i => i.Quantity).ToString("0.##");
+                    : DisplayFormatter.Quantity(_invoice.InvoiceLineItems.Sum(i => i.Quantity));
             }
 
             private Label CreateCaption(string text, int x, int y, int width)
@@ -291,7 +301,7 @@ namespace UI.Forms.Invoices
 
             private string FormatMoney(decimal value)
             {
-                return value.ToString("0.00");
+                return DisplayFormatter.Money(value);
             }
 
             private void ClearDisplay()
@@ -300,10 +310,10 @@ namespace UI.Forms.Invoices
                 lblInvoiceTypeBadge.Text = "-";
                 lblInvoiceStatusBadge.Text = "-";
 
-                lblSubTotalValue.Text = "0.00";
-                lblTaxValue.Text = "0.00";
-                lblDiscountValue.Text = "0.00";
-                lblNetValue.Text = "0.00";
+                lblSubTotalValue.Text = DisplayFormatter.Money(0m);
+                lblTaxValue.Text = DisplayFormatter.Money(0m);
+                lblDiscountValue.Text = DisplayFormatter.Money(0m);
+                lblNetValue.Text = DisplayFormatter.Money(0m);
 
                 lblItemsCountValue.Text = "0";
                 lblTotalQuantityValue.Text = "0";
@@ -337,10 +347,17 @@ namespace UI.Forms.Invoices
                 return;
             }
 
+            btnDownloadAsPdf.Enabled = false;
+            lblStatus.Text = "Generating invoice PDF...";
+
             var pdfGenerated = await InvoicesServices.GetPdfbyId(_invoiceId);
+
+            btnDownloadAsPdf.Enabled = true;
+            lblStatus.Text = "Ready";
 
             if (!pdfGenerated.IsSuccess ||
                 pdfGenerated.Data == null ||
+                pdfGenerated.Data.FileBytes == null ||
                 pdfGenerated.Data.FileBytes.Length == 0)
             {
                 MessageBox.Show(
@@ -352,12 +369,31 @@ namespace UI.Forms.Invoices
                 return;
             }
 
-            string filePath = Path.Combine(path, pdfGenerated.Data.FileName);
+            string fileName = string.IsNullOrWhiteSpace(pdfGenerated.Data.FileName)
+                ? "invoice-" + _invoiceId + ".pdf"
+                : pdfGenerated.Data.FileName;
 
-            File.WriteAllBytes(filePath, pdfGenerated.Data.FileBytes);
+            string filePath = Path.Combine(path, fileName);
+
+            try
+            {
+                File.WriteAllBytes(filePath, pdfGenerated.Data.FileBytes);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "The invoice could not be saved to the selected folder." +
+                        Environment.NewLine + Environment.NewLine + ex.Message,
+                    "Download Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+
+                return;
+            }
 
             MessageBox.Show(
-                $"The file was downloaded successfully.\nLocation:\n{filePath}",
+                "The file was downloaded successfully." + Environment.NewLine +
+                    "Location:" + Environment.NewLine + filePath,
                 "Download Complete",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);

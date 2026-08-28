@@ -112,9 +112,6 @@ namespace UI.Forms.People
                         return;
                     }
 
-                    // Document saving is intentionally separate.
-                    // Later, after you add a PeopleServices.CreatePersonDocument(...) method,
-                    // you can call it here if ctrlPersonEditor1.HasDocumentImage().
                 }
                 else
                 {
@@ -128,14 +125,6 @@ namespace UI.Forms.People
                         return;
                     }
 
-                    // Optional future hook:
-                    // if (ctrlPersonEditor1.HasDocumentImage())
-                    // {
-                    //     await PeopleServices.CreatePersonDocument(
-                    //         result.Data.Id,
-                    //         ctrlPersonEditor1.GetDocumentType(),
-                    //         ctrlPersonEditor1.GetDocumentImageBytes());
-                    // }
                 }
 
                 lblStatus.Text = "Saved successfully";

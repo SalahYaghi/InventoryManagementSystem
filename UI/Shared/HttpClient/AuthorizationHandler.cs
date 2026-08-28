@@ -93,8 +93,6 @@ namespace UI.Shared.HttpClient
 
                         var res = await base.SendAsync(originalRequest, cancellationToken);
 
-
-
                         return res;
                     }
                     else

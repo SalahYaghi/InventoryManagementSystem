@@ -1125,7 +1125,7 @@ namespace Infrastructure.Data.Migrations
 
                     b.HasIndex("WarehouseId", "ProductId")
                         .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
+                        .HasFilter("[IsDeleted] IS NULL OR [IsDeleted] = 0");
 
                     b.ToTable("WarehouseStocks", (string)null);
                 });

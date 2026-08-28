@@ -111,7 +111,6 @@ namespace UI.Services
 
             public static async Task<ApiResult<bool>> UpdatePersonImage(Guid personId, byte[] imageBytes)
             {
-                //     return ApiResult<bool>.Failure("Image is required.");
 
                 var form = new MultipartFormDataContent();
             if (imageBytes != null && imageBytes.Length > 0)
@@ -138,8 +137,6 @@ namespace UI.Services
 
                 return await response.Content.ReadAsByteArrayAsync();
             }
-
-
 
         }
     }

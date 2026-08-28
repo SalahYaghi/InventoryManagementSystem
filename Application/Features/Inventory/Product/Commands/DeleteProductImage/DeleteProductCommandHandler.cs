@@ -11,7 +11,7 @@ namespace Contract.Features.Inventory.Product.Commands.DeleteProduct
     {
         private readonly IAppDbContext _context;
         private readonly ICachingService _cache;
-        private readonly ILogger<DeleteProductImageCommandHandler> _logger; // [FIX 3.8] logger was typed to the OTHER handler
+        private readonly ILogger<DeleteProductImageCommandHandler> _logger;
         private readonly IFileStorage _fileStorage; 
         public DeleteProductImageCommandHandler(
             IAppDbContext context,

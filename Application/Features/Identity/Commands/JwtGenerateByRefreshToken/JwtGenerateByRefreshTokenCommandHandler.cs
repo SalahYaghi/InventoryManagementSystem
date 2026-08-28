@@ -24,7 +24,7 @@ namespace Contract.Features.Identity.Commands.JwtGenerate
         private IAuditLogService _audit;
         private IHttpContextAccessor _httpContext;
 
-        public JwtGenerateByRefreshTokenCommandHandler(//IIdentityService identityService, 
+        public JwtGenerateByRefreshTokenCommandHandler(
             IJwtProvider jwtProvider,
             ILogger<JwtGenerateByRefreshTokenCommandHandler> logger,
              IAuditLogService audit,
@@ -46,37 +46,44 @@ namespace Contract.Features.Identity.Commands.JwtGenerate
             var token = await _jwtProvider.GenereateJwtTokenByRefreshToken(request.refresh);
             if (token.IsError)
                 return token.Errors;
+            
             var principal = _identityService.GetPrincipalFromToken(token.Value.AccessToken);
 
             if (principal is null) {
 
                 _logger.LogError("Failed To Get Claim from new generate jwt token");
-
                 return Error.Failure("JwtGenerate.Failed" , "failed to generate jwt token login throw another way.");
             }
 
             var value =
-          principal.FindFirstValue(ClaimTypes.NameIdentifier)
-          ??principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
+             principal.FindFirstValue(ClaimTypes.NameIdentifier)
+          ?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
            if (!Guid.TryParse(value, out var userId)){
                 _logger.LogError("Failed to parse user id got from principle of jwt token");
-
                 return Error.Failure("JwtGenerate.Failed", "failed to generate jwt token login throw another way.");
-
             }
 
-
             if (request.loginSource)
-            await _audit.SaveUserLoggingAudits(new CreateUserLoggingCommands
             {
-                Action = Domain.AuditLoggs.AuditActions.Login,
-                Success = true,
-                UserId = userId,
-                IpAddress = _httpContext.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Not-Defined",
-                UserAgent = _httpContext.HttpContext?.Request?.Headers["User-Agent"].ToString() ?? "Not-Defined"
-            }, cancellationToken);
+                await _audit.SaveUserLoggingAudits(new CreateUserLoggingCommands
+                {
+                    Action = Domain.AuditLoggs.AuditActions.Login,
+                    Success = true,
+                    UserId = userId,
+                    IpAddress = _httpContext.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Not-Defined",
+                    UserAgent = _httpContext.HttpContext?.Request?.Headers["User-Agent"].ToString() ?? "Not-Defined"
+                }, cancellationToken);
+            }
 
+            var lastLoginResult = await _identityService.UpdateLastLoginAt(userId , cancellationToken);
+
+            if (lastLoginResult.IsError)
+            {
+                _logger.LogError(
+                    "Failed to update last login date with errors: {Errors}",
+                    lastLoginResult.Errors);
+            }
 
             return token.Value;
         }

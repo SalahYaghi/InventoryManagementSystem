@@ -63,16 +63,13 @@ public class EmployeeTests
         Assert.Equal(EmployeeErrors.JobTitleIsRequired.Code, result.TopError.Code);
     }
 
-    // ⚠ BUG-EXPOSING TEST — Create uses IsNullOrEmpty instead of
-    // IsNullOrWhiteSpace, so a job title of "   " is accepted.
     [Fact]
-    [Trait("Category", "BugExposing")]
-    public void Create_WithWhitespaceJobTitle_ShouldFail_ButIsAccepted()
+    public void Create_WithWhitespaceJobTitle_Fails()
     {
         var result = EmployeeEntity.Create("   ", Guid.NewGuid(), new DateOnly(2024, 1, 15), Guid.NewGuid());
 
-        // EXPECTED: JobTitleIsRequired. ACTUAL: succeeds.
         Assert.True(result.IsError);
+        Assert.Equal(EmployeeErrors.JobTitleIsRequired.Code, result.TopError.Code);
     }
 
     // ---------- Create (Person object overload) ----------
@@ -97,20 +94,13 @@ public class EmployeeTests
         Assert.Equal(EmployeeErrors.PersonIsRequired.Code, result.TopError.Code);
     }
 
-    // ⚠ BUG-EXPOSING TEST — the Person-object constructor sets the Person
-    // navigation but never sets PersonId, so PersonId stays Guid.Empty until
-    // EF Core fixes it up at save time. In pure domain terms the aggregate is
-    // inconsistent (PersonId disagrees with Person.Id) between Create and
-    // SaveChanges. Fix: set PersonId = person.Id in the constructor.
     [Fact]
-    [Trait("Category", "BugExposing")]
-    public void Create_WithPersonObject_ShouldSetPersonId()
+    public void Create_WithPersonObject_SetsPersonId()
     {
         var person = CreateValidPerson();
 
         var employee = EmployeeEntity.Create("Manager", person, new DateOnly(2024, 1, 15), Guid.NewGuid()).Value!;
 
-        // EXPECTED: PersonId mirrors person.Id. ACTUAL: Guid.Empty.
         Assert.Equal(person.Id, employee.PersonId);
     }
 
@@ -141,6 +131,19 @@ public class EmployeeTests
 
         Assert.True(result.IsError);
         Assert.Equal(EmployeeErrors.WarehouseIsRequired.Code, result.TopError.Code);
+        Assert.Equal("Storekeeper", employee.JobTitle);
+    }
+
+    [Fact]
+    public void Update_WithWhitespaceJobTitle_Fails()
+    {
+        var employee = EmployeeEntity.Create(
+            "Storekeeper", Guid.NewGuid(), new DateOnly(2024, 1, 15), Guid.NewGuid()).Value!;
+
+        var result = employee.Update("   ", new DateOnly(2025, 2, 1), Guid.NewGuid());
+
+        Assert.True(result.IsError);
+        Assert.Equal(EmployeeErrors.JobTitleIsRequired.Code, result.TopError.Code);
         Assert.Equal("Storekeeper", employee.JobTitle);
     }
 

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using UI.Services;
 using UI.Shared.CurrentUser;
+using UI.Shared.Helpers.UI_Helpers;
 
 namespace UI.Forms.Products
 {
@@ -68,6 +69,8 @@ namespace UI.Forms.Products
 
                 cmbCategory.DropDownStyle = ComboBoxStyle.DropDownList;
                 cmbUnit.DropDownStyle = ComboBoxStyle.DropDownList;
+
+                NumericInputHelper.ConfigureMoney(numSellingPrice);
 
                 chkIsActive.Checked = true;
                 lblStatus.Text = "Ready";
@@ -134,7 +137,7 @@ namespace UI.Forms.Products
                 txtSku.Text = product.SKU;
                 txtBarcode.Text = product.BarCode;
                 txtDescription.Text = product.Description;
-                numSellingPrice.Value = product.SellingPrice;
+                NumericInputHelper.SetValue(numSellingPrice, product.SellingPrice);
                 chkIsActive.Checked = product.IsActive;
                 cmbUnit.SelectedItem = product.Unit;
 
@@ -261,11 +264,24 @@ namespace UI.Forms.Products
                 {
                 var product = BuildCreateRequest();
 
-                var result = await WarehouseStocksServices.AddProduct(new AddWarehouseProductRequest()
-                {
-                    Product = product ,
-                    WarehouseId = _warehouseId == null || _warehouseId.Value == Guid.Empty ?  CurrentUser.User.Employee.WarehouseId.Value : _warehouseId.Value
+                Guid? targetWarehouseId = ResolveWarehouseId();
 
+                if (targetWarehouseId == null)
+                {
+                    btnSave.Enabled = true;
+                    lblStatus.Text = "No warehouse available";
+                    MessageBox.Show(
+                        "A warehouse is required to create a product, but none is assigned to your account.",
+                        "Warehouse Required",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
+                var result = await WarehouseStocksServices.AddProduct(new AddWarehouseProductRequest
+                {
+                    Product = product,
+                    WarehouseId = targetWarehouseId.Value
                 });
 
                     if (!result.IsSuccess)
@@ -282,26 +298,25 @@ namespace UI.Forms.Products
                 Close();
             }
 
+            private Guid? ResolveWarehouseId()
+            {
+                if (_warehouseId != null && _warehouseId.Value != Guid.Empty)
+                    return _warehouseId.Value;
+
+                var employee = CurrentUser.User == null ? null : CurrentUser.User.Employee;
+
+                if (employee == null || !employee.WarehouseId.HasValue || employee.WarehouseId.Value == Guid.Empty)
+                    return null;
+
+                return employee.WarehouseId.Value;
+            }
+
             private void btnCancel_Click(object sender, EventArgs e)
             {
                 DialogResult = DialogResult.Cancel;
                 Close();
             }
 
-        private void cmbCategory_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void txtProductName_TextChanged(object sender, EventArgs e)
-        {
-
-        }
-
-        private void panelFooter_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
     }
     }
 

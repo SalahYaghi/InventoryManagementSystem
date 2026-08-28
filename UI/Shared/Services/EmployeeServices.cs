@@ -62,8 +62,6 @@ namespace UI.Shared.Services
             return await ReadResponse<bool>(response);
         }
 
-
-
     }
 }
 

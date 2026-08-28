@@ -15,7 +15,7 @@
             private System.Windows.Forms.Label lblStatusBadge;
             private System.Windows.Forms.Label lblStatus;
 
-            private UI.Forms.Refrences.Contacts.ctrlAddressDetails ctrlAddressDetails1;
+            private UI.Forms.References.Contacts.ctrlAddressDetails ctrlAddressDetails1;
 
             private System.Windows.Forms.Button btnEdit;
             private System.Windows.Forms.Button btnClose;
@@ -32,7 +32,7 @@
             {
             this.panelRoot = new System.Windows.Forms.Panel();
             this.panelBody = new System.Windows.Forms.FlowLayoutPanel();
-            this.ctrlAddressDetails1 = new UI.Forms.Refrences.Contacts.ctrlAddressDetails();
+            this.ctrlAddressDetails1 = new UI.Forms.References.Contacts.ctrlAddressDetails();
             this.panelFooter = new System.Windows.Forms.Panel();
             this.lblStatus = new System.Windows.Forms.Label();
             this.btnEdit = new System.Windows.Forms.Button();

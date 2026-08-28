@@ -1,32 +1,39 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace UI.Shared.Storage
 {
-    public class ConfigurationManagement
+    public static class ConfigurationManagement
     {
+        private const string InventoryApiUrlKey = "inventoryApiUrl";
 
-        private  static  string _emailPath => "email";
-
-
-        public static string GetStoredEmail() {
-
-            return ConfigurationManager.AppSettings[_emailPath];
+        public static string GetStoredEmail()
+        {
+            return RegistryStorage.GetEmail();
         }
 
         public static void StoreEmail(string email)
         {
-            ConfigurationManager.AppSettings[_emailPath] = email;
+            if (string.IsNullOrWhiteSpace(email))
+                return;
+
+            RegistryStorage.SaveEmail(email.Trim());
         }
-        public static void ResetEmail( )
+
+        public static void ResetEmail()
         {
-            ConfigurationManager.AppSettings[_emailPath] = "userDefautl@gmail.com";
+            RegistryStorage.DeleteEmail();
         }
 
+        public static string GetInventoryApiUrl()
+        {
+            string url = ConfigurationManager.AppSettings[InventoryApiUrlKey];
 
+            if (string.IsNullOrWhiteSpace(url))
+                throw new ConfigurationErrorsException(
+                    "The application setting '" + InventoryApiUrlKey + "' is missing from App.config.");
+
+            return url.Trim();
+        }
     }
 }

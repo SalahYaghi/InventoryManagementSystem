@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using UI.HttpClient;
 using UI.Services;
+using UI.Shared.Helpers.UI_Helpers;
 using static HotelSystemUI.HttpClients.InventorySystemUI.HttpClients.Routes.Entities;
 
 namespace UI.Forms.Products
@@ -15,7 +16,7 @@ namespace UI.Forms.Products
     {
         private List<ProductDtoForList> _allProducts = new List<ProductDtoForList>();
         public ProductDtoForList SelectedProduct { get; private set; }
-        public frmProductSelector(Guid? supplierId = null)
+        public frmProductSelector(Guid? supplierId)
         {
             InitializeComponent();
             SetupUI();
@@ -28,7 +29,7 @@ namespace UI.Forms.Products
             SetupUI();
         }
 
-        private Guid?  _exccludeSupplierId = null;
+        private Guid?  _excludeSupplierId = null;
         private Guid?  _warehouseId = null;
         private List<Guid> _excludeProducts = new List<Guid>();
         private Guid? _fromSupplierId = null;
@@ -36,7 +37,7 @@ namespace UI.Forms.Products
 
             if (supplierId == null) return;
 
-            this._exccludeSupplierId = supplierId;
+            this._excludeSupplierId = supplierId;
             this._warehouseId = null;
             this._fromSupplierId = null;
            
@@ -48,7 +49,7 @@ namespace UI.Forms.Products
 
             this._warehouseId = warehouseId;
 
-            this._exccludeSupplierId = null;
+            this._excludeSupplierId = null;
             this._fromSupplierId = null; 
         }
         public void FromSupplier(Guid? supplierId)
@@ -58,7 +59,7 @@ namespace UI.Forms.Products
 
             this._fromSupplierId = supplierId;
 
-            this._exccludeSupplierId = null;
+            this._excludeSupplierId = null;
             this._warehouseId = null; 
         }
         public void ExcludeProducts(List<Guid> products)
@@ -98,6 +99,7 @@ namespace UI.Forms.Products
             txtSearch.Font = new Font("Segoe UI", 10F);
 
             lblStatus.Text = "Ready";
+
         }
 
         private void StyleButton(Button button, Color backColor, Color foreColor)
@@ -115,7 +117,7 @@ namespace UI.Forms.Products
         {
             lblStatus.Text = "Loading products...";
 
-            var result = await ProductsServices.GetAll(pageNumber, pageSize, _exccludeSupplierId , 
+            var result = await ProductsServices.GetAll(pageNumber, pageSize, _excludeSupplierId , 
                 _excludeProducts , _warehouseId , _fromSupplierId);
 
             if (!result.IsSuccess)
@@ -127,12 +129,20 @@ namespace UI.Forms.Products
             }
 
         
+            if (result.Data == null)
+            {
+                lblStatus.Text = "Failed to load products";
+                return "Failed to load data";
+            }
+
             _allProducts = result.Data.Items ?? new List<ProductDtoForList>();
 
 
             ApplyCurrentView();
 
-            lblStatus.Text = $"{_allProducts.Count} product(s) loaded";
+            lblStatus.Text = _allProducts.Count == 1
+                ? "1 product loaded"
+                : DisplayFormatter.Count(_allProducts.Count) + " products loaded";
 
             return result.Data;
         }
@@ -160,14 +170,14 @@ namespace UI.Forms.Products
             dgvProducts.DgvCustom.HideColumn("RowVersion");
             dgvProducts.DgvCustom.HideColumn("ProductId");
 
-            if (_fromSupplierId.HasValue || _exccludeSupplierId.HasValue
+            if (_fromSupplierId.HasValue || _excludeSupplierId.HasValue
 )
             {
                 dgvProducts.DgvCustom.HideColumn("Quantity");
                 dgvProducts.DgvCustom.HideColumn("ReservedQuantity");
                 dgvProducts.DgvCustom.HideColumn("TotalQuantity");
              
-                if(_exccludeSupplierId.HasValue)
+                if(_excludeSupplierId.HasValue)
                 dgvProducts.DgvCustom.HideColumn("PurchasePrice");
 
             }
@@ -186,6 +196,11 @@ namespace UI.Forms.Products
             dgvProducts.DgvCustom.SetColumnHeader("SellingPrice", "Selling Price");
              dgvProducts.DgvCustom.SetColumnHeader("Unit", "Unit");
             dgvProducts.DgvCustom.SetColumnHeader("Category", "Category");
+            dgvProducts.DgvCustom.SetColumnHeader("PurchasePrice", "Purchase Price");
+            dgvProducts.DgvCustom.SetColumnHeader("ReservedQuantity", "Reserved");
+            dgvProducts.DgvCustom.SetColumnHeader("TotalQuantity", "Total");
+            dgvProducts.DgvCustom.FormatColumnsAsCurrency("SellingPrice", "PurchasePrice");
+            dgvProducts.DgvCustom.FormatColumnsAsQuantity("Quantity", "ReservedQuantity", "TotalQuantity");
         }
 
         private ProductDtoForList GetSelectedProduct()

@@ -1,4 +1,4 @@
-﻿namespace UI.Forms.Refrences.Countries
+﻿namespace UI.Forms.References.Countries
 {
     partial class ctrCountryCitySelector
     {

@@ -1,4 +1,4 @@
-﻿namespace UI.Forms.Refrences.Contacts
+﻿namespace UI.Forms.References.Contacts
 {
   
         partial class ctrlAddressInfo
@@ -32,7 +32,7 @@
             {
             this.components = new System.ComponentModel.Container();
             this.groupAddress = new System.Windows.Forms.GroupBox();
-            this.ctrCountryCitySelector1 = new UI.Forms.Refrences.Countries.ctrCountryCitySelector();
+            this.ctrCountryCitySelector1 = new UI.Forms.References.Countries.ctrCountryCitySelector();
             this.lblPostalCode = new System.Windows.Forms.Label();
             this.txtStreet = new System.Windows.Forms.TextBox();
             this.lblBuildingNumber = new System.Windows.Forms.Label();

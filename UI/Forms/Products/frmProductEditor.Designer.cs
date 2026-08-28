@@ -206,7 +206,6 @@
             this.cmbCategory.Name = "cmbCategory";
             this.cmbCategory.Size = new System.Drawing.Size(305, 31);
             this.cmbCategory.TabIndex = 7;
-            this.cmbCategory.SelectedIndexChanged += new System.EventHandler(this.cmbCategory_SelectedIndexChanged);
             // 
             // lblCategory
             // 
@@ -270,7 +269,6 @@
             this.txtProductName.Name = "txtProductName";
             this.txtProductName.Size = new System.Drawing.Size(305, 30);
             this.txtProductName.TabIndex = 1;
-            this.txtProductName.TextChanged += new System.EventHandler(this.txtProductName_TextChanged);
             // 
             // lblProductName
             // 
@@ -295,7 +293,6 @@
             this.panelFooter.Padding = new System.Windows.Forms.Padding(24, 16, 24, 16);
             this.panelFooter.Size = new System.Drawing.Size(760, 80);
             this.panelFooter.TabIndex = 2;
-            this.panelFooter.Paint += new System.Windows.Forms.PaintEventHandler(this.panelFooter_Paint);
             // 
             // lblStatus
             // 

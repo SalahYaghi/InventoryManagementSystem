@@ -9,7 +9,7 @@ namespace Contract.Responses
         public string Status { get; set; } = string.Empty;
         public string InvoiceType { get; set; } = string.Empty;
         public decimal NetAmount => SubTotalAmount + TaxAmount - DiscountAmount;
-        public decimal SubTotalAmount => InvoiceLineItems.Sum(i => i.TotalAmount);
+        public decimal SubTotalAmount => InvoiceLineItems?.Sum(i => i.TotalAmount) ?? 0;
         public decimal TaxAmount { get; set; }
         public Guid OrderId { get; set; }
         public OrderDto Order { get; set; }

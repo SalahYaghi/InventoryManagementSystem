@@ -158,7 +158,6 @@
             this.txtSelectedProduct.Size = new System.Drawing.Size(290, 30);
             this.txtSelectedProduct.TabIndex = 9;
             this.txtSelectedProduct.Click += new System.EventHandler(this.txtSelectedProduct_Click);
-            this.txtSelectedProduct.TextChanged += new System.EventHandler(this.txtSelectedProduct_TextChanged);
             // 
             // btnChooseProduct
             // 

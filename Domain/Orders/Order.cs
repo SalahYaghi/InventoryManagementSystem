@@ -5,9 +5,6 @@ using Domain.Warehouses;
 using MechanicShop.Domain.Common;
 using MechanicShop.Domain.Common.Results;
 using System;
-using System.Collections.ObjectModel;
-using System.Net.NetworkInformation;
-using System.Numerics;
 
 namespace Domain.Orders
 {
@@ -82,14 +79,6 @@ namespace Domain.Orders
             if (!CanTransferStatus(status))
                 return OrderErrors.CannotTransferFromStatusToAnother(OrderStatus , status);
 
-            if (status == OrderStatus.Completed &&
-                DueDate.Date < DateTimeOffset.UtcNow.Date)
-                return OrderErrors.CannotCompeleteOrderBeforeDueDateComes;
-
-
-            if(status == OrderStatus.Completed)
-            DueDate = DateTimeOffset.UtcNow;
-
             OrderStatus = status;
 
             return Result.Updated;
@@ -132,14 +121,11 @@ namespace Domain.Orders
             List<OrderDetail>orderDetails , 
             DateTimeOffset dueDate)
         {
-            if (dueDate < DateTimeOffset.UtcNow)
+            if (dueDate <= DateTimeOffset.UtcNow)
                 return OrderErrors.InvalidDueDateSentItMustBeMoreThanToday;
 
             if (!Enum.IsDefined(typeof(OrderType), orderType))
                 return OrderErrors.InvalidOrderType;
-
-            if (dueDate <= DateTimeOffset.UtcNow)
-                return OrderErrors.InvalidDueDateSentItMustBeMoreThanToday;
          
             if (supplierId.HasValue && supplierId.Value == Guid.Empty && (OrderType.Purchase == orderType || OrderType.ReturnOut == orderType))
                 return OrderErrors.SupplierRequired;
@@ -231,22 +217,14 @@ namespace Domain.Orders
             }
 
 
-            if (this.OrderType == OrderType.Transfer)
-            {
-                return OrderErrors.OrderDetailsAreRequired;
-            }
-
-            if (discountAmount > SubTotalAmount)
+            if (this.OrderType != OrderType.Transfer && discountAmount > SubTotalAmount)
             {
                 return OrderErrors.DiscountAmountLargerThanNet;
             }
 
-            DiscountAmount = discountAmount;
+            DiscountAmount = this.OrderType == OrderType.Transfer ? null : discountAmount;
             Notes = notes;
             DueDate = dueDate == null ? DueDate : dueDate.Value;
-
-            if (this.NetAmount < 0)
-              return OrderErrors.DiscountAmountLargerThanNet;
 
             return Result.Updated;
         }

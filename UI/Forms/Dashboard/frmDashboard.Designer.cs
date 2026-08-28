@@ -38,11 +38,10 @@
             this.flpCards.Name = "flpCards";
             this.flpCards.Size = new System.Drawing.Size(800, 450);
             this.flpCards.TabIndex = 0;
-            this.flpCards.Paint += new System.Windows.Forms.PaintEventHandler(this.flpCards_Paint);
             // 
             // frmDashboard
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 16F);
+         //   this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.flpCards);

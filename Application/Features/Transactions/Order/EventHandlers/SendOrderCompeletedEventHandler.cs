@@ -27,7 +27,7 @@ namespace Application.Features.Transactions.Order.EventHandlers
                 .Include(o => o.SourceWarehouse)
                 .Include(o => o.DestinationWarehouse)
                 .Include(o => o.OrderDetails)
-                .AsSplitQuery()  // [FIX 4.5-style] several Includes; avoid the cartesian product
+                .AsSplitQuery()  
                 .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Id == notification.OrderId, ct);
 

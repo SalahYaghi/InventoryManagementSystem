@@ -6,11 +6,20 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using UI.Services;
+using UI.Shared.Helpers.UI_Helpers;
 
 namespace UI.Forms.Adjustments
 {
     public partial class frmAdjustmentDetails : Form
     {
+        private const int DetailCardWidth = 830;
+        private const int DetailCardHeight = 125;
+        private const int DetailCardSpacing = 12;
+        private const int EmptyCardHeight = 90;
+
+        private readonly int _flowDetailsTop;
+        private readonly int _detailsPanelPadding;
+
         private readonly Guid _adjustmentId;
         private AdjustmentDto _adjustment;
         private List<AdjustmentDetailDto> _details = new List<AdjustmentDetailDto>();
@@ -18,7 +27,11 @@ namespace UI.Forms.Adjustments
         public frmAdjustmentDetails(Guid adjustmentId)
         {
             InitializeComponent();
+
             _adjustmentId = adjustmentId;
+            _flowDetailsTop = flowDetails.Top;
+            _detailsPanelPadding = pnlDetails.Padding.Bottom;
+
             SetupUI();
         }
 
@@ -66,6 +79,12 @@ namespace UI.Forms.Adjustments
                 return;
             }
 
+            if (result.Data == null)
+            {
+                lblStatus.Text = "Failed to load adjustment";
+                return;
+            }
+
             _adjustment = result.Data;
             _details = _adjustment.AdjustmentDetailDtos ?? new List<AdjustmentDetailDto>();
 
@@ -79,7 +98,7 @@ namespace UI.Forms.Adjustments
         private void BindHeader()
         {
             lblTitle.Text = _adjustment.AdjustmentType + " Adjustment";
-            lblSubtitle.Text = "Adjustment ID: " + _adjustment.Id;
+            lblSubtitle.Text = "Adjustment reference: " + _adjustment.Id.ToString().ToUpperInvariant().Substring(0, 8);
 
             lblTypeBadge.Text = _adjustment.AdjustmentType.ToString();
             lblStatusBadge.Text = _adjustment.AdjustmentStatus.ToString();
@@ -90,22 +109,31 @@ namespace UI.Forms.Adjustments
 
         private void BindOverview()
         {
-            lblWarehouseValue.Text = _adjustment.Warehouse == null ? _adjustment.WarehouseId.ToString() : _adjustment.Warehouse.Name;
-            lblReasonValue.Text = _adjustment.AdjustmentReason.ToString();
-            lblNotesValue.Text = string.IsNullOrWhiteSpace(_adjustment.Notes) ? "No notes provided." : _adjustment.Notes;
+            lblWarehouseValue.Text = _adjustment.Warehouse == null
+                ? DisplayFormatter.NotSetPlaceholder
+                : DisplayFormatter.Text(_adjustment.Warehouse.Name, DisplayFormatter.NotSetPlaceholder);
 
-            lblItemsCountValue.Text = _details.Count.ToString();
-            lblTotalQuantityValue.Text = _details.Sum(d => d.Quantity).ToString("0.##");
+            lblReasonValue.Text = _adjustment.AdjustmentReason.ToString();
+
+            lblNotesValue.Text = string.IsNullOrWhiteSpace(_adjustment.Notes)
+                ? "No notes provided."
+                : _adjustment.Notes.Trim();
+
+            lblItemsCountValue.Text = DisplayFormatter.Count(_details.Count);
+            lblTotalQuantityValue.Text = DisplayFormatter.Quantity(_details.Sum(d => d.Quantity));
         }
 
         private void BindDetailsCards()
         {
+            foreach (Control control in flowDetails.Controls)
+                control.Dispose();
+
             flowDetails.Controls.Clear();
-            pnlDetails.Height = 0; flowDetails.Height = 0;
 
             if (_details.Count == 0)
             {
                 flowDetails.Controls.Add(CreateEmptyDetailsCard());
+                ResizeDetailsPanel(EmptyCardHeight + DetailCardSpacing);
                 return;
             }
 
@@ -115,25 +143,30 @@ namespace UI.Forms.Adjustments
             {
                 flowDetails.Controls.Add(CreateDetailCard(detail, index));
                 index++;
-                pnlDetails.Height = pnlDetails.Height + 142;
-                flowDetails.Height = flowDetails.Height + 142;
-
             }
+
+            ResizeDetailsPanel(_details.Count * (DetailCardHeight + DetailCardSpacing));
+        }
+
+        private void ResizeDetailsPanel(int contentHeight)
+        {
+            flowDetails.Height = contentHeight;
+            pnlDetails.Height = _flowDetailsTop + contentHeight + _detailsPanelPadding;
         }
 
         private Panel CreateDetailCard(AdjustmentDetailDto detail, int index)
         {
             Panel card = new Panel();
             card.BackColor = Color.White;
-            card.Size = new Size(830, 125);
-            card.Margin = new Padding(0, 0, 0, 12);
+            card.Size = new Size(DetailCardWidth, DetailCardHeight);
+            card.Margin = new Padding(0, 0, 0, DetailCardSpacing);
 
             Panel accent = new Panel();
-            accent.BackColor = _adjustment.AdjustmentType.ToString() == "Increase"
+            accent.BackColor = _adjustment.AdjustmentType == AdjustmentType.Increase
                 ? Color.FromArgb(39, 120, 97)
                 : Color.FromArgb(220, 53, 69);
             accent.Location = new Point(0, 0);
-            accent.Size = new Size(6, 115);
+            accent.Size = new Size(6, DetailCardHeight);
             card.Controls.Add(accent);
 
             Label lblIndex = new Label();
@@ -145,7 +178,8 @@ namespace UI.Forms.Adjustments
             card.Controls.Add(lblIndex);
 
             Label lblProduct = new Label();
-            lblProduct.Text = HandlerIfNull(detail.ProductName);
+            lblProduct.Text = DisplayFormatter.Text(detail.ProductName, "Unnamed product");
+            lblProduct.AutoEllipsis = true;
             lblProduct.Font = new Font("Segoe UI", 13F, FontStyle.Bold);
             lblProduct.ForeColor = Color.FromArgb(24, 33, 45);
             lblProduct.Location = new Point(82, 15);
@@ -154,14 +188,15 @@ namespace UI.Forms.Adjustments
  
 
             Label lblSKU = new Label();
-            lblSKU.Text = "SKU: " + HandlerIfNull(detail.Product.SKU);
+            lblSKU.Text = "SKU: " + DisplayFormatter.Text(detail.Product == null ? null : detail.Product.SKU);
+            lblSKU.AutoEllipsis = true;
             lblSKU.Font = new Font("Segoe UI", 8.5F);
             lblSKU.ForeColor = Color.Gray;
             lblSKU.Location = new Point(84, 48);
             lblSKU.Size = new Size(430, 22);
             card.Controls.Add(lblSKU);
 
-            AddCaption(card, "Ordered Qty", detail.Quantity.ToString("0.##"), 85, 76, 135);
+            AddCaption(card, "Adjusted Qty", DisplayFormatter.Quantity(detail.Quantity), 85, 76, 135);
 
 
             return card;
@@ -189,8 +224,8 @@ namespace UI.Forms.Adjustments
         {
             Panel card = new Panel();
             card.BackColor = Color.White;
-            card.Size = new Size(830, 90);
-            card.Margin = new Padding(0, 0, 0, 12);
+            card.Size = new Size(DetailCardWidth, EmptyCardHeight);
+            card.Margin = new Padding(0, 0, 0, DetailCardSpacing);
 
             Label label = new Label();
             label.Text = "No adjustment details found.";
@@ -245,11 +280,6 @@ namespace UI.Forms.Adjustments
             lblItemsCountValue.Text = "0";
             lblTotalQuantityValue.Text = "0";
             lblNotesValue.Text = "-";
-        }
-
-        private string HandlerIfNull(string value)
-        {
-            return string.IsNullOrWhiteSpace(value) ? "-" : value.Trim();
         }
 
         private void btnEdit_Click(object sender, EventArgs e)

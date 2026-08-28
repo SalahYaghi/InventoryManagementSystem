@@ -3,7 +3,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace UI.Forms.Refrences.Contacts
+namespace UI.Forms.References.Contacts
 {
     public partial class ctrlContactDetails : UserControl
     {

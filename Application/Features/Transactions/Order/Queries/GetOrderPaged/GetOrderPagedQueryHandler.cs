@@ -39,7 +39,7 @@ namespace Contract.Features.Transactions.Orders.Queries.GetOrderPaged
                     Id = x.Id,
                     CustomerId = x.CustomerId,
                     InvoiceId = x.InvoiceId,
-                    NetAmount = x.NetAmount,
+                    NetAmount = x.OrderDetails.Sum(d => d.UnitPrice * (d.ActualQuantity ?? d.Quantity)) - (x.DiscountAmount ?? 0),
                     CustomerName = x.Customer == null ? null : x.Customer.CustomerName,
                     
                     DestinationWarehouseId = x.DestinationWarehouseId,
@@ -53,7 +53,7 @@ namespace Contract.Features.Transactions.Orders.Queries.GetOrderPaged
                     
                     OrderType = x.OrderType.ToString(),
                  
-                    SubTotalAmount = x.SubTotalAmount,
+                    SubTotalAmount = x.OrderDetails.Sum(d => d.UnitPrice * (d.ActualQuantity ?? d.Quantity)),
                    
                     SupplierId = x.SupplierId,
                     SupplierName = x.Supplier == null ? null : x.Supplier.SupplierName , 

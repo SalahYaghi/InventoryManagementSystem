@@ -42,7 +42,7 @@ namespace Contract.Features.Inventory.WarehouseStocks.Commands.DeleteWarehouseSt
             _context.WarehouseStocks.Remove(entity);
             await _context.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("DeleteWarehouseStockCommandHandler is invalidating related cache entries.");
-            await _cache.RemoveByTagAsync(CacheFanout.Expand(CacheEntities.WarehouseStock), cancellationToken); // [FIX 1.7]
+            await _cache.RemoveByTagAsync(CacheFanout.Expand(CacheEntities.WarehouseStock), cancellationToken);
             _logger.LogInformation("DeleteWarehouseStockCommandHandler invalidated related cache entries successfully.");
 
             _logger.LogInformation("WarehouseStock deleted successfully with key {Key}", request.Id);

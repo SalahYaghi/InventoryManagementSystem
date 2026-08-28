@@ -3,12 +3,15 @@ using Contract.Common.Interfaces;
 using Domain.Identity.Users;
 using Infrastructure.Common.Options;
 using MechanicShop.Domain.Common.Results;
- using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -17,6 +20,22 @@ namespace Infrastructure.Identity
 {
     public class IdentityService(IAppDbContext context,IOptions<JwtOptions> jwtOptions) : IIdentityService
     {
+        
+        public async Task<Result<Updated>> UpdateLastLoginAt(Guid userId , CancellationToken ct) {
+
+            var currentUser = await context.Users.FirstOrDefaultAsync(r => r.Id == userId , ct);
+
+            if (currentUser == null) {
+                return Error.NotFound("User.NotFound" , "User is not found.");
+            }
+
+            currentUser.LastLoginAt = DateTimeOffset.UtcNow;
+
+            await context.SaveChangesAsync(ct);
+
+            return Result.Updated;
+        }
+
         public ClaimsPrincipal? GetPrincipalFromToken(string token)
         {
             var settings = jwtOptions.Value;

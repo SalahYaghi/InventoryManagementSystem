@@ -31,7 +31,7 @@ namespace Domain.Identity.Users
         private User() { }
 
         private User(string username, string hashedpassword,
-            Role role, string email, bool isAtive, Guid employeeId) {
+            Role role, string email, bool isAtive, Guid employeeId) : base(Guid.NewGuid()) {
 
             this.Username = username;
             this.HashedPassword = hashedpassword;

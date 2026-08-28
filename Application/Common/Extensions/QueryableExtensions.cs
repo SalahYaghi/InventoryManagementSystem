@@ -1,4 +1,4 @@
-using Contract.Common.Constants; // [FIX 7.1] needed for ApplicationDefaults clamping below
+using Contract.Common.Constants; 
 using Contract.Common.Models;
 using Microsoft.EntityFrameworkCore;
 

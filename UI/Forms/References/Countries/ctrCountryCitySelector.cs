@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using UI.Services;
 
-namespace UI.Forms.Refrences.Countries
+namespace UI.Forms.References.Countries
 {
     public partial class ctrCountryCitySelector : UserControl
     {
@@ -99,8 +99,6 @@ namespace UI.Forms.Refrences.Countries
 
             return cmbCity.SelectedItem as CityDto;
         }
-
-
 
         private async void cmbCountry_SelectedIndexChanged(object sender, EventArgs e)
         {

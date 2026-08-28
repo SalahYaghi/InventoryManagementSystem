@@ -1,51 +1,47 @@
-﻿using Contract.Requests.Orders;
+using Contract.Requests.Orders;
 using Contract.Responses;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 using UI.Forms.Customers;
 using UI.Forms.Products;
 using UI.Forms.Suppliers;
 using UI.Forms.Warehouses;
 using UI.Services;
 using UI.Shared.CurrentUser;
+using UI.Shared.Helpers.UI_Helpers;
 
 namespace UI.Forms.Orders
 {
     public partial class frmTransactionEditor : Form
     {
+        private const int MaxNotesLength = 500;
 
         private readonly bool _isUpdateMode;
         private readonly Guid _orderId;
 
-        private Guid? _supplierId = Guid.Empty;
-        private Guid? _customerId = Guid.Empty;
-        private Guid? _sourceWarehouseId = Guid.Empty;
-        private Guid? _destinationWarehouseId = Guid.Empty;
-
         private readonly List<OrderDetailDto> _details = new List<OrderDetailDto>();
 
-        public void SetOrderType(OrderType orderType) {
+        private Guid? _supplierId;
+        private Guid? _customerId;
+        private Guid? _sourceWarehouseId;
+        private Guid? _destinationWarehouseId;
 
-            if (!this.cmbOrderType.Items.Contains(orderType)) return;
+        private OrderStatus _orderStatus = OrderStatus.Pending;
+        private bool _isLoading;
 
-            this.cmbOrderType.SelectedItem = orderType;
+        #region Construction
 
-        }
         public frmTransactionEditor()
         {
             InitializeComponent();
             _isUpdateMode = false;
             SetupUI();
         }
+
         public frmTransactionEditor(Guid orderId)
         {
             InitializeComponent();
@@ -54,41 +50,29 @@ namespace UI.Forms.Orders
             SetupUI();
         }
 
-        private async void frmTransactionEditor_Load(object sender, EventArgs e)
+        public void SetOrderType(OrderType orderType)
         {
-            if (_isUpdateMode)
-                await LoadOrder();
+            if (cmbOrderType.Items.Count == 0)
+                return;
+
+            foreach (object item in cmbOrderType.Items)
+            {
+                if (item is OrderType && (OrderType)item == orderType)
+                {
+                    cmbOrderType.SelectedItem = item;
+                    return;
+                }
+            }
         }
 
-        private void RestDetailsToDefault() {
+        #endregion
 
-            _details.Clear();
- 
-            //_supplierId = Guid.Empty;
-            //_customerId = Guid.Empty;
-            //_destinationWarehouseId = Guid.Empty;
-            //txtCustomer.Text = string.Empty;
-            //txtSourceWarehouse.Text = string.Empty;
-            //txtDestinationWarehouse.Text = string.Empty;
-            //txtSupplier.Text = string.Empty;
-           
-            txtDiscount.Text = string.Empty;    
-            lblSubTotalValue.Text = "0.0";
-            lblDiscountValue.Text = "0.0";
-            lblNetValue.Text = "0.0";
-        }
-
-        private void ShowDiscounts(bool show) { 
-        
-            this.lblDiscount.Visible = show;
-            this.txtDiscount.Visible = show;
-            this.lblDiscountValueTitle.Visible = show;
-            this.lblDiscountValue.Visible = show;
-
-        }
+        #region Setup
 
         private void SetupUI()
         {
+            _isLoading = true;
+
             BackColor = Color.FromArgb(243, 246, 249);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterParent;
@@ -99,8 +83,6 @@ namespace UI.Forms.Orders
             StyleButton(btnSelectCustomer, Color.FromArgb(248, 250, 252), Color.FromArgb(74, 112, 139));
             StyleButton(btnSelectSourceWarehouse, Color.FromArgb(248, 250, 252), Color.FromArgb(74, 112, 139));
             StyleButton(btnSelectDestinationWarehouse, Color.FromArgb(248, 250, 252), Color.FromArgb(74, 112, 139));
-
-
             StyleButton(btnUpdateQuantity, Color.FromArgb(74, 112, 139), Color.White);
             StyleButton(btnAddDetail, Color.FromArgb(74, 112, 139), Color.White);
             StyleButton(btnRemoveDetail, Color.FromArgb(220, 53, 69), Color.White);
@@ -120,46 +102,59 @@ namespace UI.Forms.Orders
             txtSourceWarehouse.ReadOnly = true;
             txtDestinationWarehouse.ReadOnly = true;
 
+            txtNotes.MaxLength = MaxNotesLength;
+
             cmbOrderType.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbOrderType.DataSource = Enum.GetValues(typeof(OrderType));
 
             dtpDueDate.Format = DateTimePickerFormat.Custom;
-            dtpDueDate.CustomFormat = ("yyyy MM dd HH:mm");
-            dtpDueDate.MinDate = DateTime.UtcNow;
+            dtpDueDate.CustomFormat = "yyyy-MM-dd HH:mm";
+            dtpDueDate.MinDate = DateTime.Now;
+            dtpDueDate.Value = DateTime.Now.AddDays(1);
 
             lblTitle.Text = _isUpdateMode ? "Update Transaction" : "Create Transaction";
             lblSubtitle.Text = _isUpdateMode
-                ? "Update discount and notes for this transaction."
-                : "Create purchase, sale, or warehouse transfer transaction.";
+                ? "Update discount, due date and notes for this transaction."
+                : "Create a purchase, sale, return or warehouse transfer transaction.";
 
-            _sourceWarehouseId = CurrentUser.User.Employee.WarehouseId.Value;
-            txtSourceWarehouse.Text = CurrentUser.User.Employee.Warehouse == null ? "" : CurrentUser.User.Employee.Warehouse.Name;
-            btnUpdateQuantity.Visible = false;
-            btnUpdateQuantity.Enabled = false;
-            if (_isUpdateMode)
-            {
-                cmbOrderType.Enabled = false;
-                btnSelectSupplier.Enabled = false;
-                btnSelectCustomer.Enabled = false;
-                btnSelectSourceWarehouse.Enabled = false;
-                btnSelectDestinationWarehouse.Enabled = false;
-                btnAddDetail.Enabled = false;
-                btnRemoveDetail.Enabled = false;
-                txtQuantity.Enabled = false;
-                dtpDueDate.Enabled = false;
-            }
+            ApplyDefaultSourceWarehouse();
+            ApplyModeRules();
 
-         
-
-            if (_isUpdateMode) {
-                btnUpdateQuantity.Visible = true;
-                btnUpdateQuantity.Enabled = true;
-            }
+            _isLoading = false;
 
             ApplyOrderTypeVisibility();
             BindDetailsGrid();
             RecalculateSummary();
+
+            this.txtQuantity.Text = "0";
         }
+
+        private void ApplyDefaultSourceWarehouse()
+        {
+            var employee = CurrentUser.User == null ? null : CurrentUser.User.Employee;
+
+            if (employee == null)
+                return;
+
+            _sourceWarehouseId = employee.WarehouseId;
+            txtSourceWarehouse.Text = employee.Warehouse == null ? string.Empty : employee.Warehouse.Name;
+        }
+
+        private void ApplyModeRules()
+        {
+            btnUpdateQuantity.Visible = _isUpdateMode;
+            btnUpdateQuantity.Enabled = _isUpdateMode;
+
+            if (!_isUpdateMode)
+                return;
+
+            cmbOrderType.Enabled = false;
+            btnSelectSupplier.Enabled = false;
+            btnSelectCustomer.Enabled = false;
+            btnSelectSourceWarehouse.Enabled = false;
+            btnSelectDestinationWarehouse.Enabled = false;
+        }
+
         private void StyleButton(Button button, Color backColor, Color foreColor)
         {
             button.BackColor = backColor;
@@ -169,6 +164,7 @@ namespace UI.Forms.Orders
             button.Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold);
             button.Cursor = Cursors.Hand;
         }
+
         private void StyleTextBox(TextBox textBox)
         {
             textBox.BackColor = Color.FromArgb(248, 250, 252);
@@ -177,236 +173,245 @@ namespace UI.Forms.Orders
             textBox.ForeColor = Color.FromArgb(24, 33, 45);
         }
 
-        private async System.Threading.Tasks.Task LoadOrder()
+        #endregion
+
+        #region Loading
+
+        private async void frmTransactionEditor_Load(object sender, EventArgs e)
         {
+            if (_isUpdateMode)
+                await LoadOrder();
+        }
+
+        private async Task LoadOrder()
+        {
+            _isLoading = true;
             lblStatus.Text = "Loading transaction...";
 
             var result = await OrdersServices.Get(_orderId);
 
-            if (!result.IsSuccess)
+            if (!result.IsSuccess || result.Data == null)
             {
+                _isLoading = false;
                 lblStatus.Text = "Failed to load transaction";
                 MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
-            var order = result.Data;
+            OrderDto order = result.Data;
 
-            
-            cmbOrderType.SelectedItem = order.OrderType;
-            txtDiscount.Text = (order.DiscountAmount ?? 0).ToString("0.##");
-            txtNotes.Text = order.Notes ?? "";
-
-            this.dtpDueDate.MinDate = (order.DueDate > DateTimeOffset.UtcNow ?   DateTimeOffset.UtcNow: order.DueDate).UtcDateTime ;
-            dtpDueDate.Value = (order.DueDate);
+            _orderStatus = order.OrderStatus;
 
             _supplierId = order.SupplierId;
             _customerId = order.CustomerId;
             _sourceWarehouseId = order.SourceWarehouseId;
             _destinationWarehouseId = order.DestinationWarehouseId;
 
-            txtSupplier.Text = order.SupplierId == null ? "" : order.Supplier.SupplierName;
-            txtCustomer.Text = order.Customer == null ? "" : order.Customer.CustomerName;
-            txtSourceWarehouse.Text = order.SourceWarehouseDto == null ? "" : order.SourceWarehouseDto.Name;
-            txtDestinationWarehouse.Text = order.DestinationWarehouseDto == null ? "" : order.DestinationWarehouseDto.Name;
+            cmbOrderType.SelectedItem = order.OrderType;
 
-             txtDiscount.Enabled = order.OrderStatus == OrderStatus.Pending;
-            txtNotes.Enabled = order.OrderStatus == OrderStatus.Pending;
-            dtpDueDate.Enabled = order.OrderStatus == OrderStatus.Pending;
-            txtQuantity.Enabled = order.OrderStatus == OrderStatus.Pending;
-            btnUpdateQuantity.Enabled = order.OrderStatus == OrderStatus.Pending;
-            btnUpdateQuantity.Visible = order.OrderStatus == OrderStatus.Pending;
-            btnRemoveDetail.Enabled = order.OrderStatus == OrderStatus.Pending;
-            btnAddDetail.Enabled = order.OrderStatus == OrderStatus.Pending;
+            txtSupplier.Text = order.Supplier == null ? string.Empty : order.Supplier.SupplierName;
+            txtCustomer.Text = order.Customer == null ? string.Empty : order.Customer.CustomerName;
+            txtSourceWarehouse.Text = order.SourceWarehouseDto == null ? string.Empty : order.SourceWarehouseDto.Name;
+            txtDestinationWarehouse.Text = order.DestinationWarehouseDto == null ? string.Empty : order.DestinationWarehouseDto.Name;
 
-            ApplyOrderTypeVisibility();
-            txtDiscount.Text = (order.DiscountAmount ?? 0).ToString("0.00");
-            lblDiscountValue.Text = txtDiscount.Text;
+            txtNotes.Text = order.Notes ?? string.Empty;
+            txtDiscount.Text = (order.DiscountAmount ?? 0m).ToString("0.00");
 
+            ApplyDueDate(order.DueDate);
 
-            foreach (var item in order.OrderDetails)
+            _details.Clear();
+
+            if (order.OrderDetails != null)
+            {
+                foreach (var item in order.OrderDetails)
                 {
                     _details.Add(new OrderDetailDto
                     {
-                        ProductId = item.ProductId,
-                        Quantity = item.Quantity,
-                        UnitPrice = item.UnitPrice,
-                        ActualQuantity = item.ActualQuantity,
-                        OrderId = item.OrderId,
                         Id = item.Id,
+                        OrderId = item.OrderId,
+                        ProductId = item.ProductId,
                         Product = item.Product,
-                        RowVersion = item.RowVersion,
-                    
+                        Quantity = item.Quantity,
+                        ActualQuantity = item.ActualQuantity,
+                        UnitPrice = item.UnitPrice,
+                        RowVersion = item.RowVersion
                     });
                 }
+            }
 
-                BindDetailsGrid();
-                RecalculateSummary();
-            
+            _isLoading = false;
+
+            ApplyOrderTypeVisibility();
+            ApplyStatusRules();
+            BindDetailsGrid();
+            RecalculateSummary();
 
             lblStatus.Text = "Ready";
+            lblQuantity.Text = "0"; 
         }
+
+        private void ApplyDueDate(DateTime dueDate)
+        {
+            DateTime lowerBound = dueDate < DateTime.Now ? dueDate : DateTime.Now;
+
+            if (lowerBound < dtpDueDate.MinDate)
+                lowerBound = dtpDueDate.MinDate;
+
+            dtpDueDate.MinDate = lowerBound;
+
+            if (dueDate < dtpDueDate.MinDate)
+                dueDate = dtpDueDate.MinDate;
+
+            if (dueDate > dtpDueDate.MaxDate)
+                dueDate = dtpDueDate.MaxDate;
+
+            dtpDueDate.Value = dueDate;
+        }
+
+        private void ApplyStatusRules()
+        {
+            bool isEditable = _orderStatus == OrderStatus.Pending;
+
+            txtDiscount.Enabled = isEditable;
+            txtNotes.Enabled = isEditable;
+            dtpDueDate.Enabled = isEditable;
+            txtQuantity.Enabled = isEditable;
+            btnAddDetail.Enabled = isEditable;
+            btnRemoveDetail.Enabled = isEditable;
+            btnUpdateQuantity.Enabled = isEditable;
+            btnUpdateQuantity.Visible = isEditable;
+            btnSave.Enabled = isEditable;
+
+            if (!isEditable)
+                lblHint.Text = "This transaction is " + _orderStatus.ToString().ToLowerInvariant() + " and can no longer be edited.";
+        }
+
+        #endregion
+
+        #region Order type rules
 
         private OrderType SelectedOrderType
         {
-            get { return (OrderType)cmbOrderType.SelectedItem; }
+            get
+            {
+                if (cmbOrderType.SelectedItem == null)
+                    return OrderType.Purchase;
+
+                return (OrderType)cmbOrderType.SelectedItem;
+            }
+        }
+
+        private bool RequiresSupplier
+        {
+            get { return SelectedOrderType == OrderType.Purchase || SelectedOrderType == OrderType.ReturnOut; }
+        }
+
+        private bool RequiresCustomer
+        {
+            get { return SelectedOrderType == OrderType.Sale || SelectedOrderType == OrderType.ReturnIn; }
+        }
+
+        private bool IsTransfer
+        {
+            get { return SelectedOrderType == OrderType.Transfer; }
         }
 
         private void ApplyOrderTypeVisibility()
         {
             if (cmbOrderType.SelectedItem == null)
                 return;
-            RestDetailsToDefault();
-            var type = SelectedOrderType;
 
-            pnlSupplier.Visible = type == OrderType.Purchase || type == OrderType.ReturnOut;
-            pnlCustomer.Visible = type == OrderType.Sale || type == OrderType.ReturnIn;
+            pnlSupplier.Visible = RequiresSupplier;
+            pnlCustomer.Visible = RequiresCustomer;
             pnlSourceWarehouse.Visible = true;
-            pnlDestinationWarehouse.Visible = type == OrderType.Transfer;
+            pnlDestinationWarehouse.Visible = IsTransfer;
 
-            if (type == OrderType.Purchase)
-            {
-                lblHint.Text = "Purchase: supplier and source warehouse are required. Stock will be received into source warehouse.";
-            }
-            else if (type == OrderType.Sale)
-            {
-                lblHint.Text = "Sale: customer and source warehouse are required. Stock will be issued from source warehouse.";
-            }
-            else if (type == OrderType.ReturnIn)
-            {
-                lblHint.Text = "Return In: customer and source warehouse are required. Stock will be issued from source warehouse.";
-            }
-            else if (type == OrderType.ReturnOut)
-            {
-                lblHint.Text = "Return Out : supplier and source warehouse are required. Stock will be received into source warehouse.";
-            }
-            else if(type == OrderType.Transfer)
-            {
-                ShowDiscounts(false);
-                lblHint.Text = "Transfer: source and destination warehouses are required. Customer and supplier are not used.";
-            }
+            ShowDiscounts(!IsTransfer);
+
+            lblHint.Text = BuildHintText();
         }
-        private bool ValidateForm()
+
+        private string BuildHintText()
         {
-            errorProvider.Clear();
-
-            bool valid = true;
-
-            if (SelectedOrderType == OrderType.Purchase && _supplierId == Guid.Empty)
+            switch (SelectedOrderType)
             {
-                errorProvider.SetError(txtSupplier, "Supplier is required for purchase.");
-                valid = false;
+                case OrderType.Purchase:
+                    return "Purchase: supplier and source warehouse are required. Stock will be received into the source warehouse.";
+
+                case OrderType.Sale:
+                    return "Sale: customer and source warehouse are required. Stock will be issued from the source warehouse.";
+
+                case OrderType.ReturnIn:
+                    return "Return In: customer and source warehouse are required. Stock will be received into the source warehouse.";
+
+                case OrderType.ReturnOut:
+                    return "Return Out: supplier and source warehouse are required. Stock will be issued from the source warehouse.";
+
+                case OrderType.Transfer:
+                    return "Transfer: source and destination warehouses are required. Pricing and discounts do not apply.";
+
+                default:
+                    return string.Empty;
             }
-
-            if (SelectedOrderType == OrderType.Sale && _customerId == Guid.Empty)
-            {
-                errorProvider.SetError(txtCustomer, "Customer is required for sale.");
-                valid = false;
-            }
-
-            if (_sourceWarehouseId == Guid.Empty)
-            {
-                errorProvider.SetError(txtSourceWarehouse, "Source warehouse is required.");
-                valid = false;
-            }
-
-            if (SelectedOrderType == OrderType.Transfer)
-            {
-                if (_destinationWarehouseId == Guid.Empty)
-                {
-                    errorProvider.SetError(txtDestinationWarehouse, "Destination warehouse is required for transfer.");
-                    valid = false;
-                }
-
-                if (_sourceWarehouseId != Guid.Empty && _sourceWarehouseId == _destinationWarehouseId)
-                {
-                    errorProvider.SetError(txtDestinationWarehouse, "Destination warehouse cannot be same as source warehouse.");
-                    valid = false;
-                }
-            }
-
-            if (!_isUpdateMode && _details.Count == 0)
-            {
-                MessageBox.Show("Please add at least one transaction detail.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                valid = false;
-            }
-
-            decimal discount;
-
-            if (!decimal.TryParse(txtDiscount.Text.Trim(), out discount) || discount < 0)
-            {
-                errorProvider.SetError(txtDiscount, "Discount must be zero or greater.");
-                valid = false;
-            }
-
-            if (txtNotes.Text.Trim().Length > 500)
-            {
-                errorProvider.SetError(txtNotes, "Notes must not exceed 500 characters.");
-                valid = false;
-            }
-
-            return valid;
         }
 
-        private CreateOrderRequest BuildCreateRequest()
+        private void ShowDiscounts(bool show)
         {
-            return new CreateOrderRequest
-            {
-                OrderType = SelectedOrderType,
+            lblDiscount.Visible = show;
+            txtDiscount.Visible = show;
+            lblDiscountValueTitle.Visible = show;
+            lblDiscountValue.Visible = show;
 
-                SupplierId = SelectedOrderType == OrderType.Purchase || SelectedOrderType == OrderType.ReturnOut ? _supplierId.Value : Guid.Empty,
-                CustomerId = SelectedOrderType == OrderType.Sale || SelectedOrderType == OrderType.ReturnIn ? _customerId.Value : Guid.Empty,
-                SourceWarehouseId = _sourceWarehouseId.Value,
-                DestinationWarehouseId = SelectedOrderType == OrderType.Transfer ? _destinationWarehouseId.Value : Guid.Empty,
-                DueDate = dtpDueDate.Value,
-                Discount = SelectedDiscount,
-                Notes = txtNotes.Text.Trim(),
-
-                OrderDetails = _details.Select(d => new CreateOrderDetailRequestInner
-                {
-                    ProductId = d.ProductId,
-                    Quantity = d.Quantity,
-                     RowVersion = d.RowVersion ,
-            
-                }).ToList(),
-            };
+            lblSubTotal.Visible = show;
+            lblSubTotalValue.Visible = show;
+            lblNet.Visible = show;
+            lblNetValue.Visible = show;
         }
-        private UpdateOrderRequest BuildUpdateRequest()
+
+        private void ResetDetailsToDefault()
         {
-            return new UpdateOrderRequest
-            {
-                Id = _orderId,
-                DiscountAmount = decimal.Parse(txtDiscount.Text.Trim()),
-                Notes = txtNotes.Text.Trim() ,
-                DueDate = dtpDueDate.Value
-            };
+            _details.Clear();
+
+            txtDiscount.Text = "0.00";
+            txtQuantity.Text = "0";
+
+            lblSubTotalValue.Text = DisplayFormatter.Money(0m);
+            lblDiscountValue.Text = DisplayFormatter.Money(0m);
+            lblNetValue.Text = DisplayFormatter.Money(0m);
+
+            BindDetailsGrid();
         }
 
+        private void cmbOrderType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (_isLoading)
+                return;
 
+            ResetDetailsToDefault();
+            ApplyOrderTypeVisibility();
+            RecalculateSummary();
+        }
 
+        #endregion
+
+        #region Grid
 
         private void BindDetailsGrid()
         {
             dgvDetails.SetData(_details.ToList());
 
-            dgvDetails.HideColumn("Quantity");
-
-            dgvDetails.HideColumn("ActualQuantity");
-
-            dgvDetails.HideColumn("ProductId");
-
-            dgvDetails.HideColumn("OrderId");
-
-            dgvDetails.HideColumn("Id");
-
-            dgvDetails.HideColumn("Product");
-
-            dgvDetails.HideColumn("RowVersion");
+            dgvDetails.HideColumns("Id", "OrderId", "ProductId", "Product", "RowVersion", "Quantity", "ActualQuantity");
 
             dgvDetails.SetColumnHeader("ProductName", "Product");
             dgvDetails.SetColumnHeader("CurrentQuantity", "Quantity");
             dgvDetails.SetColumnHeader("UnitPrice", "Unit Price");
             dgvDetails.SetColumnHeader("TotalAmount", "Total");
+
+            dgvDetails.FormatColumnAsQuantity("CurrentQuantity");
+            dgvDetails.FormatColumnsAsCurrency("UnitPrice", "TotalAmount");
+
+            if (IsTransfer)
+                dgvDetails.HideColumns("UnitPrice", "TotalAmount");
         }
 
         private OrderDetailDto GetSelectedDetail()
@@ -414,41 +419,94 @@ namespace UI.Forms.Orders
             return dgvDetails.GetSelectedItem<OrderDetailDto>();
         }
 
+        #endregion
+
+        #region Summary
+
+        private decimal SelectedQuantity
+        {
+            get
+            {
+                decimal result;
+                return decimal.TryParse(txtQuantity.Text.Trim(), out result) ? result : 0m;
+            }
+        }
+
+        private decimal SelectedDiscount
+        {
+            get
+            {
+                if (IsTransfer)
+                    return 0m;
+
+                decimal result;
+                return decimal.TryParse(txtDiscount.Text.Trim(), out result) ? result : 0m;
+            }
+        }
+
         private void RecalculateSummary()
         {
-            
-            decimal subTotal = _details.Sum(d => d.Quantity * d.UnitPrice);
+            decimal subTotal = _details.Sum(d => d.CurrentQuantity * d.UnitPrice);
 
-            decimal discount = 0;
-            decimal.TryParse(txtDiscount.Text.Trim(), out discount);
+            decimal discount = SelectedDiscount;
 
             if (discount < 0)
                 discount = 0;
+
+            if (discount > subTotal)
+                discount = subTotal;
 
             decimal net = subTotal - discount;
 
             if (net < 0)
                 net = 0;
 
-            lblSubTotalValue.Text = subTotal.ToString("0.00");
-            lblDiscountValue.Text = discount.ToString("0.00");
-            lblNetValue.Text = net.ToString("0.00");
+            lblSubTotalValue.Text = DisplayFormatter.Money(subTotal);
+            lblDiscountValue.Text = DisplayFormatter.Money(discount);
+            lblNetValue.Text = DisplayFormatter.Money(net);
         }
 
-        private void cmbOrderType_SelectedIndexChanged(object sender, EventArgs e)
+        private void txtDiscount_TextChanged(object sender, EventArgs e)
         {
-            ApplyOrderTypeVisibility();
+            if (_isLoading)
+                return;
+
+            RecalculateSummary();
         }
+
+        private void txtQuantity_TextChanged(object sender, EventArgs e)
+        {
+            if (_isLoading || _isUpdateMode)
+                return;
+
+            var selected = GetSelectedDetail();
+
+            if (selected == null)
+                return;
+
+            int index = dgvDetails.GetSelectedItemPosition();
+
+            selected.Quantity = SelectedQuantity;
+
+            BindDetailsGrid();
+            dgvDetails.SetAsSelected(index);
+            RecalculateSummary();
+        }
+
+        #endregion
+
+        #region Party selection
 
         private void btnSelectSupplier_Click(object sender, EventArgs e)
         {
             using (var frm = new frmSupplierSelector())
             {
-                if (frm.ShowDialog() != DialogResult.OK)
+                if (frm.ShowDialog(this) != DialogResult.OK || frm.SelectedSupplier == null)
                     return;
 
                 _supplierId = frm.SelectedSupplier.Id;
                 txtSupplier.Text = frm.SelectedSupplier.SupplierName;
+                errorProvider.SetError(txtSupplier, string.Empty);
             }
         }
 
@@ -456,11 +514,12 @@ namespace UI.Forms.Orders
         {
             using (var frm = new frmCustomerSelector())
             {
-                if (frm.ShowDialog() != DialogResult.OK)
+                if (frm.ShowDialog(this) != DialogResult.OK || frm.SelectedCustomer == null)
                     return;
 
                 _customerId = frm.SelectedCustomer.Id;
                 txtCustomer.Text = frm.SelectedCustomer.CustomerName;
+                errorProvider.SetError(txtCustomer, string.Empty);
             }
         }
 
@@ -468,170 +527,191 @@ namespace UI.Forms.Orders
         {
             using (var frm = new frmWarehouseSelector())
             {
-                if (frm.ShowDialog() != DialogResult.OK)
+                if (frm.ShowDialog(this) != DialogResult.OK || frm.SelectedWarehouse == null)
                     return;
 
                 _sourceWarehouseId = frm.SelectedWarehouse.Id;
                 txtSourceWarehouse.Text = frm.SelectedWarehouse.Name;
+                errorProvider.SetError(txtSourceWarehouse, string.Empty);
             }
         }
 
-            private void btnSelectDestinationWarehouse_Click(object sender, EventArgs e)
+        private void btnSelectDestinationWarehouse_Click(object sender, EventArgs e)
         {
             using (var frm = new frmWarehouseSelector())
             {
-                if (frm.ShowDialog() != DialogResult.OK)
+                if (frm.ShowDialog(this) != DialogResult.OK || frm.SelectedWarehouse == null)
                     return;
 
                 _destinationWarehouseId = frm.SelectedWarehouse.Id;
                 txtDestinationWarehouse.Text = frm.SelectedWarehouse.Name;
+                errorProvider.SetError(txtDestinationWarehouse, string.Empty);
             }
         }
 
-            private List<Guid> SelectedProducts() {
+        #endregion
 
-            return this._details.Select(x => x.ProductId).ToList();
+        #region Details management
 
-        }
-            private decimal SelectedQuantity {
-            
-            get {
-                if (decimal.TryParse(txtQuantity.Text, out decimal result))
-                    return result;
-                return 0;
-            }
-            
-            }
-        private decimal SelectedDiscount
+        private List<Guid> SelectedProducts()
         {
-
-            get
-            {
-                if (decimal.TryParse(txtDiscount.Text, out decimal result))
-                    return result;
-                return 0;
-            }
-
+            return _details.Select(x => x.ProductId).ToList();
         }
 
-        private frmProductSelector MakeProductSelectorForm() {
+        private frmProductSelector MakeProductSelectorForm()
+        {
+            if (RequiresSupplier && !HasValue(_supplierId))
+            {
+                errorProvider.SetError(txtSupplier, "Select a supplier before adding products.");
+                return null;
+            }
+
+            if (!RequiresSupplier && !HasValue(_sourceWarehouseId))
+            {
+                errorProvider.SetError(txtSourceWarehouse, "Select a source warehouse before adding products.");
+                return null;
+            }
 
             frmProductSelector frm = new frmProductSelector();
 
-            var selectedProduct = SelectedProducts();
-
-            frm.ExcludeProducts(selectedProduct);
-
-
-            if (SelectedOrderType == OrderType.Purchase || SelectedOrderType == OrderType.ReturnOut)
+            try
             {
-                if (_supplierId == null || _supplierId == Guid.Empty)
-                {
-                    errorProvider.SetError(txtSupplier, "Supplier is required for purchase.");
-                    return null;
-                }
-                frm.FromSupplier(_supplierId);
-            }
-            else
-            {
-                if (_sourceWarehouseId == null || _sourceWarehouseId == Guid.Empty)
-                {
-                    errorProvider.SetError(txtSourceWarehouse, "Source Warehouse is required for purchase.");
-                    return null;
-                }
-                frm.FromWarehouse(_sourceWarehouseId);
-            }
+                frm.ExcludeProducts(SelectedProducts());
 
-            return frm;
+                if (RequiresSupplier)
+                    frm.FromSupplier(_supplierId);
+                else
+                    frm.FromWarehouse(_sourceWarehouseId);
+
+                return frm;
+            }
+            catch
+            {
+                frm.Dispose();
+                throw;
+            }
         }
-            private async void btnAddDetail_Click(object sender, EventArgs e)
-            {
 
+        private async void btnAddDetail_Click(object sender, EventArgs e)
+        {
+            decimal quantity = SelectedQuantity;
+
+            //if (quantity <= 0)
+            //{
+            //    errorProvider.SetError(txtQuantity, "Enter a quantity greater than zero before adding a product.");
+            //    txtQuantity.Focus();
+            //    return;
+            //}
+
+           // errorProvider.SetError(txtQuantity, string.Empty);
 
             var form = MakeProductSelectorForm();
-            if (form == null) return;
-                using (var frm = form)
-                {
-                    if (frm.ShowDialog() != DialogResult.OK)
-                        return;
 
-                    var product = frm.SelectedProduct;
+            if (form == null)
+                return;
 
-                if (product == null) return;
-
-                var orderDetail = new OrderDetailDto()
-                {
-                    Product = new ProductDto()
-                    {
-                        Id = product.Id,
-                        ProductName = product.ProductName,
-                        BarCode = product.BarCode,
-                        IsActive = product.IsActive,
-                        SKU = product.SKU,
-                        SellingPrice = product.SellingPrice,
-
-
-                    },
-                    ProductId = product.Id,
-                    Quantity = SelectedQuantity,
-                    UnitPrice = SelectedOrderType == OrderType.Purchase ? product.PurchasePrice.Value : product.SellingPrice,
-                    RowVersion = product.RowVersion
-
-                };
-
-                if (_isUpdateMode)
-                {
-                    decimal qt = SelectedQuantity;
-                    if (qt <= 0) {
-                        MessageBox.Show("Invalid quantity defined."); 
-                        return;
-                    }
-                    var result = await OrdersServices.CreateOrderDetail(new CreateOrderDetailRequest()
-                    {
-                        OrderId = _orderId,
-                        ProductId = product.Id,
-                        Quantity = qt,
-                        RowVersion = product.RowVersion ,
-                     });
-
-                    if (!result.IsSuccess) {
-                        lblStatus.Text = "Failed to add detail";
-                        MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-                    orderDetail.RowVersion = result.Data.RowVersion;
-                    orderDetail.Id = result.Data.Id; ; 
-                    orderDetail.OrderId = result.Data.OrderId;
-                   
-                    _details.Add(orderDetail);
-
-                }
-                else
-                {
-                    _details.Add(orderDetail);
-                }
-                
-                    BindDetailsGrid();
-                    RecalculateSummary();
-                }
-            }
-            private async void btnRemoveDetail_Click(object sender, EventArgs e)
+            using (var frm = form)
             {
-                var selected = GetSelectedDetail();
+                if (frm.ShowDialog(this) != DialogResult.OK)
+                    return;
 
-                if (selected == null)
+                var product = frm.SelectedProduct;
+
+                if (product == null)
+                    return;
+
+                if (_details.Any(d => d.ProductId == product.Id))
                 {
-                    MessageBox.Show("Please select a detail first.");
+                    MessageBox.Show("This product is already part of the transaction.", "Duplicate Product",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
 
-            if (_isUpdateMode) {
+                var orderDetail = BuildOrderDetail(product, quantity);
 
-                 var confirm = MessageBox.Show(
-                  $"Are you sure you want to delete {selected.ProductName}?",
-                  "Confirm Delete",
-                  MessageBoxButtons.YesNo,
-                  MessageBoxIcon.Warning);
+                if (_isUpdateMode && !await PersistNewDetail(orderDetail, product.Id, quantity, product.RowVersion))
+                    return;
+
+                _details.Add(orderDetail);
+
+                BindDetailsGrid();
+                RecalculateSummary();
+
+                lblStatus.Text = "Detail added";
+            }
+        }
+
+        private OrderDetailDto BuildOrderDetail(ProductDtoForList product, decimal quantity)
+        {
+            decimal unitPrice = RequiresSupplier
+                ? (product.PurchasePrice ?? product.SellingPrice)
+                : product.SellingPrice;
+
+            return new OrderDetailDto
+            {
+                Product = new ProductDto
+                {
+                    Id = product.Id,
+                    ProductName = product.ProductName,
+                    BarCode = product.BarCode,
+                    IsActive = product.IsActive,
+                    SKU = product.SKU,
+                    SellingPrice = product.SellingPrice
+                },
+                ProductId = product.Id,
+                Quantity = quantity,
+                UnitPrice = unitPrice,
+                RowVersion = product.RowVersion
+            };
+        }
+
+        private async Task<bool> PersistNewDetail(OrderDetailDto orderDetail, Guid productId, decimal quantity, byte[] rowVersion)
+        {
+            btnAddDetail.Enabled = false;
+
+            var result = await OrdersServices.CreateOrderDetail(new CreateOrderDetailRequest
+            {
+                OrderId = _orderId,
+                ProductId = productId,
+                Quantity = quantity,
+                RowVersion = rowVersion
+            });
+
+            btnAddDetail.Enabled = true;
+
+            if (!result.IsSuccess || result.Data == null)
+            {
+                lblStatus.Text = "Failed to add detail";
+                MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+
+            orderDetail.Id = result.Data.Id;
+            orderDetail.OrderId = result.Data.OrderId;
+            orderDetail.RowVersion = result.Data.RowVersion;
+            orderDetail.UnitPrice = result.Data.UnitPrice;
+
+            return true;
+        }
+
+        private async void btnRemoveDetail_Click(object sender, EventArgs e)
+        {
+            var selected = GetSelectedDetail();
+
+            if (selected == null)
+            {
+                MessageBox.Show("Please select a detail first.", "No Selection",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (_isUpdateMode)
+            {
+                var confirm = MessageBox.Show(
+                    "Are you sure you want to remove " + DisplayFormatter.Text(selected.ProductName, "this product") + "?",
+                    "Confirm Remove",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
 
                 if (confirm != DialogResult.Yes)
                     return;
@@ -644,122 +724,277 @@ namespace UI.Forms.Orders
 
                 if (!result.IsSuccess)
                 {
-
+                    lblStatus.Text = "Failed to remove detail";
                     MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-
             }
 
+            _details.Remove(selected);
 
-                _details.Remove(selected);
-                BindDetailsGrid();
-                RecalculateSummary();
-            }
-            private void txtDiscount_TextChanged(object sender, EventArgs e)
-            {
-            if (string.IsNullOrEmpty(txtDiscount.Text))
-            {
-                txtDiscount.Text = "0";
-                return;
-            }
-                RecalculateSummary();
-            }
-            private async void btnSave_Click(object sender, EventArgs e)
-            {
-                if (!ValidateForm())
-                    return;
-
-                btnSave.Enabled = false;
-                lblStatus.Text = "Saving transaction...";
-
-                if (_isUpdateMode)
-                {
-                    var result = await OrdersServices.Update(_orderId, BuildUpdateRequest());
-
-                    btnSave.Enabled = true;
-
-                    if (!result.IsSuccess)
-                    {
-                        lblStatus.Text = "Failed to update transaction";
-                        MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-                }
-                else
-                {
-                    var result = await OrdersServices.Create(BuildCreateRequest());
-
-                    btnSave.Enabled = true;
-
-                    if (!result.IsSuccess)
-                    {
-                        lblStatus.Text = "Failed to create transaction";
-                        MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-                }
-
-                lblStatus.Text = "Saved successfully";
-                DialogResult = DialogResult.OK;
-                Close();
-            }
-            private void btnCancel_Click(object sender, EventArgs e)
-            {
-                DialogResult = DialogResult.Cancel;
-                Close();
-            }
-            private void txtQuantity_TextChanged(object sender, EventArgs e)
-        {
-            if (_isUpdateMode) return;
-            var selected = GetSelectedDetail();
-            var index = dgvDetails.GetselectedItemPosition();
-            if (selected == null)
-            {
-                return;
-            }
-
-            selected.Quantity = SelectedQuantity;
             BindDetailsGrid();
-            dgvDetails.SetAsSelected(index);
-            RecalculateSummary(); 
+            RecalculateSummary();
 
+            lblStatus.Text = "Detail removed";
         }
 
-        private async void btnAddQuantity_Click(object sender, EventArgs e)
+        private async void btnUpdateQuantity_Click(object sender, EventArgs e)
         {
-            if (!_isUpdateMode) return;
+            if (!_isUpdateMode)
+                return;
 
- 
             var selected = GetSelectedDetail();
+
             if (selected == null)
             {
-                MessageBox.Show("Please select a detail first.");
-                return;
-            }
-            var quantity = SelectedQuantity;
-            if (quantity <= 0)
-            {
-                MessageBox.Show("Invalid quantity selected.");
+                MessageBox.Show("Please select a detail first.", "No Selection",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            var result = await OrdersServices.UpdateOrderDetailQuantity(selected.Id, new UpdateOrderDetailQuantityRequest()
+            decimal quantity = SelectedQuantity;
+
+            if (quantity <= 0)
+            {
+                errorProvider.SetError(txtQuantity, "Enter a quantity greater than zero.");
+                txtQuantity.Focus();
+                return;
+            }
+
+            errorProvider.SetError(txtQuantity, string.Empty);
+
+            btnUpdateQuantity.Enabled = false;
+
+            var result = await OrdersServices.UpdateOrderDetailQuantity(selected.Id, new UpdateOrderDetailQuantityRequest
             {
                 Quantity = quantity,
                 RowVersion = selected.RowVersion
             });
 
-            if (!(result.IsSuccess)) {
+            btnUpdateQuantity.Enabled = true;
+
+            if (!result.IsSuccess)
+            {
                 lblStatus.Text = "Failed to update quantity";
                 MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
             selected.Quantity = quantity;
+            selected.ActualQuantity = null;
+
+            await RefreshDetailConcurrencyToken(selected);
+
+            int index = dgvDetails.GetSelectedItemPosition();
 
             BindDetailsGrid();
+            dgvDetails.SetAsSelected(index);
             RecalculateSummary();
+
+            lblStatus.Text = "Quantity updated";
         }
+
+        private async Task RefreshDetailConcurrencyToken(OrderDetailDto detail)
+        {
+            var refreshed = await OrdersServices.GetOrderDetail(detail.Id);
+
+            if (!refreshed.IsSuccess || refreshed.Data == null)
+                return;
+
+            detail.RowVersion = refreshed.Data.RowVersion;
+            detail.Quantity = refreshed.Data.Quantity;
+            detail.ActualQuantity = refreshed.Data.ActualQuantity;
+            detail.UnitPrice = refreshed.Data.UnitPrice;
+        }
+
+        #endregion
+
+        #region Validation
+
+        private static bool HasValue(Guid? id)
+        {
+            return id.HasValue && id.Value != Guid.Empty;
+        }
+
+        private bool ValidateForm()
+        {
+            errorProvider.Clear();
+
+            bool valid = true;
+
+            if (RequiresSupplier && !HasValue(_supplierId))
+            {
+                errorProvider.SetError(txtSupplier, "Supplier is required for " + SelectedOrderType + " transactions.");
+                valid = false;
+            }
+
+            if (RequiresCustomer && !HasValue(_customerId))
+            {
+                errorProvider.SetError(txtCustomer, "Customer is required for " + SelectedOrderType + " transactions.");
+                valid = false;
+            }
+
+            if (!HasValue(_sourceWarehouseId))
+            {
+                errorProvider.SetError(txtSourceWarehouse, "Source warehouse is required.");
+                valid = false;
+            }
+
+            if (IsTransfer)
+            {
+                if (!HasValue(_destinationWarehouseId))
+                {
+                    errorProvider.SetError(txtDestinationWarehouse, "Destination warehouse is required for a transfer.");
+                    valid = false;
+                }
+                else if (_sourceWarehouseId == _destinationWarehouseId)
+                {
+                    errorProvider.SetError(txtDestinationWarehouse, "Destination warehouse cannot be the same as the source warehouse.");
+                    valid = false;
+                }
+            }
+
+            if (!_isUpdateMode && _details.Count == 0)
+            {
+                MessageBox.Show("Please add at least one transaction detail.", "Validation",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                valid = false;
+            }
+
+            if (!IsTransfer && !ValidateDiscount())
+                valid = false;
+
+            if (txtNotes.Text.Trim().Length > MaxNotesLength)
+            {
+                errorProvider.SetError(txtNotes, "Notes must not exceed " + MaxNotesLength + " characters.");
+                valid = false;
+            }
+
+            return valid;
+        }
+
+        private bool ValidateDiscount()
+        {
+            string text = txtDiscount.Text.Trim();
+
+            if (string.IsNullOrEmpty(text))
+                return true;
+
+            decimal discount;
+
+            if (!decimal.TryParse(text, out discount))
+            {
+                errorProvider.SetError(txtDiscount, "Discount must be a valid number.");
+                return false;
+            }
+
+            if (discount < 0)
+            {
+                errorProvider.SetError(txtDiscount, "Discount must be zero or greater.");
+                return false;
+            }
+
+            decimal subTotal = _details.Sum(d => d.CurrentQuantity * d.UnitPrice);
+
+            if (_details.Count > 0 && discount > subTotal)
+            {
+                errorProvider.SetError(txtDiscount, "Discount cannot be greater than the sub total.");
+                return false;
+            }
+
+            return true;
+        }
+
+        #endregion
+
+        #region Requests
+
+        private CreateOrderRequest BuildCreateRequest()
+        {
+            return new CreateOrderRequest
+            {
+                OrderType = SelectedOrderType,
+                SupplierId = RequiresSupplier ? _supplierId : null,
+                CustomerId = RequiresCustomer ? _customerId : null,
+                SourceWarehouseId = _sourceWarehouseId.Value,
+                DestinationWarehouseId = IsTransfer ? _destinationWarehouseId : null,
+                DueDate = dtpDueDate.Value,
+                Discount = SelectedDiscount,
+                Notes = txtNotes.Text.Trim(),
+                OrderDetails = _details.Select(d => new CreateOrderDetailRequestInner
+                {
+                    ProductId = d.ProductId,
+                    Quantity = d.Quantity,
+                    RowVersion = d.RowVersion
+                }).ToList()
+            };
+        }
+
+        private UpdateOrderRequest BuildUpdateRequest()
+        {
+            return new UpdateOrderRequest
+            {
+                Id = _orderId,
+                DiscountAmount = SelectedDiscount,
+                Notes = txtNotes.Text.Trim(),
+                DueDate = dtpDueDate.Value
+            };
+        }
+
+        #endregion
+
+        #region Save
+
+        private async void btnSave_Click(object sender, EventArgs e)
+        {
+            if (!ValidateForm())
+                return;
+
+            btnSave.Enabled = false;
+            lblStatus.Text = "Saving transaction...";
+
+            bool saved = _isUpdateMode ? await SaveUpdate() : await SaveCreate();
+
+            btnSave.Enabled = true;
+
+            if (!saved)
+                return;
+
+            lblStatus.Text = "Saved successfully";
+            DialogResult = DialogResult.OK;
+            Close();
+        }
+
+        private async Task<bool> SaveUpdate()
+        {
+            var result = await OrdersServices.Update(_orderId, BuildUpdateRequest());
+
+            if (result.IsSuccess)
+                return true;
+
+            lblStatus.Text = "Failed to update transaction";
+            MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return false;
+        }
+
+        private async Task<bool> SaveCreate()
+        {
+            var result = await OrdersServices.Create(BuildCreateRequest());
+
+            if (result.IsSuccess)
+                return true;
+
+            lblStatus.Text = "Failed to create transaction";
+            MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return false;
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Cancel;
+            Close();
+        }
+
+        #endregion
     }
-    }
+}

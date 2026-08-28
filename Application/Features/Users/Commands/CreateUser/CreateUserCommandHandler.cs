@@ -25,7 +25,7 @@ namespace Contract.Features.User.Commands.CreateUser
         ILogger<CreateUserCommandHandler> logger,
         ICachingService cache,
         IAuditLogService logService,
-        IUser currentUser,                       // [FIX 6.4] acting user for the audit trail
+        IUser currentUser,                      
         IHttpContextAccessor httpContext) : IRequestHandler<CreateUserCommand, Result<UserDto>>
     {
         private readonly ILogger<CreateUserCommandHandler> _logger = logger;
@@ -34,14 +34,14 @@ namespace Contract.Features.User.Commands.CreateUser
         {
             _logger.LogInformation("Started handling {RequestName}.", nameof(CreateUserCommandHandler));
 
-            bool usernameFound = await context.Users.AnyAsync(u => u.Username == request.username, cancellationToken); // [FIX 6.11] +ct
+            bool usernameFound = await context.Users.AnyAsync(u => u.Username == request.username, cancellationToken); 
             if (usernameFound)
             {
                 _logger.LogWarning("CreateUserCommandHandler stopped because an error result was returned: {ErrorResult}.", "ApplicationErrors.UserWithUsernameAlreadyExists");
                 return ApplicationErrors.UserWithUsernameAlreadyExists;
             }
            
-            bool emailFound = await context.Users.AnyAsync(u => u.Email == request.email, cancellationToken); // [FIX 6.11] +ct
+            bool emailFound = await context.Users.AnyAsync(u => u.Email == request.email, cancellationToken); 
             if (emailFound)
             {
                 _logger.LogWarning("CreateUserCommandHandler stopped because an error result was returned: {ErrorResult}.", "ApplicationErrors.UserWithEmailAlreadyExists");
@@ -87,7 +87,7 @@ namespace Contract.Features.User.Commands.CreateUser
 
             }
 
-            await context.Users.AddAsync(result.Value, cancellationToken); // [FIX 6.11] +ct
+            await context.Users.AddAsync(result.Value, cancellationToken);  
             await context.SaveChangesAsync(cancellationToken);
             if (currentUser.UserId.HasValue && currentUser.UserId.Value != Guid.Empty)
             {

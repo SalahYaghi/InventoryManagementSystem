@@ -24,8 +24,8 @@
             this.lblSupplierCode = new System.Windows.Forms.Label();
             this.txtSupplierName = new System.Windows.Forms.TextBox();
             this.lblSupplierName = new System.Windows.Forms.Label();
-            this.ctrlContactInfo1 = new UI.Forms.Refrences.Contacts.ctrlContactInfo();
-            this.ctrlAddressInfo1 = new UI.Forms.Refrences.Contacts.ctrlAddressInfo();
+            this.ctrlContactInfo1 = new UI.Forms.References.Contacts.ctrlContactInfo();
+            this.ctrlAddressInfo1 = new UI.Forms.References.Contacts.ctrlAddressInfo();
             this.groupNotes = new System.Windows.Forms.GroupBox();
             this.txtNotes = new System.Windows.Forms.TextBox();
             this.panelFooter = new System.Windows.Forms.Panel();
@@ -296,8 +296,8 @@
             private System.Windows.Forms.Button btnCancel;
             private System.Windows.Forms.Label lblStatus;
             private System.Windows.Forms.ErrorProvider errorProvider;
-        private Refrences.Contacts.ctrlContactInfo ctrlContactInfo1;
-        private Refrences.Contacts.ctrlAddressInfo ctrlAddressInfo1;
+        private References.Contacts.ctrlContactInfo ctrlContactInfo1;
+        private References.Contacts.ctrlAddressInfo ctrlAddressInfo1;
         private System.Windows.Forms.GroupBox groupNotes;
         private System.Windows.Forms.TextBox txtNotes;
     }

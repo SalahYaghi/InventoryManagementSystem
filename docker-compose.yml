@@ -24,7 +24,7 @@ services:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "Your_strong_password123!"
     ports:
-      - "1433:1433"
+      - "7433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
     restart: always
@@ -33,7 +33,7 @@ services:
     image: redis:latest
     container_name: redis
     ports:
-      - "6379:6379"
+      - "6852:6379"
     restart: unless-stopped
 
   seq:
@@ -44,7 +44,7 @@ services:
       ACCEPT_EULA: "Y"
       SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
     ports:
-      - "5341:80"
+      - "5111:80"
     restart: unless-stopped
 
   prometheus:
@@ -63,7 +63,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: "YourStrongPwd"
     ports:
-      - "8049:3000"
+      - "5005:3000"
     volumes:
       - grafana-data:/var/lib/grafana
     depends_on:

@@ -1,4 +1,4 @@
-﻿namespace UI.Forms.Refrences.Documents
+﻿namespace UI.Forms.References.Documents
 {
         partial class ctrlDocumentDetails
         {

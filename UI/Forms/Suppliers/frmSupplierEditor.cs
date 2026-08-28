@@ -153,30 +153,6 @@ namespace UI.Forms.Suppliers
                     isValid = false;
                 }
 
-                //if (string.IsNullOrWhiteSpace(txtEmail.Text))
-                //{
-                //    errorProvider.SetError(txtEmail, "Email is required.");
-                //    isValid = false;
-                //}
-
-                //if (string.IsNullOrWhiteSpace(txtPhoneNumber.Text))
-                //{
-                //    errorProvider.SetError(txtPhoneNumber, "Phone number is required.");
-                //    isValid = false;
-                //}
-
-                //if (!Guid.TryParse(txtCountryId.Text.Trim(), out _))
-                //{
-                //    errorProvider.SetError(txtCountryId, "Country Id must be a valid Guid.");
-                //    isValid = false;
-                //}
-
-                //if (!Guid.TryParse(txtCityId.Text.Trim(), out _))
-                //{
-                //    errorProvider.SetError(txtCityId, "City Id must be a valid Guid.");
-                //    isValid = false;
-                //}
-
                 if (txtNotes.Text.Trim().Length > 500)
                 {
                     errorProvider.SetError(txtNotes, "Notes must be 500 characters or less.");

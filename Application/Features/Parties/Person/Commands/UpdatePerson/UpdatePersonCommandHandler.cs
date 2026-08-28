@@ -100,7 +100,7 @@ namespace Contract.Features.Parties.People.Commands.UpdatePerson
             }
 
             var nationalNoDuplicated = await _context.People.AnyAsync(p => p.NationalNo == request.NationalNo
-            && p.Id != request.Id, cancellationToken); // [FIX 6.11] +ct
+            && p.Id != request.Id, cancellationToken); 
 
             if (nationalNoDuplicated)
 

@@ -33,10 +33,10 @@ namespace Infrastructure.Data.Configurations
                 .WithMany(p => p.WarehouseStock)
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
-             builder.HasQueryFilter(x => !x.IsDeleted.HasValue);
+             builder.HasQueryFilter(x => x.IsDeleted != true);
             builder.HasIndex(x => new { x.WarehouseId, x.ProductId })
                 .IsUnique()
-                .HasFilter("[IsDeleted] = 0");
+                .HasFilter("[IsDeleted] IS NULL OR [IsDeleted] = 0");
         }
     }
 }

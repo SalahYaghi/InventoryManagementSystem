@@ -19,7 +19,7 @@ namespace Contract.Features.Users.Commands.DeleteUser
     {
         public async Task<Result<Deleted>> Handle(DeleteUserCommand request, CancellationToken cancellationToken)
         {
-            logger.LogInformation("Started handling {RequestName}.", nameof(DeleteUserCommandHandler)); // [FIX] logged the wrong handler name
+            logger.LogInformation("Started handling {RequestName}.", nameof(DeleteUserCommandHandler));  
 
 
             var user = await context.Users.FirstOrDefaultAsync(u => u.Id == request.userId , cancellationToken);
@@ -51,7 +51,7 @@ namespace Contract.Features.Users.Commands.DeleteUser
             context.Users.Remove(user);
             await context.SaveChangesAsync(cancellationToken);
             logger.LogInformation("DeleteUserCommandHandler is invalidating related cache entries.");
-            await cache.RemoveByTagAsync(CacheFanout.Expand(CacheEntities.User), cancellationToken); // [FIX 1.11]
+            await cache.RemoveByTagAsync(CacheFanout.Expand(CacheEntities.User), cancellationToken); 
 
             logger.LogInformation("DeleteUserCommandHandler invalidated related cache entries successfully.");
 

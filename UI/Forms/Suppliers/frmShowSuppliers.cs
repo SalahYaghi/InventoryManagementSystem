@@ -80,6 +80,9 @@ namespace UI.Forms.Suppliers
                 dgvSuppliers.SetColumnHeader("Street", "Street");
                 dgvSuppliers.SetColumnHeader("Status", "Active");
 
+                dgvSuppliers.SetDefaultValueForNulls("BuildingNumber", "NotDefined");
+                dgvSuppliers.SetDefaultValueForNulls("Street", "NotDefined");
+
                 btnAdd.Focus();
             }
 

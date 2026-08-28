@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="Application/Application.csproj" />
     <Project Path="ContracOldCompatibile/ContractOldCompatibile.csproj" Id="b2d74d6a-ad0c-482b-81cb-3da955363052" />
@@ -6,7 +10,9 @@
     <Project Path="Domain/Domain.csproj" />
     <Project Path="Infrastructure/Infrastructure.csproj" />
     <Project Path="InventoryManagementSystemAPI/InventoryManagementSystemAPI.csproj" />
-    <Project Path="UI/UI.csproj" Id="cd808c27-01a4-4aec-8760-7cd9b207888c" />
+    <Project Path="UI/UI.csproj" Id="cd808c27-01a4-4aec-8760-7cd9b207888c">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
   </Folder>
   <Folder Name="/testing/">
     <Project Path="ApplicationTesting/InventoryManagement.Application.UnitTests.csproj" />
@@ -15,6 +21,7 @@
     <Project Path="SubcutaneousTests/InventoryManagement.SubcutaneousTests.csproj" Id="2c850405-1930-436b-b80b-f722b254ed36" />
   </Folder>
   <Project Path="docker-compose.dcproj">
+    <BuildType Project="Release" />
     <Build />
   </Project>
 </Solution>

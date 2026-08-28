@@ -717,7 +717,7 @@
             this.btnUpdateQuantity.TabIndex = 6;
             this.btnUpdateQuantity.Text = "Update Quantity";
             this.btnUpdateQuantity.UseVisualStyleBackColor = false;
-            this.btnUpdateQuantity.Click += new System.EventHandler(this.btnAddQuantity_Click);
+            this.btnUpdateQuantity.Click += new System.EventHandler(this.btnUpdateQuantity_Click);
             // 
             // frmTransactionEditor
             // 

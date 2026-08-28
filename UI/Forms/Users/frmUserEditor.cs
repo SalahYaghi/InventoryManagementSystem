@@ -6,10 +6,11 @@ using OldContract.Features.User.Dtos;
 using System;
 using System.Drawing;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using UI.Forms.Employees;
 using UI.Forms.People;
+using Domain.Common.Helpers;
+using UI.Shared.Helpers.UI_Helpers;
 using UI.Shared.Services;
  
 namespace UI.Forms.Users
@@ -128,13 +129,14 @@ namespace UI.Forms.Users
 
         private string BuildPersonName(PersonDto person)
         {
-            return string.Join(" ", new[]
-            {
+            if (person == null)
+                return string.Empty;
+
+            return TextFormattingHelper.BuildFullName(
                 person.FirstName,
                 person.SecondName,
                 person.ThirdName,
-                person.LastName
-            }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                person.LastName);
         }
 
         private void Bind() {
@@ -144,7 +146,9 @@ namespace UI.Forms.Users
             chkIsActive.Checked = _user.IsActive;
             _selectedEmployeeId = _user.EmployeeId;
 
-            txtEmployee.Text = BuildPersonName(_user.Employee.Person);
+            txtEmployee.Text = _user.Employee == null || _user.Employee.Person == null
+                ? DisplayFormatter.NotAvailablePlaceholder
+                : BuildPersonName(_user.Employee.Person);
 
             cmbRole.SelectedItem = _user.Role;
 
@@ -167,22 +171,35 @@ namespace UI.Forms.Users
                 errorProvider.SetError(txtUsername, "Username is required.");
                 valid = false;
             }
+            else if (!ValidationHelper.ValidateUsername(txtUsername.Text))
+            {
+                errorProvider.SetError(txtUsername, ValidationHelper.DescribeUsernameRules());
+                valid = false;
+            }
 
             if (string.IsNullOrWhiteSpace(txtEmail.Text))
             {
                 errorProvider.SetError(txtEmail, "Email is required.");
                 valid = false;
             }
-            else if (!Regex.IsMatch(txtEmail.Text.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            else if (!ValidationHelper.ValidateEmail(txtEmail.Text))
             {
                 errorProvider.SetError(txtEmail, "Email format is invalid.");
                 valid = false;
             }
 
-            if (!_isUpdateMode && string.IsNullOrWhiteSpace(txtPassword.Text))
+            if (!_isUpdateMode)
             {
-                errorProvider.SetError(txtPassword, "Password is required.");
-                valid = false;
+                if (string.IsNullOrWhiteSpace(txtPassword.Text))
+                {
+                    errorProvider.SetError(txtPassword, "Password is required.");
+                    valid = false;
+                }
+                else if (!ValidationHelper.ValidatePassword(txtPassword.Text))
+                {
+                    errorProvider.SetError(txtPassword, ValidationHelper.DescribePasswordRules());
+                    valid = false;
+                }
             }
 
             if (cmbRole.SelectedItem == null)
@@ -226,14 +243,11 @@ namespace UI.Forms.Users
 
                 _selectedEmployeeId = frm.SelectedEmployeeId;
 
-                if (frm.SelectedEmployee != null )
-                {
-                    txtEmployee.Text = (frm.SelectedEmployee.FullName);
-                }
-                else
-                {
-                    txtEmployee.Text = _selectedEmployeeId.ToString();
-                }
+                txtEmployee.Text = frm.SelectedEmployee == null
+                    ? DisplayFormatter.NotAvailablePlaceholder
+                    : DisplayFormatter.Text(frm.SelectedEmployee.FullName, DisplayFormatter.NotAvailablePlaceholder);
+
+                errorProvider.SetError(txtEmployee, string.Empty);
             }
         }
 

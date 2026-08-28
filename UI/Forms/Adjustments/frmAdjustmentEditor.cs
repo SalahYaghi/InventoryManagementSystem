@@ -12,6 +12,7 @@ using UI.Forms.Products;
 using UI.Forms.Warehouses;
 using UI.Services;
 using UI.Shared.CurrentUser;
+using UI.Shared.Helpers.UI_Helpers;
 
 namespace UI.Forms.Adjustments
 {
@@ -255,17 +256,14 @@ namespace UI.Forms.Adjustments
 
         private void BindDetailsGrid()
         {
-        
-        
-     
-            dgvDetails.SetData(_details);
-                      dgvDetails.HideColumn("RowVersion");
-            dgvDetails.HideColumn("Id");
-            dgvDetails.HideColumn("ProductId");
-                        dgvDetails.HideColumn("AdjustmentId");
-            dgvDetails.HideColumn("Product");
+            dgvDetails.SetData(_details.ToList());
 
-            }
+            dgvDetails.HideColumns("Id", "ProductId", "AdjustmentId", "Product", "RowVersion");
+
+            dgvDetails.SetColumnHeader("ProductName", "Product");
+            dgvDetails.SetColumnHeader("Quantity", "Quantity");
+            dgvDetails.FormatColumnAsQuantity("Quantity");
+        }
 
         private AdjustmentDetailDto GetSelectedDetail()
         {
@@ -279,19 +277,26 @@ namespace UI.Forms.Adjustments
 
         private frmProductSelector MakeProductSelectorForm()
         {
-            frmProductSelector frm = new frmProductSelector();
-
-            frm.ExcludeProducts(SelectedProducts());
-
             if (_warehouseId == null || _warehouseId == Guid.Empty)
             {
-                errorProvider.SetError(txtWarehouse, "Warehouse is required.");
+                errorProvider.SetError(txtWarehouse, "Select a warehouse before adding products.");
                 return null;
             }
 
-            frm.FromWarehouse(_warehouseId);
+            frmProductSelector frm = new frmProductSelector();
 
-            return frm;
+            try
+            {
+                frm.ExcludeProducts(SelectedProducts());
+                frm.FromWarehouse(_warehouseId);
+
+                return frm;
+            }
+            catch
+            {
+                frm.Dispose();
+                throw;
+            }
         }
 
         private void cmbReason_SelectedIndexChanged(object sender, EventArgs e)
@@ -313,8 +318,21 @@ namespace UI.Forms.Adjustments
 
         private async void btnAddDetail_Click(object sender, EventArgs e)
         {
+            decimal quantity = SelectedQuantity;
+
+            if (quantity <= 0)
+            {
+                errorProvider.SetError(txtQuantity, "Enter a quantity greater than zero before adding a product.");
+                txtQuantity.Focus();
+                return;
+            }
+
+            errorProvider.SetError(txtQuantity, string.Empty);
+
             var form = MakeProductSelectorForm();
-            if (form == null) return;
+
+            if (form == null)
+                return;
 
             using (var frm = form)
             {
@@ -326,11 +344,10 @@ namespace UI.Forms.Adjustments
                 if (product == null)
                     return;
 
-                decimal quantity = SelectedQuantity;
-
-                if (quantity <= 0)
+                if (_details.Any(d => d.ProductId == product.Id))
                 {
-                    MessageBox.Show("Invalid quantity defined.");
+                    MessageBox.Show("This product is already part of the adjustment.", "Duplicate Product",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return;
                 }
 
@@ -370,12 +387,17 @@ namespace UI.Forms.Adjustments
                         return;
                     }
 
-                    detail.Id = result.Data.Id;
-                    detail.ProductId = result.Data.ProductId;
-                    detail.Product = result.Data.Product;
-                    detail.Quantity = result.Data.Quantity;
-                    detail.RowVersion = result.Data.RowVersion;
-                    
+                    if (result.Data != null)
+                    {
+                        detail.Id = result.Data.Id;
+                        detail.ProductId = result.Data.ProductId;
+                        detail.Quantity = result.Data.Quantity;
+                        detail.RowVersion = result.Data.RowVersion;
+
+                        if (result.Data.Product != null)
+                            detail.Product = result.Data.Product;
+                    }
+
                 }
 
                 _details.Add(detail);
@@ -396,8 +418,9 @@ namespace UI.Forms.Adjustments
             if (_isUpdateMode)
             {
                 var confirm = MessageBox.Show(
-                    $"Are you sure you want to delete {selected.Product.ProductName}?",
-                    "Confirm Delete",
+                    "Are you sure you want to remove " +
+                        DisplayFormatter.Text(selected.ProductName, "this product") + "?",
+                    "Confirm Remove",
                     MessageBoxButtons.YesNo,
                     MessageBoxIcon.Warning);
 
@@ -438,9 +461,14 @@ namespace UI.Forms.Adjustments
 
             if (quantity <= 0)
             {
-                MessageBox.Show("Invalid quantity selected.");
+                errorProvider.SetError(txtQuantity, "Enter a quantity greater than zero.");
+                txtQuantity.Focus();
                 return;
             }
+
+            errorProvider.SetError(txtQuantity, string.Empty);
+
+            btnUpdateQuantity.Enabled = false;
 
             var result = await AdjustmentsServices.UpdateAdjustmentDetailQuantity(
                 selected.Id,
@@ -450,6 +478,8 @@ namespace UI.Forms.Adjustments
                     RowVersion = selected.RowVersion
                 });
 
+            btnUpdateQuantity.Enabled = true;
+
             if (!result.IsSuccess)
             {
                 lblStatus.Text = "Failed to update quantity";
@@ -458,7 +488,13 @@ namespace UI.Forms.Adjustments
             }
 
             selected.Quantity = quantity;
+
+            int selectedIndex = dgvDetails.GetSelectedItemPosition();
+
             BindDetailsGrid();
+            dgvDetails.SetAsSelected(selectedIndex);
+
+            lblStatus.Text = "Quantity updated";
         }
 
         private async void btnSave_Click(object sender, EventArgs e)
@@ -511,13 +547,14 @@ namespace UI.Forms.Adjustments
         {
             if (_isUpdateMode) return;
             var selected = GetSelectedDetail();
-            var index = dgvDetails.GetselectedItemPosition();
+
             if (selected == null)
-            {
                 return;
-            }
+
+            int index = dgvDetails.GetSelectedItemPosition();
 
             selected.Quantity = SelectedQuantity;
+
             BindDetailsGrid();
             dgvDetails.SetAsSelected(index);
         }

@@ -1,5 +1,5 @@
 using Contract.Common.Interfaces;
-using Domain.Common.Helpers; // [FIX 7.2] ValidationHelper lives in Domain.Common.Helpers
+using Domain.Common.Helpers;  
 using Contract.Features.References.Document;
 using MechanicShop.Domain.Common.Results;
 using Microsoft.AspNetCore.Http;

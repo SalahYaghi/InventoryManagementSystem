@@ -23,7 +23,7 @@ namespace Contract.Features.Parties.Employees.Commands.UpdateEmployee
 
        async  Task<Result<EmployeeDto>>  IRequestHandler<UpdateEmployeeCommand, Result<EmployeeDto>>.Handle(UpdateEmployeeCommand request, CancellationToken cancellationToken)
         {
-            var emp = await context.Employees.FirstOrDefaultAsync(e => e.Id == request.employeeId, cancellationToken); // [FIX 6.11] +ct
+            var emp = await context.Employees.FirstOrDefaultAsync(e => e.Id == request.employeeId, cancellationToken); 
 
             if (emp == null)
 
@@ -35,7 +35,7 @@ namespace Contract.Features.Parties.Employees.Commands.UpdateEmployee
             }
 
             var warehouseFound = await context.Warehouses
-                          .AnyAsync(r => request.warehouseId == r.Id, cancellationToken); // [FIX 6.11] +ct
+                          .AnyAsync(r => request.warehouseId == r.Id, cancellationToken);  
                           
             if (!warehouseFound)
                           

@@ -73,9 +73,17 @@ namespace UI.Forms.Warehouses
 
                 dgvWarehouses.SetData(_warehouses);
 
-                dgvWarehouses.HideColumn("Id"); 
+                dgvWarehouses.HideColumn("Id");
 
-             
+                dgvWarehouses.SetColumnHeaders(new Dictionary<string, string>
+                {
+                    { "Name", "Warehouse Name" },
+                    { "Code", "Code" },
+                    { "BuildingNumber", "Building No." },
+                    { "Street", "Street" },
+                    { "IsActived", "Active" }
+                });
+
                 btnAdd.Focus();
             }
 

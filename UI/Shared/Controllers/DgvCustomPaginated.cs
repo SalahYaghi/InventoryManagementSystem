@@ -39,7 +39,8 @@ namespace UI.Shared.Controllers
             set { 
             
                 _pageNumber = value;
-                lblPageInfo.Text = "Page " + _pageNumber.ToString();
+                lblPageInfo.Text = "Page " + _pageNumber.ToString() +
+                    (_totalPages > 0 ? " of " + _totalPages.ToString() : string.Empty);
 
             }
         }
@@ -76,18 +77,28 @@ namespace UI.Shared.Controllers
 
             lblStatus.Text = "Loading...";
 
-            var result = await LoadData?.Invoke(_pageNumber, _pageSize);
+            var result = await LoadData.Invoke(_pageNumber, _pageSize);
+
+            if (result == null)
+            {
+                lblStatus.Text = "Failed to show data";
+                return;
+            }
+
             if (result.DataNotModified)
             {
-
                 lblStatus.Text = "Data Not Modified";
             }
             else
-            if (result.IsSuccess)
+            if (result.IsSuccess && result.Data != null)
             {
                 _totalPages = result.Data.TotalPages;
 
-                lblStatus.Text = "Showing " + result.Data.PageSize + " product(s)";
+                if (_pageNumber > _totalPages && _totalPages > 0)
+                    PageNumber = _totalPages;
+
+                lblStatus.Text = "Showing " + dgvCustom.RecordCount +
+                    " of " + result.Data.TotalCount + " record(s)";
             } else {
                 lblStatus.Text = "Failed to show data";
             }
@@ -100,7 +111,7 @@ namespace UI.Shared.Controllers
         private  async void btnNext_Click(object sender, EventArgs e)
         {
             
-            if (_totalPages == PageNumber )
+            if (PageNumber >= _totalPages)
             {
                 return;
             }

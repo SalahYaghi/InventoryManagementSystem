@@ -28,6 +28,11 @@ namespace Domain.Suppliers
 
             public static readonly Error NotesTooLong =
                 Error.Validation("Supplier.NotesTooLong", "Notes are too long.");
-        }
-    } 
+     
+            public static readonly Error DuplicateSupplierCode =
+                Error.Validation("Supplier.DuplicateSupplierCode", "Supplier code is duplicated.");
+
+
+    }
+} 
 

@@ -23,7 +23,13 @@ namespace UI.Forms.Employees
         public frmShowWarehouseEmployees()
         {
             InitializeComponent();
-            _warehouseId = CurrentUser.User.Employee.WarehouseId.Value;
+
+            var employee = CurrentUser.User == null ? null : CurrentUser.User.Employee;
+
+            _warehouseId = employee == null || !employee.WarehouseId.HasValue
+                ? Guid.Empty
+                : employee.WarehouseId.Value;
+
             SetupUI();
         }
 
@@ -300,7 +306,7 @@ namespace UI.Forms.Employees
             button.Size = new Size(34, 28);
             button.Text = icon;
             button.Font = new Font("Segoe UI Emoji", 8.5F, FontStyle.Regular);
-            button.BackColor = Color.Transparent;//Color.FromArgb(248, 250, 252);
+            button.BackColor = Color.Transparent;
             button.ForeColor = Color.FromArgb(24, 33, 45);
             button.FlatStyle = FlatStyle.Flat;
             button.FlatAppearance.BorderSize = 0;
@@ -317,7 +323,7 @@ namespace UI.Forms.Employees
 
             button.MouseLeave += (s, e) =>
             {
-                button.BackColor =Color.Transparent ;// Color.FromArgb(248, 250, 252);
+                button.BackColor =Color.Transparent ;
             };
 
             _toolTip.SetToolTip(button, tooltipText);

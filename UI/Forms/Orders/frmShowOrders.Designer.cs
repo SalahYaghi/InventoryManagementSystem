@@ -45,7 +45,7 @@ namespace UI.Forms.Orders
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnDelete = new System.Windows.Forms.Button();
             this.btnRefresh = new System.Windows.Forms.Button();
-            this.btnCompeleted = new System.Windows.Forms.Button();
+            this.btnComplete = new System.Windows.Forms.Button();
             this.panelContent.SuspendLayout();
             this.panelFilters.SuspendLayout();
             this.panelActions.SuspendLayout();
@@ -125,7 +125,7 @@ namespace UI.Forms.Orders
             // panelActions
             // 
             this.panelActions.BackColor = System.Drawing.Color.White;
-            this.panelActions.Controls.Add(this.btnCompeleted);
+            this.panelActions.Controls.Add(this.btnComplete);
             this.panelActions.Controls.Add(this.btnAdd);
             this.panelActions.Controls.Add(this.btnEdit);
             this.panelActions.Controls.Add(this.btnView);
@@ -176,7 +176,7 @@ namespace UI.Forms.Orders
             this.btnCancel.TabIndex = 3;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = false;
-            this.btnCancel.Click += new System.EventHandler(this.btnStatus_Click);
+            this.btnCancel.Click += new System.EventHandler(this.btnCancelOrder_Click);
             // 
             // btnDelete
             // 
@@ -199,15 +199,15 @@ namespace UI.Forms.Orders
             this.btnRefresh.UseVisualStyleBackColor = false;
             this.btnRefresh.Click += new System.EventHandler(this.btnRefresh_Click);
             // 
-            // btnCompeleted
+            // btnComplete
             // 
-            this.btnCompeleted.Location = new System.Drawing.Point(608, 16);
-            this.btnCompeleted.Name = "btnCompeleted";
-            this.btnCompeleted.Size = new System.Drawing.Size(130, 42);
-            this.btnCompeleted.TabIndex = 6;
-            this.btnCompeleted.Text = "Compelete";
-            this.btnCompeleted.UseVisualStyleBackColor = false;
-            this.btnCompeleted.Click += new System.EventHandler(this.btnCompeleted_Click);
+            this.btnComplete.Location = new System.Drawing.Point(608, 16);
+            this.btnComplete.Name = "btnComplete";
+            this.btnComplete.Size = new System.Drawing.Size(130, 42);
+            this.btnComplete.TabIndex = 6;
+            this.btnComplete.Text = "Complete";
+            this.btnComplete.UseVisualStyleBackColor = false;
+            this.btnComplete.Click += new System.EventHandler(this.btnCompleteOrder_Click);
             // 
             // frmShowOrders
             // 
@@ -231,6 +231,6 @@ namespace UI.Forms.Orders
 
         private ctrlOrderByCmb cmbOrderBy;
         private ctrlSortByCmb cmbOrderStatus;
-        private System.Windows.Forms.Button btnCompeleted;
+        private System.Windows.Forms.Button btnComplete;
     }
     } 

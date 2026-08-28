@@ -1,4 +1,4 @@
-﻿namespace UI.Forms.Refrences.Contacts
+﻿namespace UI.Forms.References.Contacts
 {
     partial class ctrlContactDetails
     {

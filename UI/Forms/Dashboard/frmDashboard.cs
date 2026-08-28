@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using UI.Shared.Helpers.UI_Helpers;
 using UI.Shared.Services;
 
 namespace UI.Forms.Dashboard
@@ -50,7 +51,7 @@ namespace UI.Forms.Dashboard
                 case "purchases today revenue":
                 case "sales revenue":
                 case "total expenses":
-                    return Properties.Resources.icons8_stocks_growth_96; // replace later with money icon
+                    return Properties.Resources.icons8_stocks_growth_96;
 
                 default:
                     return Properties.Resources.icons8_warehouse_50;
@@ -77,7 +78,12 @@ namespace UI.Forms.Dashboard
             Controls.Add(flpCards);
         }
 
-        private void AddCard(string title, long value, Color accentColor, bool isMoney = false)
+        public async Task RefreshData()
+        {
+            await _LoadCards();
+        }
+
+        private void AddCard(string title, decimal value, Color accentColor, bool isMoney = false)
         {
             Panel shadow = new Panel
             {
@@ -114,8 +120,9 @@ namespace UI.Forms.Dashboard
 
             Label valueLabel = new Label
             {
-                Text = isMoney ? value.ToString("N0") + " $" : value.ToString("N0"),
-                Font = new Font("Segoe UI", isMoney ? 22F : 27F, FontStyle.Bold),
+                Text = isMoney ? DisplayFormatter.Money(value) : DisplayFormatter.Quantity(value),
+                Font = new Font("Segoe UI", isMoney ? 19F : 27F, FontStyle.Bold),
+                AutoEllipsis = true,
                 ForeColor = Color.FromArgb(24, 33, 45),
                 Location = new Point(20, 48),
                 Size = new Size(175, 58)
@@ -183,10 +190,10 @@ namespace UI.Forms.Dashboard
         private async Task _LoadCards()
         {
             flpCards.Controls.Clear();
-
+            
             var cards = await DashboardServices.Get();
 
-            if (!cards.IsSuccess)
+            if (!cards.IsSuccess || cards.Data == null)
                 return;
 
             var data = cards.Data;
@@ -202,23 +209,19 @@ namespace UI.Forms.Dashboard
 
             AddCard("Today Sales Orders", data.TodaySaleOrders, Color.FromArgb(70, 130, 100));
             AddCard("Today Purchase Orders", data.TodayPurchaseOrders, Color.FromArgb(74, 112, 139));
-            AddCard("Reserved Stock", (long)data.ReservedStock, Color.FromArgb(160, 120, 55));
-            AddCard("Stock Movements Today", (long)data.StockMovementsToday, Color.FromArgb(100, 90, 140));
+            AddCard("Reserved Stock", data.ReservedStock, Color.FromArgb(160, 120, 55));
+            AddCard("Stock Movements Today", data.StockMovementsToday, Color.FromArgb(100, 90, 140));
 
-            AddCard("Sales Today Revenue", (long)data.SalesTodayRevenue, Color.FromArgb(70, 130, 100), true);
-            AddCard("Purchases Today Revenue", (long)data.PurchasesTodayRevenue, Color.FromArgb(150, 90, 60), true);
-            AddCard("Sales Revenue", (long)data.SalesRevenue, Color.FromArgb(74, 112, 139), true);
-            AddCard("Total Expenses", (long)data.TotalExpenses, Color.FromArgb(150, 60, 60), true);
+            AddCard("Sales Today Revenue", data.SalesTodayRevenue, Color.FromArgb(70, 130, 100), true);
+            AddCard("Purchases Today Revenue", data.PurchasesTodayRevenue, Color.FromArgb(150, 90, 60), true);
+            AddCard("Sales Revenue", data.SalesRevenue, Color.FromArgb(74, 112, 139), true);
+            AddCard("Total Expenses", data.TotalExpenses, Color.FromArgb(150, 60, 60), true);
         }
 
         private async void frmDashboard_Load(object sender, EventArgs e)
         {
-            await _LoadCards();
+         //   await _LoadCards();
         }
 
-        private void flpCards_Paint(object sender, PaintEventArgs e)
-        {
-
-        }
     }
 }

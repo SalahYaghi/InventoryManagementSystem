@@ -123,15 +123,6 @@ namespace UI.Forms.People
 
             private async void btnSave_Click(object sender, EventArgs e)
             {
-                //if (_selectedImageBytes == null || _selectedImageBytes.Length == 0)
-                //{
-                //    MessageBox.Show(
-                //        "Please choose an image first.",
-                //        "Validation",
-                //        MessageBoxButtons.OK,
-                //        MessageBoxIcon.Warning);
-                //    return;
-                //}
 
                 btnSave.Enabled = false;
                 lblStatus.Text = "Updating image...";
@@ -163,7 +154,6 @@ namespace UI.Forms.People
 
             picPersonImage.Image = null;
             ImageHelper.LoadDefaultImage(picPersonImage);
-                //_ = LoadPersonImage();
             }
 
      

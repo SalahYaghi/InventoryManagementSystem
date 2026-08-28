@@ -7,6 +7,7 @@ using Domain.Contacts.ContactInfo;
 using Domain.Suppliers;
 using MechanicShop.Domain.Common.Results;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Contract.Features.Parties.Supplier.Commands.CreateSupplier
@@ -81,6 +82,11 @@ namespace Contract.Features.Parties.Supplier.Commands.CreateSupplier
 
             }
 
+
+            // validate supplier unique SKU
+            if (await _context.Suppliers.AnyAsync(s => s.SupplierCode == request.SupplierCode)) {
+                return SupplierErrors.DuplicateSupplierCode; 
+            }
 
 
             var entityResult = Domain.Suppliers.Supplier.Create(request.Id, request.SupplierName, request.SupplierCode, contactInfo, address, request.Status, request.Notes);

@@ -43,6 +43,7 @@ namespace Contract.Features.Transactions.Orders.Commands.CreateOrder
             var orderDetails = new List<OrderDetail>();
             var productIds = request.OrderDetails.Select(p => p.ProductId).ToList();
 
+
             List<ProductVersionInfo> versions;
 
             if (request.OrderType == OrderType.Purchase || request.OrderType == OrderType.ReturnOut)
@@ -91,6 +92,8 @@ namespace Contract.Features.Transactions.Orders.Commands.CreateOrder
                 orderDetails.Add(detailObject.Value);
             }
 
+            
+   
             var entityResult = Domain.Orders.Order.Create(
                 Guid.NewGuid(),
                 request.OrderType,

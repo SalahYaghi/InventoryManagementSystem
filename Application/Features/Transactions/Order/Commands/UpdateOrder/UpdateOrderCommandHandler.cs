@@ -14,7 +14,7 @@ namespace Contract.Features.Transactions.Orders.Commands.UpdateOrder
     {
         private readonly IAppDbContext _context;
         private readonly ICachingService _cache;
-        private readonly ILogger<UpdateOrderCommandHandler> _logger; // [FIX] was ILogger<UpdateOrderStatusCommandHandler> - logs landed under the wrong category
+        private readonly ILogger<UpdateOrderCommandHandler> _logger;  
 
         public UpdateOrderCommandHandler(
             IAppDbContext context,
@@ -39,8 +39,7 @@ namespace Contract.Features.Transactions.Orders.Commands.UpdateOrder
             {
 
                 _logger.LogWarning("UpdateOrderCommandHandler stopped: order {OrderId} not found.", request.Id);
-                return ApplicationErrors.OrderNotFound; // [FIX 7.3] use the shared catalogue entry
-
+                return ApplicationErrors.OrderNotFound; 
             }
 
             var result = 

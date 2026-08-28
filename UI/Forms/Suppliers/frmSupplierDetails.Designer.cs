@@ -14,8 +14,8 @@
         private System.Windows.Forms.Label lblStatusBadge;
         private System.Windows.Forms.Label lblStatus;
 
-        private UI.Forms.Refrences.Contacts.ctrlContactDetails ctrlContactDetails1 = new Refrences.Contacts.ctrlContactDetails();
-        private UI.Forms.Refrences.Contacts.ctrlAddressDetails ctrlAddressDetails1 = new Refrences.Contacts.ctrlAddressDetails();
+        private UI.Forms.References.Contacts.ctrlContactDetails ctrlContactDetails1 = new References.Contacts.ctrlContactDetails();
+        private UI.Forms.References.Contacts.ctrlAddressDetails ctrlAddressDetails1 = new References.Contacts.ctrlAddressDetails();
 
         private System.Windows.Forms.GroupBox groupNotes;
         private System.Windows.Forms.TextBox txtNotes;
@@ -37,8 +37,8 @@
             this.panelBody = new System.Windows.Forms.FlowLayoutPanel();
             this.groupNotes = new System.Windows.Forms.GroupBox();
             this.txtNotes = new System.Windows.Forms.TextBox();
-            this.ctrlAddressDetails1 = new UI.Forms.Refrences.Contacts.ctrlAddressDetails();
-            this.ctrlContactDetails1 = new UI.Forms.Refrences.Contacts.ctrlContactDetails();
+            this.ctrlAddressDetails1 = new UI.Forms.References.Contacts.ctrlAddressDetails();
+            this.ctrlContactDetails1 = new UI.Forms.References.Contacts.ctrlContactDetails();
             this.panelFooter = new System.Windows.Forms.Panel();
             this.lblStatus = new System.Windows.Forms.Label();
             this.btnEdit = new System.Windows.Forms.Button();

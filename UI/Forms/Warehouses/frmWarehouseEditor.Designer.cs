@@ -19,7 +19,7 @@
             private System.Windows.Forms.TextBox txtWarehouseCode;
             private System.Windows.Forms.CheckBox chkStatus;
 
-            private UI.Forms.Refrences.Contacts.ctrlAddressInfo ctrlAddressInfo1;
+            private UI.Forms.References.Contacts.ctrlAddressInfo ctrlAddressInfo1;
 
             private System.Windows.Forms.Label lblStatus;
             private System.Windows.Forms.Button btnSave;
@@ -46,7 +46,7 @@
             this.lblWarehouseCode = new System.Windows.Forms.Label();
             this.txtWarehouseName = new System.Windows.Forms.TextBox();
             this.lblWarehouseName = new System.Windows.Forms.Label();
-            this.ctrlAddressInfo1 = new UI.Forms.Refrences.Contacts.ctrlAddressInfo();
+            this.ctrlAddressInfo1 = new UI.Forms.References.Contacts.ctrlAddressInfo();
             this.panelFooter = new System.Windows.Forms.Panel();
             this.lblStatus = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();

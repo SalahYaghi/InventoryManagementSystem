@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using UI;
+using Domain.Common.Helpers;
 using UI.Shared.CurrentUser;
 using UI.Shared.Services;
 using UI.Shared.Storage;
@@ -30,12 +31,8 @@ namespace HotelSystemUI.Login
             public frmLogin()
             {
                 InitializeComponent();
-         //   this.Icon = UI.Properties.Resources.inventory_x_icon;
             this.Load += (s, e) => CenterLoginCard();
-                this.Resize += (s, e) => CenterLoginCard();
-           // this.txtPassword.Text = "Salahnour1*";
-            //this.txtEmail.Text = "nour@gmail.com";
-
+            this.Resize += (s, e) => CenterLoginCard();
 
         }
 
@@ -69,13 +66,24 @@ namespace HotelSystemUI.Login
             {
                 ValidateChildren();
 
-                if (!string.IsNullOrWhiteSpace(errorProvider1.GetError(txtEmail))) return;
-                if (!string.IsNullOrWhiteSpace(errorProvider1.GetError(txtPassword))) return;
+                if (!string.IsNullOrWhiteSpace(errorProvider1.GetError(txtEmail)))
+                    return;
 
-                await LoginByCredintaials();
+                if (!string.IsNullOrWhiteSpace(errorProvider1.GetError(txtPassword)))
+                    return;
+
+                if (!ValidationHelper.ValidateEmail(Email))
+                {
+                    errorProvider1.SetError(txtEmail, "Enter a valid email address.");
+                    return;
+                }
+
+                errorProvider1.SetError(txtEmail, string.Empty);
+
+                await LoginByCredentials();
             }
 
-            private async Task LoginByCredintaials()
+            private async Task LoginByCredentials()
             {
                 SetLoading(true);
 
@@ -88,14 +96,14 @@ namespace HotelSystemUI.Login
                     });
 
 
-                    if (!result.IsSuccess)
+                    if (!result.IsSuccess || result.Data == null)
                     {
-                        MessageBox.Show(result.Title_Full, "Failed",
+                        MessageBox.Show(result.Title_Full, "Sign In Failed",
                             MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
 
-                     await Login(result.Data, chkRememberMe.Checked);
+                    await Login(result.Data, chkRememberMe.Checked);
 
                 }
                 finally
@@ -112,7 +120,7 @@ namespace HotelSystemUI.Login
             {
 
                 var refreshToken = SecurityStorage.ReadRefreshToken();
-                var email = RegisteryStorage.GetEmail();
+                var email = RegistryStorage.GetEmail();
 
                 if (string.IsNullOrEmpty(refreshToken)) return;
                 
@@ -128,14 +136,10 @@ namespace HotelSystemUI.Login
 
                 });
 
-                if (!result.IsSuccess)
-                {
-                    MessageBox.Show(result.Title_Full, "Failed",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                if (!result.IsSuccess || result.Data == null)
                     return;
-                }
 
-                await Login(result.Data , true);
+                await Login(result.Data, true);
 
             }
             finally
@@ -157,18 +161,28 @@ namespace HotelSystemUI.Login
             }
              
                 SecurityStorage.StoreRefreshToken(jwt.RefreshToken);
-                RegisteryStorage.SaveEmail(Email);
+                RegistryStorage.SaveEmail(Email);
             
 
             var user = await UserServices.GetByEmail(Email);
 
-            if (!user.IsSuccess)
+            if (!user.IsSuccess || user.Data == null)
             {
-                MessageBox.Show(user.Title_Full, "Failed",
+                MessageBox.Show(user.Title_Full, "Sign In Failed",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
-          
+
+            if (!user.Data.IsActive)
+            {
+                MessageBox.Show(
+                    "This account has been deactivated. Please contact your administrator.",
+                    "Account Inactive",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
             CurrentUser.User = user.Data;
 
             Hide();
@@ -206,11 +220,6 @@ namespace HotelSystemUI.Login
                 DialogResult = DialogResult.Cancel;
                 Close();
             }
-
-            private void chkRememberMe_CheckedChanged(object sender, EventArgs e)
-        {
-
-        }
 
             private async void frmLogin_Load(object sender, EventArgs e)
         {

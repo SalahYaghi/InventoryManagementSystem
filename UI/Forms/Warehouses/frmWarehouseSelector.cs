@@ -152,11 +152,11 @@ namespace UI.Forms.Warehouses
 
         private async void btnAdd_Click(object sender, EventArgs e)
         {
-            //using (var frm = new frmWarehouseEditor())
-            //{
-            //    if (frm.ShowDialog() == DialogResult.OK)
-            //        await LoadWarehouses();
-            //}
+            using (var frm = new frmWarehouseEditor())
+            {
+                if (frm.ShowDialog(this) == DialogResult.OK)
+                    await LoadWarehouses();
+            }
         }
 
         private void btnClose_Click(object sender, EventArgs e)

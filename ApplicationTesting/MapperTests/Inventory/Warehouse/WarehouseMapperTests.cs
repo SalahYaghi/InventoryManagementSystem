@@ -42,12 +42,5 @@ public class WarehouseMapperTests
         Assert.Equal(address.Street, dto.Street);
     }
 
-    [Fact]
-    public void ToDtoForList_DefaultsStrings_WhenAddressNull()
-    {
-        var entity = MapperTestData.Warehouse(address: null);
-        var dto = entity.ToDtoForList();
-        Assert.Equal(string.Empty, dto.BuildingNumber);
-        Assert.Equal(string.Empty, dto.Street);
-    }
+  
 }

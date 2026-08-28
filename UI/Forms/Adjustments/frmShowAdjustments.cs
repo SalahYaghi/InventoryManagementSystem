@@ -1,5 +1,4 @@
 ﻿using Contract.Requests.Adjustment;
-using Contract.Requests.Adjustments;
 using Contract.Responses;
 using System;
 using System.Collections.Generic;
@@ -15,7 +14,8 @@ namespace UI.Forms.Adjustments
     public partial class frmShowAdjustments : Form
     {
         private List<AdjustmentForListDto> _allAdjustments = new List<AdjustmentForListDto>();
-        private bool _isLoadingFilters = false;
+        private bool _filtersInitialised;
+        private bool _suppressFilterEvents;
 
         public frmShowAdjustments()
         {
@@ -23,11 +23,7 @@ namespace UI.Forms.Adjustments
             SetupUI();
         }
 
-        private async void frmShowAdjustments_Load(object sender, EventArgs e)
-        {
-            dgvAdjustments.SubscribeToLoadData(LoadData);
-            await dgvAdjustments.LoadDataGridViewData();
-        }
+        #region Setup
 
         private void SetupUI()
         {
@@ -40,11 +36,16 @@ namespace UI.Forms.Adjustments
             StyleButton(btnView, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
             StyleButton(btnEdit, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
             StyleButton(btnCancel, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
-            StyleButton(btnApprove, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
+            StyleButton(btnApprove, Color.FromArgb(39, 120, 97), Color.White);
             StyleButton(btnDelete, Color.FromArgb(220, 53, 69), Color.White);
             StyleButton(btnRefresh, Color.FromArgb(243, 246, 249), Color.FromArgb(24, 33, 45));
 
             StyleTextBox(txtSearch);
+
+            cmbOrderBy.Title = "Order By";
+            cmbAdjustmentStatus.Title = "Status";
+            cmbAdjustmentReason.Title = "Reason";
+
         }
 
         private void StyleButton(Button button, Color backColor, Color foreColor)
@@ -65,23 +66,29 @@ namespace UI.Forms.Adjustments
             textBox.ForeColor = Color.FromArgb(24, 33, 45);
         }
 
+        #endregion
+
+        #region Loading
+
+        private async void frmShowAdjustments_Load(object sender, EventArgs e)
+        {
+            dgvAdjustments.SubscribeToLoadData(LoadData);
+            await dgvAdjustments.LoadDataGridViewData();
+        }
+
         private async Task<ApiResult<PaginatedList>> LoadData(int pageNo, int pageSize)
         {
             var result = await AdjustmentsServices.GetAll(pageNo, pageSize);
 
-            if (!result.IsSuccess)
+            if (!result.IsSuccess || result.Data == null)
             {
                 MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return "Failed to load adjustments";
             }
 
-            var data = result.Data.Items;
+            _allAdjustments = result.Data.Items ?? new List<AdjustmentForListDto>();
 
-            _allAdjustments = data == null
-                ? new List<AdjustmentForListDto>()
-                : data.Cast<AdjustmentForListDto>().ToList();
-
-            dgvAdjustments.SetData<AdjustmentForListDto>(_allAdjustments);
+            dgvAdjustments.SetData(_allAdjustments);
 
             LoadFilterSources();
             ApplyCurrentView();
@@ -91,69 +98,48 @@ namespace UI.Forms.Adjustments
 
         private void LoadFilterSources()
         {
-            _isLoadingFilters = true;
+            _suppressFilterEvents = true;
 
-            cmbOrderBy.LoadData(dgvAdjustments.DgvCustom.GetColumnNamesExcept(new HashSet<string>()
+            try
             {
-                "Id",
-                "WarehouseId"
-            }));
+                cmbOrderBy.LoadData(dgvAdjustments.DgvCustom.GetColumnNamesExcept(new HashSet<string>
+                {
+                    "Id",
+                    "WarehouseId"
+                }));
 
-            cmbAdjustmentStatus.LoadData<AdjustmentForListDto>(_allAdjustments, a => a.AdjustmentStatus);
-            cmbAdjustmentReason.LoadData<AdjustmentForListDto>(_allAdjustments, a => a.AdjustmentReason);
+                cmbAdjustmentStatus.LoadData<AdjustmentForListDto>(_allAdjustments, a => a.AdjustmentStatus);
+                cmbAdjustmentReason.LoadData<AdjustmentForListDto>(_allAdjustments, a => a.AdjustmentReason);
 
-            cmbAdjustmentStatus.IndexChanged += ApplyCurrentView;
-            cmbAdjustmentReason.IndexChanged += ApplyCurrentView;
-            cmbOrderBy.IndexChanged += ApplyCurrentView;
+                if (_filtersInitialised)
+                    return;
 
-            _isLoadingFilters = false;
+                cmbAdjustmentStatus.IndexChanged += ApplyCurrentView;
+                cmbAdjustmentReason.IndexChanged += ApplyCurrentView;
+                cmbOrderBy.IndexChanged += ApplyCurrentView;
+
+                _filtersInitialised = true;
+            }
+            finally
+            {
+                _suppressFilterEvents = false;
+            }
         }
+
+        #endregion
+
+        #region Filtering
 
         private List<AdjustmentForListDto> ApplyLocalFilters()
         {
             IEnumerable<AdjustmentForListDto> query = _allAdjustments;
 
-            string search = txtSearch.Text.Trim().ToLower();
+            string search = txtSearch.Text.Trim().ToLowerInvariant();
 
             if (!string.IsNullOrWhiteSpace(search))
-            {
-                query = query.Where(a =>
-                    (a.AsjustmentType ?? "").ToLower().Contains(search) ||
-                    (a.AdjustmentStatus ?? "").ToLower().Contains(search) ||
-                    (a.AdjustmentReason ?? "").ToLower().Contains(search) ||
-                    (a.WarehouseName ?? "").ToLower().Contains(search) ||
-                    (a.CreatedAt.ToString() ?? "").ToLower().Contains(search) ||
-                    (//a.AprovedAt ?
-                    a.AprovedAt.ToString() //: ""
-                    ).ToLower().Contains(search));
-            }
+                query = query.Where(a => MatchesSearch(a, search));
 
-            switch (cmbOrderBy.GetSelectedItemName())
-            {
-                case "AsjustmentType":
-                    query = cmbOrderBy.SortData<AdjustmentForListDto>(query, a => a.AsjustmentType);
-                    break;
-
-                case "AdjustmentStatus":
-                    query = cmbOrderBy.SortData<AdjustmentForListDto>(query, a => a.AdjustmentStatus);
-                    break;
-
-                case "AdjustmentReason":
-                    query = cmbOrderBy.SortData<AdjustmentForListDto>(query, a => a.AdjustmentReason);
-                    break;
-
-                case "WarehouseName":
-                    query = cmbOrderBy.SortData<AdjustmentForListDto>(query, a => a.WarehouseName);
-                    break;
-
-                case "AprovedAt":
-                    query = cmbOrderBy.SortData<AdjustmentForListDto>(query, a => a.AprovedAt);
-                    break;
-
-                default:
-                    query = cmbOrderBy.SortData<AdjustmentForListDto>(query, a => a.CreatedAt);
-                    break;
-            }
+            query = ApplySorting(query);
 
             query = cmbAdjustmentStatus.FilterData<AdjustmentForListDto>(
                 query,
@@ -166,21 +152,68 @@ namespace UI.Forms.Adjustments
             return query.ToList();
         }
 
+        private bool MatchesSearch(AdjustmentForListDto adjustment, string search)
+        {
+            return (adjustment.AsjustmentType ?? string.Empty).ToLowerInvariant().Contains(search) ||
+                   (adjustment.AdjustmentStatus ?? string.Empty).ToLowerInvariant().Contains(search) ||
+                   (adjustment.AdjustmentReason ?? string.Empty).ToLowerInvariant().Contains(search) ||
+                   (adjustment.WarehouseName ?? string.Empty).ToLowerInvariant().Contains(search) ||
+                   adjustment.CreatedAt.ToString().ToLowerInvariant().Contains(search) ||
+                   (adjustment.AprovedAt.HasValue
+                       ? adjustment.AprovedAt.Value.ToString().ToLowerInvariant().Contains(search)
+                       : false);
+        }
+
+        private IEnumerable<AdjustmentForListDto> ApplySorting(IEnumerable<AdjustmentForListDto> query)
+        {
+            switch (cmbOrderBy.GetSelectedItemName())
+            {
+                case "AsjustmentType":
+                    return cmbOrderBy.SortData<AdjustmentForListDto>(query, a => a.AsjustmentType);
+
+                case "AdjustmentStatus":
+                    return cmbOrderBy.SortData<AdjustmentForListDto>(query, a => a.AdjustmentStatus);
+
+                case "AdjustmentReason":
+                    return cmbOrderBy.SortData<AdjustmentForListDto>(query, a => a.AdjustmentReason);
+
+                case "WarehouseName":
+                    return cmbOrderBy.SortData<AdjustmentForListDto>(query, a => a.WarehouseName);
+
+                case "AprovedAt":
+                    return cmbOrderBy.SortData<AdjustmentForListDto>(query, a => a.AprovedAt ?? DateTime.MinValue);
+
+                default:
+                    return cmbOrderBy.SortData<AdjustmentForListDto>(query, a => a.CreatedAt);
+            }
+        }
+
+        #endregion
+
+        #region View
+
         private void ApplyCurrentView()
         {
-            var adjustments = ApplyLocalFilters();
+            if (_suppressFilterEvents)
+                return;
 
-            dgvAdjustments.SetData(adjustments);
+            dgvAdjustments.SetData(ApplyLocalFilters());
 
-            dgvAdjustments.DgvCustom.HideColumn("Id");
-            dgvAdjustments.DgvCustom.HideColumn("WarehouseId");
+            var grid = dgvAdjustments.DgvCustom;
 
-            dgvAdjustments.DgvCustom.SetColumnHeader("AsjustmentType", "Type");
-            dgvAdjustments.DgvCustom.SetColumnHeader("AdjustmentStatus", "Status");
-            dgvAdjustments.DgvCustom.SetColumnHeader("AdjustmentReason", "Reason");
-            dgvAdjustments.DgvCustom.SetColumnHeader("WarehouseName", "Warehouse");
-            dgvAdjustments.DgvCustom.SetColumnHeader("AprovedAt", "Approved At");
-            dgvAdjustments.DgvCustom.SetColumnHeader("CreatedAt", "Created At");
+            grid.HideColumns("Id", "WarehouseId");
+
+            grid.SetColumnHeaders(new Dictionary<string, string>
+            {
+                { "AsjustmentType", "Type" },
+                { "AdjustmentStatus", "Status" },
+                { "AdjustmentReason", "Reason" },
+                { "WarehouseName", "Warehouse" },
+                { "AprovedAt", "Approved At" },
+                { "CreatedAt", "Created At" }
+            });
+
+            grid.FormatColumnsAsDateTime("AprovedAt", "CreatedAt");
         }
 
         private AdjustmentForListDto GetSelectedAdjustment()
@@ -188,65 +221,87 @@ namespace UI.Forms.Adjustments
             return dgvAdjustments.DgvCustom.GetSelectedItem<AdjustmentForListDto>();
         }
 
+        private AdjustmentForListDto RequireSelectedAdjustment()
+        {
+            var selected = GetSelectedAdjustment();
+
+            if (selected == null)
+                MessageBox.Show("Please select an adjustment first.", "No Selection",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            return selected;
+        }
+
         private void txtSearch_TextChanged(object sender, EventArgs e)
         {
             ApplyCurrentView();
         }
 
+        #endregion
+
+        #region Actions
+
         private void btnAdd_Click(object sender, EventArgs e)
         {
             using (var frm = new frmAdjustmentEditor())
             {
-                if (frm.ShowDialog() == DialogResult.OK)
+                if (frm.ShowDialog(this) == DialogResult.OK)
                     _ = dgvAdjustments.LoadDataGridViewData();
             }
         }
 
         private void btnView_Click(object sender, EventArgs e)
         {
-            var selected = GetSelectedAdjustment();
+            var selected = RequireSelectedAdjustment();
 
             if (selected == null)
-            {
-                MessageBox.Show("Please select an adjustment first.");
                 return;
-            }
 
             using (var frm = new frmAdjustmentDetails(selected.Id))
             {
-                frm.ShowDialog();
+                frm.ShowDialog(this);
             }
+
+            _ = dgvAdjustments.LoadDataGridViewData();
         }
 
         private void btnEdit_Click(object sender, EventArgs e)
         {
-            var selected = GetSelectedAdjustment();
+            var selected = RequireSelectedAdjustment();
 
             if (selected == null)
+                return;
+
+            if (selected.AdjustmentStatus != AdjustmentStatus.Draft.ToString())
             {
-                MessageBox.Show("Please select an adjustment first.");
+                MessageBox.Show("Only draft adjustments can be edited.", "Not Allowed",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             using (var frm = new frmAdjustmentEditor(selected.Id))
             {
-                if (frm.ShowDialog() == DialogResult.OK)
+                if (frm.ShowDialog(this) == DialogResult.OK)
                     _ = dgvAdjustments.LoadDataGridViewData();
             }
         }
 
         private async void btnApprove_Click(object sender, EventArgs e)
         {
-            var selected = GetSelectedAdjustment();
+            var selected = RequireSelectedAdjustment();
 
             if (selected == null)
+                return;
+
+            if (selected.AdjustmentStatus != AdjustmentStatus.Draft.ToString())
             {
-                MessageBox.Show("Please select an adjustment first.");
+                MessageBox.Show("Only draft adjustments can be approved.", "Not Allowed",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             var confirm = MessageBox.Show(
-                "Are you sure you want to approve this adjustment?",
+                "Approving this adjustment will change warehouse stock. Continue?",
                 "Confirm Approval",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question);
@@ -254,53 +309,46 @@ namespace UI.Forms.Adjustments
             if (confirm != DialogResult.Yes)
                 return;
 
-            btnApprove.Enabled = false;
-
-            var result = await AdjustmentsServices.UpdateStatus(selected.Id, new UpdateAdjustmentStatusRequest
-            {
-                Id = selected.Id,
-                AdjustmentStatus = AdjustmentStatus.Approved
-            });
-
-            btnApprove.Enabled = true;
-
-            if (!result.IsSuccess)
-            {
-                MessageBox.Show(result.Title_Full, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            await dgvAdjustments.LoadDataGridViewData();
+            await ChangeStatus(btnApprove, selected.Id, AdjustmentStatus.Approved);
         }
 
         private async void btnCancel_Click(object sender, EventArgs e)
         {
-            var selected = GetSelectedAdjustment();
+            var selected = RequireSelectedAdjustment();
 
             if (selected == null)
+                return;
+
+            if (selected.AdjustmentStatus == AdjustmentStatus.Cancelled.ToString())
             {
-                MessageBox.Show("Please select an adjustment first.");
+                MessageBox.Show("This adjustment is already cancelled.", "Not Allowed",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             var confirm = MessageBox.Show(
                 "Are you sure you want to cancel this adjustment?",
-                "Confirm Cancelation",
+                "Confirm Cancellation",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
 
             if (confirm != DialogResult.Yes)
                 return;
 
-            btnCancel.Enabled = false;
+            await ChangeStatus(btnCancel, selected.Id, AdjustmentStatus.Cancelled);
+        }
 
-            var result = await AdjustmentsServices.UpdateStatus(selected.Id, new UpdateAdjustmentStatusRequest
+        private async Task ChangeStatus(Button trigger, Guid adjustmentId, AdjustmentStatus status)
+        {
+            trigger.Enabled = false;
+
+            var result = await AdjustmentsServices.UpdateStatus(adjustmentId, new UpdateAdjustmentStatusRequest
             {
-                Id = selected.Id,
-                AdjustmentStatus = AdjustmentStatus.Cancelled
+                Id = adjustmentId,
+                AdjustmentStatus = status
             });
 
-            btnCancel.Enabled = true;
+            trigger.Enabled = true;
 
             if (!result.IsSuccess)
             {
@@ -313,13 +361,10 @@ namespace UI.Forms.Adjustments
 
         private async void btnDelete_Click(object sender, EventArgs e)
         {
-            var selected = GetSelectedAdjustment();
+            var selected = RequireSelectedAdjustment();
 
             if (selected == null)
-            {
-                MessageBox.Show("Please select an adjustment first.");
                 return;
-            }
 
             var confirm = MessageBox.Show(
                 "Are you sure you want to delete this adjustment?",
@@ -349,6 +394,7 @@ namespace UI.Forms.Adjustments
         {
             await dgvAdjustments.LoadDataGridViewData();
         }
+
+        #endregion
     }
 }
-

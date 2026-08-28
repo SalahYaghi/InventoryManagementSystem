@@ -108,9 +108,9 @@ namespace UI.Forms.People
                     _person.FirstName , _person.SecondName , _person.ThirdName , _person.LastName ,
                 });
                 lblPersonName.Text = fullName;
-                lblPersonSubTitle.Text = "National No: " + TranformIfNull(_person.NationalNo);
+                lblPersonSubTitle.Text = "National No: " + TransformIfNull(_person.NationalNo);
 
-                lblNationalNoValue.Text = TranformIfNull(_person.NationalNo);
+                lblNationalNoValue.Text = TransformIfNull(_person.NationalNo);
                 lblFullNameValue.Text = fullName;
                 lblGenderValue.Text = _person.Gender ? "Male" : "Female";
                 lblDateOfBirthValue.Text = _person.DateOfBirth.ToString("dd MMM yyyy");
@@ -164,7 +164,7 @@ namespace UI.Forms.People
 
 
             
-            private string TranformIfNull(string value)
+            private string TransformIfNull(string value)
             {
                 return string.IsNullOrWhiteSpace(value) ? "-" : value.Trim();
             }

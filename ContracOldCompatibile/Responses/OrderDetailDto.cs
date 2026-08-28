@@ -14,7 +14,7 @@ namespace Contract.Responses
         public byte[] RowVersion { get; set; } 
 
         public decimal CurrentQuantity => ActualQuantity == null ? Quantity : ActualQuantity.Value;
-        public string ProductName => Product.ProductName; 
+        public string ProductName => Product?.ProductName ?? string.Empty;
         public decimal TotalAmount => CurrentQuantity * UnitPrice;
     }
 }

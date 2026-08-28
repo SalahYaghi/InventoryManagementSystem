@@ -103,7 +103,7 @@ public class UsersController(IMediator sender) : ApiController
                 response => Ok(response), Problem);
         }
     [HttpGet]
-    [OutputCache(Tags = [CacheEntities.User], PolicyName = nameof(AuthenticatedUserCachePolicy))]
+//    [OutputCache(Tags = [CacheEntities.User], PolicyName = nameof(AuthenticatedUserCachePolicy))]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -126,7 +126,7 @@ public class UsersController(IMediator sender) : ApiController
                 response => Ok(response), Problem);
         }
     [HttpGet("{id:guid}")]
-    [OutputCache(Tags = [CacheEntities.User], PolicyName = nameof(AuthenticatedUserCachePolicy), VaryByRouteValueNames = ["id"])]
+    //[OutputCache(Tags = [CacheEntities.User], PolicyName = nameof(AuthenticatedUserCachePolicy), VaryByRouteValueNames = ["id"])]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -149,7 +149,7 @@ public class UsersController(IMediator sender) : ApiController
                 response => Ok(response), Problem);
         }
     [HttpGet("{email}")]
-    [OutputCache(Tags = [CacheEntities.User], PolicyName = nameof(AuthenticatedUserCachePolicy), VaryByRouteValueNames = ["email"])]
+   // [OutputCache(Tags = [CacheEntities.User], PolicyName = nameof(AuthenticatedUserCachePolicy), VaryByRouteValueNames = ["email"])]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
@@ -158,7 +158,7 @@ public class UsersController(IMediator sender) : ApiController
     [EndpointName("GetUserByEmail")]
     [MapToApiVersion("1.0")]
      
-  // [Authorize(Roles = RoleConstants.Admin)]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<ActionResult> GetUserByEmail(string email,
             CancellationToken ct)
         {

@@ -20,11 +20,11 @@ namespace Infrastructure.Services
             var stock = await context.WarehouseStocks
                 .Where(s => s.WarehouseId == warehouseId &&
                 s.ProductId == productId)
-                .Select(s => s.Quantity)
+                .Select(s => (decimal?)s.Quantity)
                 .FirstOrDefaultAsync(ct);
 
 
-            if (stock == default)
+            if (stock is null)
                 return ApplicationErrors.WarehouseStockNotFound;
 
             if (stock < quantity)
@@ -33,6 +33,7 @@ namespace Infrastructure.Services
 
             var ordersReservedQuantity = await context.OrderDetails
                  .Where(o => o.Order!.OrderStatus == OrderStatus.Pending &&
+                   o.Order!.SourceWarehouseId == warehouseId &&
                    o.ProductId == productId && (
                    o.Order!.OrderType == OrderType.Sale ||
                    o.Order!.OrderType == OrderType.Transfer ||
@@ -44,13 +45,14 @@ namespace Infrastructure.Services
 
             var adjustmentsReservedQuantity = await context.AdjustmentDetails
                .Where(o => 
+                 o.Adjustment!.WarehouseId == warehouseId &&
                  o.Adjustment!.AdjustmentType == AdjustmentType.Decrease &&
                  o.Adjustment!.AdjustmentStatus == AdjustmentStatus.Draft &&
                  o.ProductId == productId)
                .Select(o => o.Quantity).SumAsync(ct);
 
 
-            if (stock - (ordersReservedQuantity + adjustmentsReservedQuantity) < quantity)
+            if (stock.Value - (ordersReservedQuantity + adjustmentsReservedQuantity) < quantity)
                 return ApplicationErrors.QuantityInvaidReservedQuanity;
 
 

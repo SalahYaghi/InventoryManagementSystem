@@ -10,7 +10,7 @@ namespace Contract.Responses
         public ProductDto Product { get; set; }
         public byte[] RowVersion { get; set; }
 
-        public string ProductName => Product.ProductName; 
+        public string ProductName => Product?.ProductName ?? string.Empty;
         public decimal Quantity { get; set; }
     }
 }

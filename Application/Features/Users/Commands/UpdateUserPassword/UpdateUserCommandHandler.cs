@@ -35,7 +35,7 @@ namespace Contract.Features.User.Commands.CreateUser
             _logger.LogInformation("Started handling {RequestName}.", nameof(UpdateUserPasswordCommandHandler));
 
          
-            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == request.id, cancellationToken); // [FIX 6.11] +ct
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == request.id, cancellationToken); 
 
             if (user == default)
 
@@ -91,7 +91,7 @@ namespace Contract.Features.User.Commands.CreateUser
                 activeTokens.Count, user.Id);
 
             await context.SaveChangesAsync(cancellationToken);
-            await cache.RemoveByTagAsync(CacheFanout.Expand(CacheEntities.User), cancellationToken); // [FIX 1.11]
+            await cache.RemoveByTagAsync(CacheFanout.Expand(CacheEntities.User), cancellationToken); 
             await audit.SaveUserLoggingAudits(new CreateUserLoggingCommands
             {
                 Action = Domain.AuditLoggs.AuditActions.ResetPassword,

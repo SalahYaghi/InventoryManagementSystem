@@ -60,10 +60,14 @@ namespace Contract.Features.Inventory.Product.Queries.GetProductPaged
                             _context.OrderDetails
                                 .Where(w => w.ProductId == e.ProductId &&
                                             w.Order!.OrderStatus == Domain.Orders.OrderStatus.Pending &&
-                                            w.Order!.OrderType != Domain.Orders.OrderType.Purchase)
+                                            w.Order!.SourceWarehouseId == request.fromWarehouseId &&
+                                            (w.Order!.OrderType == Domain.Orders.OrderType.Sale ||
+                                             w.Order!.OrderType == Domain.Orders.OrderType.Transfer ||
+                                             w.Order!.OrderType == Domain.Orders.OrderType.ReturnOut))
                                 .Sum(v => v.Quantity)
                             + _context.AdjustmentDetails
                                 .Where(w => w.ProductId == e.ProductId &&
+                                            w.Adjustment!.WarehouseId == request.fromWarehouseId &&
                                             w.Adjustment!.AdjustmentStatus == Domain.Adjustments.AdjustmentStatus.Draft &&
                                             w.Adjustment.AdjustmentType == Domain.Adjustments.AdjustmentType.Decrease)
                                 .Sum(v => v.Quantity)

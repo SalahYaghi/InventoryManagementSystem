@@ -1,6 +1,7 @@
 using Domain.Invoices;
 using Domain.Orders;
 using InventoryManagement.Application.DomainTesting.TestHelpers;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace InventoryManagement.Application.DomainTesting.Orders;
@@ -299,6 +300,20 @@ public class OrderTests
     }
 
     [Fact]
+    public async Task UpdateStatus_CompletingAfterDueDateHasPassed_Succeeds()
+    {
+        var order = TestData.ValidSaleOrder(dueDate: DateTimeOffset.UtcNow.AddMilliseconds(50));
+        await Task.Delay(150);
+
+        Assert.True(order.DueDate < DateTimeOffset.UtcNow);
+
+        var result = order.UpdateStatus(OrderStatus.Completed);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OrderStatus.Completed, order.OrderStatus);
+    }
+
+    [Fact]
     public void UpdateStatus_OnCompletedOrder_FailsWithLocked()
     {
         var order = TestData.ValidSaleOrder();
@@ -330,15 +345,7 @@ public class OrderTests
         Assert.True(pending.IsLocked);
     }
 
-    // ⚠ BUG-EXPOSING TEST — expected to FAIL until the domain is fixed.
-    //
-    // UpdateStatus unconditionally executes `DueDate = DateTimeOffset.UtcNow;`
-    // before assigning the new status. Completing OR cancelling an order
-    // silently destroys its original due date. If you meant to record a
-    // completion timestamp, add a separate CompletedAt property — do not
-    // overwrite DueDate.
     [Fact]
-    [Trait("Category", "BugExposing")]
     public void UpdateStatus_ShouldNotOverwriteDueDate()
     {
         var dueDate = DateTimeOffset.UtcNow.AddDays(7);
@@ -346,7 +353,7 @@ public class OrderTests
 
         order.UpdateStatus(OrderStatus.Cancelled);
 
-        Assert.Equal(dueDate, order.DueDate); // FAILS: DueDate is now ~UtcNow
+        Assert.Equal(dueDate, order.DueDate);
     }
 
 
@@ -387,15 +394,7 @@ public class OrderTests
         Assert.Equal(dueDate, order.DueDate);
     }
 
-    // ⚠ BUG-EXPOSING TEST — expected to FAIL until the domain is fixed.
-    //
-    // Update assigns DiscountAmount/Notes/DueDate FIRST and only afterwards
-    // checks `NetAmount < 0`. When the discount exceeds the subtotal the method
-    // returns an error, but the invalid discount is already stored on the
-    // entity. Validate before mutating (compute the prospective net amount
-    // from the parameter, not from the already-mutated property).
     [Fact]
-    [Trait("Category", "BugExposing")]
     public void Update_WithDiscountExceedingSubtotal_ShouldNotMutate()
     {
         var order = TestData.ValidSaleOrder(discountAmount: 0m, quantity: 2m, unitPrice: 50m);
@@ -403,25 +402,36 @@ public class OrderTests
 
         var result = order.Update(discountAmount: 500m, notes: null, dueDate: null);
 
-        Assert.True(result.IsError); // this part passes
-        Assert.Equal(0m, order.DiscountAmount); // FAILS: DiscountAmount == 500
+        Assert.True(result.IsError);
+        Assert.Equal(0m, order.DiscountAmount);
     }
 
-    // ⚠ BUG-EXPOSING TEST — expected to FAIL until the domain is fixed.
-    //
-    // Create() enforces "Transfer orders have no discount" (forces null), but
-    // Update() takes a non-nullable discount and applies it to ANY order type.
-    // One call to Update() puts a Transfer order into a state Create() forbids.
+    // Create() enforces "Transfer orders have no discount" (forces null).
+    // Update() should keep that rule too instead of applying an incoming
+    // discount to any order type.
     [Fact]
-    [Trait("Category", "BugExposing")]
-    public void Update_OnTransferOrder_ShouldNotAllowDiscount()
+    public void Update_OnTransferOrder_DiscountIsAlwaysNull()
     {
         var order = TestData.ValidTransferOrder();
 
         var result = order.Update(discountAmount: 25m, notes: null, dueDate: null);
 
-        Assert.True(result.IsError || order.DiscountAmount is null);
-        // FAILS: Update succeeds and DiscountAmount becomes 25
+        Assert.True(result.IsSuccess);
+        Assert.Null(order.DiscountAmount);
+    }
+
+    [Fact]
+    public void Update_OnTransferOrder_StillUpdatesNotesAndDueDate()
+    {
+        var order = TestData.ValidTransferOrder();
+        var newDate = DateTimeOffset.UtcNow.AddDays(3);
+
+        var result = order.Update(discountAmount: 0m, notes: "updated notes", dueDate: newDate);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("updated notes", order.Notes);
+        Assert.Equal(newDate, order.DueDate);
+        Assert.Null(order.DiscountAmount);
     }
 
     // =========================================================

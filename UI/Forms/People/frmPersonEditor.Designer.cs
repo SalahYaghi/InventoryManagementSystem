@@ -1,4 +1,4 @@
-﻿using UI.Forms.People.Controlls;
+﻿using UI.Forms.People.Controls;
 
 namespace UI.Forms.People
 {
@@ -32,7 +32,7 @@ namespace UI.Forms.People
             {
             this.panelRoot = new System.Windows.Forms.Panel();
             this.panelBody = new System.Windows.Forms.Panel();
-            this.ctrlPersonEditor1 = new UI.Forms.People.Controlls.ctrlPersonEditor();
+            this.ctrlPersonEditor1 = new UI.Forms.People.Controls.ctrlPersonEditor();
             this.panelFooter = new System.Windows.Forms.Panel();
             this.lblStatus = new System.Windows.Forms.Label();
             this.btnSave = new System.Windows.Forms.Button();

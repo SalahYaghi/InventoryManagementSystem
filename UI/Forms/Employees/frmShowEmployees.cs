@@ -106,11 +106,11 @@ namespace UI.Forms.Employees
             var query = string.IsNullOrEmpty(txt) ? _employees :  _employees.Where(e =>
             {
 
-                return e.JobTitle.ToLower().Contains(txt) ||
-                e.WarehouseName.ToLower().Contains(txt) ||
-                e.FullName.ToLower().Contains(txt) ||
-                e.City.ToLower().Contains(txt) ||
-                e.Country.ToLower().Contains(txt);
+                return (e.JobTitle ?? "").ToLower().Contains(txt) ||
+                (e.WarehouseName ?? "").ToLower().Contains(txt) ||
+                (e.FullName ?? "").ToLower().Contains(txt) ||
+                (e.City ?? "").ToLower().Contains(txt) ||
+                (e.Country ?? "").ToLower().Contains(txt);
                 
             });
 
@@ -153,8 +153,6 @@ namespace UI.Forms.Employees
                     query = cmbOrderBy.SortData(query, d => d.FullName);
                     break;
             }
-
-
 
             query = cmbWarehouse.FilterData<EmployeeDtoForList>(query , 
                 p => p.WarehouseName == cmbWarehouse.GetSelectedItemName());

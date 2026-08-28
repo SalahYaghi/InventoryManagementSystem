@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using UI.Forms.People.Controlls;
+using UI.Forms.People.Controls;
 using UI.Services;
 using UI.Shared.CurrentUser;
 
@@ -199,8 +199,6 @@ namespace UI.Forms.People
             lblStatus.Text = "Saved successfully";
             DialogResult = DialogResult.OK;
             Close();
-
-
 
         }
          

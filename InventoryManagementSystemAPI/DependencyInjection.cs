@@ -19,6 +19,9 @@ using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using QuestPDF;
+using QuestPDF.Drawing;
+using QuestPDF.Infrastructure;
 using Serilog;
 using System.Net.NetworkInformation;
 using System.Text.Json;
@@ -128,13 +131,13 @@ namespace InventoryManagementSystemAPI
 
             return services;
         }
-        
+      
         public static IServiceCollection AddExceptionHandling(this IServiceCollection services)
         {
             services.AddExceptionHandler<GlobalExceptionHandler>();
             return services;
         }
-      
+  
         public static IServiceCollection AddCustomProblemDetails(this IServiceCollection services)
         {
             services.AddProblemDetails(options => options.CustomizeProblemDetails = (context) =>
@@ -255,7 +258,8 @@ namespace InventoryManagementSystemAPI
                 .AddJsonConverters()
                 .AddResponseCompressoinToProgram()
                 .AddIdentityInfrastructure()
-                .AddOpenAPIDocumentation();
+                .AddOpenAPIDocumentation()
+                ;
  
 
             return services;

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -206,10 +206,10 @@
     <Compile Include="Forms\Orders\frmTransactionEditor.Designer.cs">
       <DependentUpon>frmTransactionEditor.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\People\Controlls\ctrlPersonEditor.cs">
+    <Compile Include="Forms\People\Controls\ctrlPersonEditor.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Forms\People\Controlls\ctrlPersonEditor.Designer.cs">
+    <Compile Include="Forms\People\Controls\ctrlPersonEditor.Designer.cs">
       <DependentUpon>ctrlPersonEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\People\frmMakePersonDocument.cs">
@@ -254,22 +254,22 @@
     <Compile Include="Forms\Products\frmProductSelector.Designer.cs">
       <DependentUpon>frmProductSelector.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\Refrences\Documents\ctrlDocument.cs">
+    <Compile Include="Forms\References\Documents\ctrlDocument.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Forms\Refrences\Documents\ctrlDocument.Designer.cs">
+    <Compile Include="Forms\References\Documents\ctrlDocument.Designer.cs">
       <DependentUpon>ctrlDocument.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\Refrences\Documents\ctrlDocumentInfo.cs">
+    <Compile Include="Forms\References\Documents\ctrlDocumentInfo.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Forms\Refrences\Documents\ctrlDocumentInfo.Designer.cs">
+    <Compile Include="Forms\References\Documents\ctrlDocumentInfo.Designer.cs">
       <DependentUpon>ctrlDocumentInfo.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\Refrences\Documents\frmUpdateDocument.cs">
+    <Compile Include="Forms\References\Documents\frmUpdateDocument.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\Refrences\Documents\frmUpdateDocument.Designer.cs">
+    <Compile Include="Forms\References\Documents\frmUpdateDocument.Designer.cs">
       <DependentUpon>frmUpdateDocument.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\Suppliers\frmSupplierProductsManager.cs">
@@ -314,34 +314,34 @@
     <Compile Include="Forms\Products\frmShowProducts.Designer.cs">
       <DependentUpon>frmShowProducts.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\Refrences\Contacts\ctrlAddressInfo.cs">
+    <Compile Include="Forms\References\Contacts\ctrlAddressInfo.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Forms\Refrences\Contacts\ctrlAddressInfo.Designer.cs">
+    <Compile Include="Forms\References\Contacts\ctrlAddressInfo.Designer.cs">
       <DependentUpon>ctrlAddressInfo.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\Refrences\Contacts\ctrlContactInfo.cs">
+    <Compile Include="Forms\References\Contacts\ctrlContactInfo.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Forms\Refrences\Contacts\ctrlContactInfo.Designer.cs">
+    <Compile Include="Forms\References\Contacts\ctrlContactInfo.Designer.cs">
       <DependentUpon>ctrlContactInfo.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\Refrences\Contacts\ctrlAddressDetails.cs">
+    <Compile Include="Forms\References\Contacts\ctrlAddressDetails.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Forms\Refrences\Contacts\ctrlAddressDetails.Designer.cs">
+    <Compile Include="Forms\References\Contacts\ctrlAddressDetails.Designer.cs">
       <DependentUpon>ctrlAddressDetails.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\Refrences\Contacts\ctrlContactDetails.cs">
+    <Compile Include="Forms\References\Contacts\ctrlContactDetails.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Forms\Refrences\Contacts\ctrlContactDetails.Designer.cs">
+    <Compile Include="Forms\References\Contacts\ctrlContactDetails.Designer.cs">
       <DependentUpon>ctrlContactDetails.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\Refrences\Countries\ctrCountryCitySelector.cs">
+    <Compile Include="Forms\References\Countries\ctrCountryCitySelector.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Forms\Refrences\Countries\ctrCountryCitySelector.Designer.cs">
+    <Compile Include="Forms\References\Countries\ctrCountryCitySelector.Designer.cs">
       <DependentUpon>ctrCountryCitySelector.cs</DependentUpon>
     </Compile>
     <Compile Include="Forms\Suppliers\frmSupplierDetails.cs">
@@ -436,11 +436,13 @@
       <DependentUpon>DgvCustomPaginated.cs</DependentUpon>
     </Compile>
     <Compile Include="Shared\CurrentUser\CurrentUser.cs" />
-    <Compile Include="Shared\Helpers\IO Helper\FileHelper.cs" />
-    <Compile Include="Shared\Helpers\IO Helper\FileResponse.cs" />
-    <Compile Include="Shared\Helpers\UI Helpers\ImageHelper.cs" />
-    <Compile Include="Shared\Helpers\UI Helpers\TextFormattingHelper.cs" />
-    <Compile Include="Shared\Helpers\ValidatoinHelper\ValidationHelper.cs" />
+    <Compile Include="Shared\Helpers\IOHelper\FileHelper.cs" />
+    <Compile Include="Shared\Helpers\IOHelper\FileResponse.cs" />
+    <Compile Include="Shared\Helpers\UIHelpers\ImageHelper.cs" />
+    <Compile Include="Shared\Helpers\UIHelpers\DisplayFormatter.cs" />
+    <Compile Include="Shared\Helpers\UIHelpers\NumericInputHelper.cs" />
+    <Compile Include="Shared\Helpers\UIHelpers\TextFormattingHelper.cs" />
+    <Compile Include="Shared\Helpers\ValidationHelper\ValidationHelper.cs" />
     <Compile Include="Shared\HttpClient\ApiResult.cs" />
     <Compile Include="Shared\HttpClient\AuthorizationHandler.cs" />
     <Compile Include="Shared\HttpClient\HttpClientHelper.cs" />
@@ -484,11 +486,15 @@
     <Compile Include="Shared\Controllers\DgvCustom.Designer.cs">
       <DependentUpon>DgvCustom.cs</DependentUpon>
     </Compile>
+    <Compile Include="Shared\Controllers\DgvCustom.Helpers.cs">
+      <DependentUpon>DgvCustom.cs</DependentUpon>
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Shared\frmImagePreviewer.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Shared\Storage\ConfigurationManagement.cs" />
-    <Compile Include="Shared\Storage\RegisteryStorage.cs" />
+    <Compile Include="Shared\Storage\RegistryStorage.cs" />
     <Compile Include="Shared\Storage\SecurityStorage.cs" />
     <EmbeddedResource Include="BaseForm.resx">
       <DependentUpon>BaseForm.cs</DependentUpon>
@@ -547,7 +553,7 @@
     <EmbeddedResource Include="Forms\Orders\frmTransactionEditor.resx">
       <DependentUpon>frmTransactionEditor.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\People\Controlls\ctrlPersonEditor.resx">
+    <EmbeddedResource Include="Forms\People\Controls\ctrlPersonEditor.resx">
       <DependentUpon>ctrlPersonEditor.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\People\frmMakePersonDocument.resx">
@@ -580,25 +586,25 @@
     <EmbeddedResource Include="Forms\Products\frmShowProducts.resx">
       <DependentUpon>frmShowProducts.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\Refrences\Contacts\ctrlAddressDetails.resx">
+    <EmbeddedResource Include="Forms\References\Contacts\ctrlAddressDetails.resx">
       <DependentUpon>ctrlAddressDetails.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\Refrences\Contacts\ctrlAddressInfo.resx">
+    <EmbeddedResource Include="Forms\References\Contacts\ctrlAddressInfo.resx">
       <DependentUpon>ctrlAddressInfo.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\Refrences\Contacts\ctrlContactInfo.resx">
+    <EmbeddedResource Include="Forms\References\Contacts\ctrlContactInfo.resx">
       <DependentUpon>ctrlContactInfo.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\Refrences\Countries\ctrCountryCitySelector.resx">
+    <EmbeddedResource Include="Forms\References\Countries\ctrCountryCitySelector.resx">
       <DependentUpon>ctrCountryCitySelector.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\Refrences\Documents\ctrlDocument.resx">
+    <EmbeddedResource Include="Forms\References\Documents\ctrlDocument.resx">
       <DependentUpon>ctrlDocument.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\Refrences\Documents\ctrlDocumentInfo.resx">
+    <EmbeddedResource Include="Forms\References\Documents\ctrlDocumentInfo.resx">
       <DependentUpon>ctrlDocumentInfo.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Forms\Refrences\Documents\frmUpdateDocument.resx">
+    <EmbeddedResource Include="Forms\References\Documents\frmUpdateDocument.resx">
       <DependentUpon>frmUpdateDocument.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\Suppliers\frmShowSuppliers.resx">

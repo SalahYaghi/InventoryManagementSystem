@@ -13,8 +13,8 @@
         private System.Windows.Forms.Label lblCustomerCode;
         private System.Windows.Forms.Label lblStatus;
 
-        private UI.Forms.Refrences.Contacts.ctrlContactDetails ctrlContactDetails1;
-        private UI.Forms.Refrences.Contacts.ctrlAddressDetails ctrlAddressDetails1;
+        private UI.Forms.References.Contacts.ctrlContactDetails ctrlContactDetails1;
+        private UI.Forms.References.Contacts.ctrlAddressDetails ctrlAddressDetails1;
 
         private System.Windows.Forms.GroupBox groupNotes;
         private System.Windows.Forms.TextBox txtNotes;
@@ -36,8 +36,8 @@
             this.panelBody = new System.Windows.Forms.FlowLayoutPanel();
             this.groupNotes = new System.Windows.Forms.GroupBox();
             this.txtNotes = new System.Windows.Forms.TextBox();
-            this.ctrlAddressDetails1 = new UI.Forms.Refrences.Contacts.ctrlAddressDetails();
-            this.ctrlContactDetails1 = new UI.Forms.Refrences.Contacts.ctrlContactDetails();
+            this.ctrlAddressDetails1 = new UI.Forms.References.Contacts.ctrlAddressDetails();
+            this.ctrlContactDetails1 = new UI.Forms.References.Contacts.ctrlContactDetails();
             this.panelFooter = new System.Windows.Forms.Panel();
             this.lblStatus = new System.Windows.Forms.Label();
             this.btnEdit = new System.Windows.Forms.Button();

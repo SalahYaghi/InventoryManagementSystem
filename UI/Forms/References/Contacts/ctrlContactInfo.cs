@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace UI.Forms.Refrences.Contacts
+namespace UI.Forms.References.Contacts
 {
     
         public partial class ctrlContactInfo : UserControl

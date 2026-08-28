@@ -61,7 +61,6 @@ namespace UI.Forms.Users
             this.panelContent.Name = "panelContent";
             this.panelContent.Size = new System.Drawing.Size(1180, 720);
             this.panelContent.TabIndex = 0;
-            this.panelContent.Paint += new System.Windows.Forms.PaintEventHandler(this.panelContent_Paint);
             // 
             // dgvUsers
             // 
@@ -72,7 +71,6 @@ namespace UI.Forms.Users
             this.dgvUsers.Name = "dgvUsers";
             this.dgvUsers.Size = new System.Drawing.Size(1180, 520);
             this.dgvUsers.TabIndex = 3;
-            this.dgvUsers.Load += new System.EventHandler(this.dgvUsers_Load);
             // 
             // cmbOrderBy
             // 
@@ -82,7 +80,6 @@ namespace UI.Forms.Users
             this.cmbOrderBy.Name = "cmbOrderBy";
             this.cmbOrderBy.Size = new System.Drawing.Size(360, 68);
             this.cmbOrderBy.TabIndex = 12;
-            this.cmbOrderBy.Load += new System.EventHandler(this.cmbOrderBy_Load);
             // 
             // cmbActive
             // 
@@ -93,7 +90,6 @@ namespace UI.Forms.Users
             this.cmbActive.Size = new System.Drawing.Size(218, 79);
             this.cmbActive.TabIndex = 14;
             this.cmbActive.Title = "Active";
-            this.cmbActive.Load += new System.EventHandler(this.cmbActive_Load);
             // 
             // panelFilters
             // 
@@ -105,7 +101,6 @@ namespace UI.Forms.Users
             this.panelFilters.Name = "panelFilters";
             this.panelFilters.Size = new System.Drawing.Size(1180, 82);
             this.panelFilters.TabIndex = 1;
-            this.panelFilters.Paint += new System.Windows.Forms.PaintEventHandler(this.panelFilters_Paint);
             // 
             // lblSearch
             // 
@@ -116,7 +111,6 @@ namespace UI.Forms.Users
             this.lblSearch.Size = new System.Drawing.Size(180, 22);
             this.lblSearch.TabIndex = 0;
             this.lblSearch.Text = "Search users";
-            this.lblSearch.Click += new System.EventHandler(this.lblSearch_Click);
             // 
             // txtSearch
             // 
@@ -140,7 +134,6 @@ namespace UI.Forms.Users
             this.panelActions.Name = "panelActions";
             this.panelActions.Size = new System.Drawing.Size(1180, 74);
             this.panelActions.TabIndex = 0;
-            this.panelActions.Paint += new System.Windows.Forms.PaintEventHandler(this.panelActions_Paint);
             // 
             // btnRefresh
             // 
@@ -198,7 +191,6 @@ namespace UI.Forms.Users
             this.panelFooter.Name = "panelFooter";
             this.panelFooter.Size = new System.Drawing.Size(1180, 44);
             this.panelFooter.TabIndex = 2;
-            this.panelFooter.Paint += new System.Windows.Forms.PaintEventHandler(this.panelFooter_Paint);
             // 
             // lblStatus
             // 
@@ -209,7 +201,6 @@ namespace UI.Forms.Users
             this.lblStatus.Size = new System.Drawing.Size(500, 23);
             this.lblStatus.TabIndex = 0;
             this.lblStatus.Text = "Ready";
-            this.lblStatus.Click += new System.EventHandler(this.lblStatus_Click);
             // 
             // btnDelete
             // 

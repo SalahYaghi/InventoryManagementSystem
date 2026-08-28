@@ -22,6 +22,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
+using QuestPDF;
+using QuestPDF.Drawing;
 using QuestPDF.Infrastructure;
 using StackExchange.Redis;
 using System;
@@ -57,9 +59,9 @@ namespace Infrastructure
 
             return services;
         }
-      
-        
-        
+
+
+
         private static IServiceCollection AddCache(this IServiceCollection services 
             , IConfiguration configuration)
         {
@@ -229,7 +231,12 @@ namespace Infrastructure
         }
         public static IServiceCollection RegisterQuestPDF(this IServiceCollection services) {
 
-            QuestPDF.Settings.License = LicenseType.Community;
+            Settings.License = LicenseType.Community;
+
+            FontManager.RegisterFont(File.OpenRead(Path.Combine(AppContext.BaseDirectory, "NotoEmoji-Regular.ttf")));
+
+            FontManager.RegisterFont(File.OpenRead(Path.Combine(AppContext.BaseDirectory, "NotoSansArabic.ttf")));
+             
             return services;
         }
         public static IServiceCollection RegisterSerilog(this IServiceCollection services) {
@@ -248,7 +255,7 @@ namespace Infrastructure
             services.RegisterSecurity(configuration)
                      .AddCache(configuration)
                      .RegisterBackgroundServices();
-
+                      
 
             return services;
         }

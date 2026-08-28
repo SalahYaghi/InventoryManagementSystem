@@ -1,12 +1,13 @@
 using Application.Common.Dtos.Loggs;
 using Contract.Common.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using Contract.Features.Identity.Commands.JwtGenerate;
+using Domain.Identity.Users;
 using Domain.Products.Enums;
 using Infrastructure.Identity;
 using MechanicShop.Domain.Common.Results;
 using MediatR;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace Contract.Features.Identity.Commands.JwtGenerate
         private IJwtProvider _jwtProvider;
         private IAuditLogService _audit;
         private IHttpContextAccessor _httpContext;
-        private readonly IAppDbContext _context; // [FIX 6.5] needed to resolve the user id on a FAILED login
+        private readonly IAppDbContext _context;  
 
         public JwtGenerateCommandHandler(
             IIdentityService identityService,
@@ -65,7 +66,8 @@ namespace Contract.Features.Identity.Commands.JwtGenerate
                 return jwtToken.Errors;
 
             }
-            
+
+
             await _audit.SaveUserLoggingAudits(new CreateUserLoggingCommands
             {
                 Action = Domain.AuditLoggs.AuditActions.Login,
@@ -73,9 +75,20 @@ namespace Contract.Features.Identity.Commands.JwtGenerate
                 UserId = userResult.Value.Id,
                 IpAddress = _httpContext.HttpContext?.Connection?.RemoteIpAddress?.ToString() ?? "Not-Defined",
                 UserAgent = _httpContext.HttpContext?.Request?.Headers["User-Agent"].ToString() ?? "Not-Defined"
-            }, cancellationToken); // [FIX 6.11] +ct
-           
-        
+            }, cancellationToken);
+
+
+            var lastLoginResult = await _identityService.UpdateLastLoginAt(userResult.Value.Id, cancellationToken);
+
+            if (lastLoginResult.IsError)
+            {
+                _logger.LogError(
+                    "Failed to update last login date with errors: {Errors}",
+                    lastLoginResult.Errors);
+            }
+
+
+
             _logger.LogInformation("JwtGenerateCommandHandler completed successfully.");
             return jwtToken.Value;
         }

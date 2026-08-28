@@ -47,9 +47,7 @@ namespace UI.Services
             }
 
             var response = await _inventoryClient.GetAsync(route);
-
-         
-
+             
             return await ReadResponse<PaginatedList<ProductDtoForList>>(response);
         }
 

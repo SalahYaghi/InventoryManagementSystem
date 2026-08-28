@@ -49,12 +49,6 @@ namespace Contract.Features.Transactions.Orders.Commands.UpdateOrder
                 return OrderErrors.OrderIsLocked;
             }
 
-            if (request.OrderStatus == OrderStatus.Completed)
-            {
-                var movement = await ApplyStockMovementsAsync(entity, cancellationToken);
-                if (movement.IsError) return movement.Errors;
-            }
-
             var result = entity.UpdateStatus(request.OrderStatus);
 
             if (result.IsError)
@@ -65,6 +59,9 @@ namespace Contract.Features.Transactions.Orders.Commands.UpdateOrder
 
             if (entity.OrderStatus == OrderStatus.Completed)
             {
+                var movement = await ApplyStockMovementsAsync(entity, cancellationToken);
+                if (movement.IsError) return movement.Errors;
+
                 entity.AddDomainEvent(new OrderCompeletedEvent { OrderId = entity.Id });
             }
 
@@ -80,7 +77,7 @@ namespace Contract.Features.Transactions.Orders.Commands.UpdateOrder
 
         private async Task<Result<Success>> ApplyStockMovementsAsync(Domain.Orders.Order entity, CancellationToken ct)
         {
-            var productIds = entity.OrderDetails.Select(o => o.ProductId).ToList();
+            var productIds = entity.OrderDetails.Select(o => o.ProductId).ToHashSet();
 
             var sourceStock = await _context.WarehouseStocks
                 .Where(w => w.WarehouseId == entity.SourceWarehouseId && productIds.Contains(w.ProductId))
@@ -113,6 +110,7 @@ namespace Contract.Features.Transactions.Orders.Commands.UpdateOrder
                         }
 
                         await _context.WarehouseStocks.AddAsync(newStock.Value, ct);
+                        sourceStock.Add(newStock.Value);
                         continue;
                     }
 

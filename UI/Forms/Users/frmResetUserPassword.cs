@@ -3,6 +3,8 @@ using Contract.Requests.Users;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using Domain.Common.Helpers;
+using UI.Shared.Helpers.UI_Helpers;
 using UI.Shared.Services;
 
 namespace UI.Forms.Users
@@ -24,7 +26,8 @@ namespace UI.Forms.Users
    
         private void SetupUI()
         {
-            lblSubtitle.Text = "Update password for user: ";
+            lblSubtitle.Text = "Update password for user: " +
+                DisplayFormatter.Text(_username, DisplayFormatter.NotAvailablePlaceholder);
 
             BackColor = Color.FromArgb(243, 246, 249);
 
@@ -72,9 +75,22 @@ namespace UI.Forms.Users
                 valid = false;
             }
 
+            else if (!ValidationHelper.ValidatePassword(txtNewPassword.Text))
+            {
+                errorProvider.SetError(txtNewPassword, ValidationHelper.DescribePasswordRules());
+                valid = false;
+            }
+
             if (txtNewPassword.Text != txtConfirmPassword.Text)
             {
                 errorProvider.SetError(txtConfirmPassword, "Passwords do not match.");
+                valid = false;
+            }
+
+            if (txtOldPassword.Text == txtNewPassword.Text &&
+                !string.IsNullOrWhiteSpace(txtNewPassword.Text))
+            {
+                errorProvider.SetError(txtNewPassword, "The new password must be different from the old password.");
                 valid = false;
             }
 

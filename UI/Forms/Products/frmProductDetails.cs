@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using UI.Services;
+using UI.Shared.Helpers.UI_Helpers;
 
 namespace UI.Forms.Products
 { 
@@ -66,6 +67,12 @@ namespace UI.Forms.Products
                     return;
                 }
 
+                if (result.Data == null)
+                {
+                    lblStatus.Text = "Failed to load product";
+                    return;
+                }
+
                 _product = result.Data;
                 BindProduct();
 
@@ -77,14 +84,19 @@ namespace UI.Forms.Products
                 if (_product == null)
                     return;
 
-                lblProductName.Text = _product.ProductName;
-                lblSku.Text = "SKU: " + _product.SKU;
+                lblProductName.Text = DisplayFormatter.Text(_product.ProductName, "Unnamed product");
+                lblSku.Text = "SKU: " + DisplayFormatter.Text(_product.SKU);
 
-                lblBarcodeValue.Text = string.IsNullOrWhiteSpace(_product.BarCode) ? "-" : _product.BarCode;
-                lblCategoryValue.Text = _product.Category == null ? "-" : _product.Category.Name;
+                lblBarcodeValue.Text = DisplayFormatter.Text(_product.BarCode, DisplayFormatter.NotSetPlaceholder);
+                lblCategoryValue.Text = _product.Category == null
+                    ? DisplayFormatter.NotSetPlaceholder
+                    : DisplayFormatter.Text(_product.Category.Name, DisplayFormatter.NotSetPlaceholder);
                 lblUnitValue.Text = _product.Unit.ToString();
-                lblPriceValue.Text = _product.SellingPrice.ToString("N2");
-                txtDescription.Text = string.IsNullOrWhiteSpace(_product.Description) ? "No description provided." : _product.Description;
+                lblPriceValue.Text = DisplayFormatter.Money(_product.SellingPrice);
+
+                txtDescription.Text = string.IsNullOrWhiteSpace(_product.Description)
+                    ? "No description provided."
+                    : _product.Description.Trim();
 
                 if (_product.IsActive)
                 {

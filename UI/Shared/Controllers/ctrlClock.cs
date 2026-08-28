@@ -22,16 +22,17 @@ namespace UI.Shared.Controllers
             lblDateTime.Text = DateTimeOffset.Now.ToString("dddd, dd MMMM yyyy   hh:mm:ss tt");
         }
         public void StartClock() {
+            if (timer.Enabled) return;
+            timer.Tick -= ClockTime_Tick;
             timer.Tick += ClockTime_Tick;
             timer.Interval = 1000;
             timer.Start();
             UpdateDateTime();
         }
-        public void StopClock() { 
-        
-       
-        
-        } 
+        public void StopClock() {
+            timer.Stop();
+            timer.Tick -= ClockTime_Tick;
+        }
       }
 }
 

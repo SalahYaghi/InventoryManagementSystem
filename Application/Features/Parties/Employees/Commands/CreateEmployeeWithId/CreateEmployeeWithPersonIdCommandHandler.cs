@@ -23,7 +23,7 @@ namespace Contract.Features.Parties.Employees.Commands.CreateEmployeeWithId
        async  Task<Result<EmployeeDto>>  IRequestHandler<CreateEmployeeWithPersonIdCommand, Result<EmployeeDto>>.Handle(CreateEmployeeWithPersonIdCommand request, CancellationToken cancellationToken)
         {
             var warehouseFound = await context.Warehouses
-                          .AnyAsync(r => request.warehouseId == r.Id, cancellationToken); // [FIX 6.11] +ct
+                          .AnyAsync(r => request.warehouseId == r.Id, cancellationToken);  
                           
             if (!warehouseFound)
                           
@@ -35,8 +35,7 @@ namespace Contract.Features.Parties.Employees.Commands.CreateEmployeeWithId
             }
  
             var personExists = await context.People
-                .AnyAsync(p => p.Id == request.personId, cancellationToken); // [FIX 6.11] +ct
-
+                .AnyAsync(p => p.Id == request.personId, cancellationToken);  
             if (!personExists)
 
             {
@@ -58,7 +57,7 @@ namespace Contract.Features.Parties.Employees.Commands.CreateEmployeeWithId
 
             }
 
-            await context.Employees.AddAsync(empResult.Value, cancellationToken); // [FIX 6.11] +ct
+            await context.Employees.AddAsync(empResult.Value, cancellationToken);  
             await context.SaveChangesAsync(cancellationToken);
             
 

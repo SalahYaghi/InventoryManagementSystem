@@ -15,7 +15,7 @@ using UI.Services;
 using UI.Shared;
 using UI.Shared.Helpers.IO_Helper;
 
-namespace UI.Forms.Refrences.Documents
+namespace UI.Forms.References.Documents
 {
         public partial class ctrlDocumentInfo : UserControl
         {

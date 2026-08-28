@@ -9,9 +9,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using UI.Forms.Refrences.Countries;
+using UI.Forms.References.Countries;
 
-namespace UI.Forms.Refrences.Contacts
+namespace UI.Forms.References.Contacts
 {
 
         public partial class ctrlAddressInfo : UserControl

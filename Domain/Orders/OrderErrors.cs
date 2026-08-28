@@ -28,9 +28,6 @@ namespace Domain.Orders
         public static readonly Error CannotIssueInvoiceBeforeOrderCompeletion =
            Error.Validation("Order.InvalidInvoiceIssueOrder", "Cannot issue invoice without order compeletions.");
 
-        public static readonly Error CannotCompeleteOrderBeforeDueDateComes =
-           Error.Validation("Order.InvalidCompeletionOrder", "Cannot compelete the order before due date comes.");
-
         public static readonly Error OrderIsLocked =
            Error.Conflict("Order.OrderIsLocked", "Order is locked can't be modiefied.");
 

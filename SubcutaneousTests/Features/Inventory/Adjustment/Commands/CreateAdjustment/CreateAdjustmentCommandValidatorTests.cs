@@ -19,7 +19,15 @@ public class CreateAdjustmentCommandValidatorTests
     [Fact]
     public void Validate_WithValidData_ShouldNotHaveValidationError()
     {
-        var command = new CreateAdjustmentCommand { WarehouseId = Guid.NewGuid(), AdjustmentReason = AdjustmentReason.ExtraFound, Notes = "Valid" };
+        var c = new CreateAdjustmentDetailInnerCommand { ProductId = Guid.NewGuid(), Quantity = 1m, RowVersion = [1, 2, 3] };
+        var command = new CreateAdjustmentCommand
+        {
+            WarehouseId = Guid.NewGuid(),
+            AdjustmentReason = AdjustmentReason.ExtraFound,
+            Notes = "Valid",
+            AdjustmentDetailCommands = new() {c
+        }
+        }; 
         _validator.TestValidate(command).ShouldNotHaveAnyValidationErrors();
     }
 

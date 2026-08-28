@@ -92,10 +92,15 @@ namespace UI.Forms.Customers
             dgvCustomers.HideColumn("ContactId");
             dgvCustomers.HideColumn("AddressId");
 
-            dgvCustomers.SetColumnHeader("CustomerName", "Customer Name");
-            dgvCustomers.SetColumnHeader("CustomerCode", "Customer Code");
-            dgvCustomers.SetColumnHeader("Status", "Active");
-            dgvCustomers.SetColumnHeader("Notes", "Notes");
+            dgvCustomers.SetColumnHeaders(new Dictionary<string, string>
+            {
+                { "CustomerName", "Customer Name" },
+                { "CustomerCode", "Code" },
+                { "Email", "Email" },
+                { "PhoneNumber", "Phone" },
+                { "BuildingNumber", "Building No." },
+                { "Street", "Street" }
+            });
         }
 
         private CustomerForListDto SelectedCustomer => dgvCustomers.GetSelectedItem<CustomerForListDto>();

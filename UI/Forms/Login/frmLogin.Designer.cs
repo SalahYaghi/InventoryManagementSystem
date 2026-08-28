@@ -182,7 +182,6 @@
             this.chkRememberMe.TabIndex = 7;
             this.chkRememberMe.Text = "Remember Me";
             this.chkRememberMe.UseVisualStyleBackColor = true;
-            this.chkRememberMe.CheckedChanged += new System.EventHandler(this.chkRememberMe_CheckedChanged);
             // 
             // chkShowPassword
             // 

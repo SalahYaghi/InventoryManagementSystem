@@ -2,6 +2,8 @@
 using Domain.Contacts.Address;
 using Domain.Invoices;
 using Domain.Warehouses;
+using QuestPDF;
+using QuestPDF.Drawing;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -23,16 +25,19 @@ namespace Infrastructure.Services
         {
             ArgumentNullException.ThrowIfNull(invoice);
 
-            QuestPDF.Settings.License = LicenseType.Community;
-
             return Document.Create(container =>
             {
                 container.Page(page =>
                 {
+
+                    page.DefaultTextStyle(x => x
+    .FontFamily("Lato", "Noto Sans Arabic", "Noto Emoji")
+    .FontSize(9)
+    .FontColor(DarkText));
+
                     page.Size(PageSizes.A4);
                     page.Margin(30);
-                    page.DefaultTextStyle(x => x.FontSize(9).FontColor(DarkText));
-
+ 
                     page.Header().Element(c => ComposeHeader(c, invoice));
                     page.Content().Element(c => ComposeContent(c, invoice));
                     page.Footer().Element(ComposeFooter);

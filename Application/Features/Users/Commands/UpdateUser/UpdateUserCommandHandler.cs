@@ -29,7 +29,7 @@ namespace Contract.Features.User.Commands.CreateUser
             _logger.LogInformation("Started handling {RequestName}.", nameof(UpdateUserCommandHandler));
 
             bool usernameFound = await context.Users.AnyAsync(u => u.Username == request.username&&
-            u.Id != request.id, cancellationToken); // [FIX 6.11] +ct
+            u.Id != request.id, cancellationToken);  
             if (usernameFound)
             {
                 _logger.LogWarning("UpdateUserCommandHandler stopped because an error result was returned: {ErrorResult}.", "ApplicationErrors.UserWithUsernameAlreadyExists");
@@ -37,14 +37,14 @@ namespace Contract.Features.User.Commands.CreateUser
             }
            
             bool emailFound = await context.Users.AnyAsync(u => u.Email == request.email && 
-            u.Id != request.id, cancellationToken); // [FIX 6.11] +ct
+            u.Id != request.id, cancellationToken);  
             if (emailFound)
             {
                 _logger.LogWarning("UpdateUserCommandHandler stopped because an error result was returned: {ErrorResult}.", "ApplicationErrors.UserWithEmailAlreadyExists");
                 return ApplicationErrors.UserWithEmailAlreadyExists;
             }
 
-            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == request.id, cancellationToken); // [FIX 6.11] +ct
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == request.id, cancellationToken); 
 
             if (user == default)
 
@@ -69,7 +69,7 @@ namespace Contract.Features.User.Commands.CreateUser
             await context.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("UpdateUserCommandHandler completed successfully.");
-            await cache.RemoveByTagAsync(CacheFanout.Expand(CacheEntities.User), cancellationToken); // [FIX 1.11]
+            await cache.RemoveByTagAsync(CacheFanout.Expand(CacheEntities.User), cancellationToken);  
 
             var dto=  user.ToDto();
 

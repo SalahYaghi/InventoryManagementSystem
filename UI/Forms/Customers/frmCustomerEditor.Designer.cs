@@ -1,4 +1,4 @@
-﻿using UI.Forms.Refrences.Contacts;
+﻿using UI.Forms.References.Contacts;
 
 namespace UI.Forms.Customers
 {
@@ -52,7 +52,7 @@ namespace UI.Forms.Customers
             this.lblCustomerCode = new System.Windows.Forms.Label();
             this.txtCustomerCode = new System.Windows.Forms.TextBox();
             this.chkStatus = new System.Windows.Forms.CheckBox();
-            this.ctrlContactInfo1 = new UI.Forms.Refrences.Contacts.ctrlContactInfo();
+            this.ctrlContactInfo1 = new UI.Forms.References.Contacts.ctrlContactInfo();
             this.groupNotes = new System.Windows.Forms.GroupBox();
             this.lblNotes = new System.Windows.Forms.Label();
             this.txtNotes = new System.Windows.Forms.TextBox();
@@ -64,7 +64,7 @@ namespace UI.Forms.Customers
             this.lblTitle = new System.Windows.Forms.Label();
             this.lblSubtitle = new System.Windows.Forms.Label();
             this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
-            this.ctrlAddressInfo1 = new UI.Forms.Refrences.Contacts.ctrlAddressInfo();
+            this.ctrlAddressInfo1 = new UI.Forms.References.Contacts.ctrlAddressInfo();
             this.panelRoot.SuspendLayout();
             this.flowBody.SuspendLayout();
             this.groupBasic.SuspendLayout();

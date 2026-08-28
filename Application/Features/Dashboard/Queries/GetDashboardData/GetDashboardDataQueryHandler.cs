@@ -50,7 +50,9 @@ namespace Contract.Features.Dashboard.Queries.GetDashboardData
 
             dashboardDto.ReservedStock = await context.OrderDetails
                 .Where(w => w.Order!.OrderStatus == OrderStatus.Pending &&
-                            w.Order!.OrderType != OrderType.Purchase)
+                            (w.Order!.OrderType == OrderType.Sale ||
+                             w.Order!.OrderType == OrderType.Transfer ||
+                             w.Order!.OrderType == OrderType.ReturnOut))
                 .SumAsync(v => v.Quantity, cancellationToken);
 
             dashboardDto.ReservedStock += await context.AdjustmentDetails
@@ -75,7 +77,7 @@ namespace Contract.Features.Dashboard.Queries.GetDashboardData
                 .Where(o => o.OrderStatus == OrderStatus.Completed && o.OrderType == orderType);
 
             if (from.HasValue && to.HasValue)
-                query = query.Where(o => o.DueDate >= from.Value && o.DueDate < to.Value);
+                query = query.Where(o => o.LastModifiedUtc >= from.Value && o.LastModifiedUtc < to.Value);
 
             return await query
                 .Select(o => o.OrderDetails.Sum(d => d.Quantity * d.UnitPrice) - (o.DiscountAmount ?? 0))

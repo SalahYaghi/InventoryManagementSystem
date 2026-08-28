@@ -167,12 +167,8 @@ public class PersonTests
         Assert.Equal(PersonErrors.AddressRequired.Code, result.TopError.Code);
     }
 
-    // ⚠ DESIGN-NOTE TEST — FullName is FirstName + SecondName + LastName and
-    // silently omits ThirdName even when present. If that's intentional
-    // (common in some naming conventions) delete this test; if not, fix FullName.
     [Fact]
-    [Trait("Category", "BugExposing")]
-    public void FullName_ShouldIncludeThirdName_WhenPresent()
+    public void FullName_IncludesThirdName_WhenPresent()
     {
         var person = CreateValidPerson(); 
         Assert.Equal("Ahmad Sami Khalid Yousef", person.FullName);

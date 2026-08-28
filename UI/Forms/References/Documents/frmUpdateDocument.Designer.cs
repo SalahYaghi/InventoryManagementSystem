@@ -37,7 +37,7 @@
             this.btnSave = new System.Windows.Forms.Button();
             this.btnCancel = new System.Windows.Forms.Button();
             this.panelBody = new System.Windows.Forms.Panel();
-            this.ctrlDocumentInfo1 = new UI.Forms.Refrences.Documents.ctrlDocumentInfo();
+            this.ctrlDocumentInfo1 = new UI.Forms.References.Documents.ctrlDocumentInfo();
             this.panelHeader.SuspendLayout();
             this.panelFooter.SuspendLayout();
             this.panelBody.SuspendLayout();
@@ -180,7 +180,7 @@
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnCancel;
         private System.Windows.Forms.Panel panelBody;
-        private Refrences.Documents.ctrlDocumentInfo ctrlDocumentInfo1;
+        private References.Documents.ctrlDocumentInfo ctrlDocumentInfo1;
         private System.Windows.Forms.Button btnDelete;
     }
 }

@@ -13,12 +13,13 @@ namespace Infrastructure.Services
         public async Task<Result<bool>> CheckSupplierSellsProducts(
             Guid supplierId, Guid[] products, CancellationToken ct)
         {
+            var distinctProductIds = products.Distinct().ToArray();
 
             var supplierProductsCount = await context.SupplierProducts
                 .Where(s => s.SupplierId == supplierId &&
-                products.Contains(s.ProductId)).CountAsync(ct);
+                distinctProductIds.Contains(s.ProductId)).CountAsync(ct);
 
-            if (supplierProductsCount != products.Length) {
+            if (supplierProductsCount != distinctProductIds.Length) {
 
 
                 return ApplicationErrors.SupplierDoesNotSellProduct;

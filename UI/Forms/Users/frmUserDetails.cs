@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using UI.Forms.Employees;
+using UI.Shared.Helpers.UI_Helpers;
 using UI.Shared.Services;
 
 namespace UI.Forms.Users
@@ -66,26 +67,32 @@ namespace UI.Forms.Users
 
         private void BindUser()
         {
-            lblUserName.Text = _user.Username;
-            lblSubTitle.Text = _user.Email;
+            if (_user == null)
+                return;
 
-            lblUsernameValue.Text = _user.Username;
-            lblEmailValue.Text = _user.Email;
-            lblRoleValue.Text = (_user.Role.ToString());
-            lblLastLoginValue.Text = (_user.LastLoginAt.ToString("yyyy-MM-dd hh:mm:ss"));
+            lblUserName.Text = DisplayFormatter.Text(_user.Username);
+            lblSubTitle.Text = DisplayFormatter.Text(_user.Email);
 
-            if (_user.Employee != null)
-            {
-                lblJobTitleValue.Text = (_user.Employee.JobTitle);
+            lblUsernameValue.Text = DisplayFormatter.Text(_user.Username);
+            lblEmailValue.Text = DisplayFormatter.Text(_user.Email);
+            lblRoleValue.Text = _user.Role.ToString();
+            lblLastLoginValue.Text = _user.LastLoginAt == default(DateTime)
+                ? "Never signed in"
+                : DisplayFormatter.DateTimeValue(_user.LastLoginAt);
 
-                if (_user.Employee.Warehouse != null)
-                    lblWarehouseValue.Text = (_user.Employee.Warehouse.Name);
+            var employee = _user.Employee;
 
-                if (_user.Employee.Person != null)
-                    lblEmployeeValue.Text = BuildPersonName(_user.Employee.Person);
-                else
-                    lblEmployeeValue.Text = "Not Included";
-            }
+            lblJobTitleValue.Text = employee == null
+                ? DisplayFormatter.NotSetPlaceholder
+                : DisplayFormatter.Text(employee.JobTitle, DisplayFormatter.NotSetPlaceholder);
+
+            lblWarehouseValue.Text = employee == null || employee.Warehouse == null
+                ? "No warehouse assigned"
+                : DisplayFormatter.Text(employee.Warehouse.Name, "No warehouse assigned");
+
+            lblEmployeeValue.Text = employee == null || employee.Person == null
+                ? DisplayFormatter.NotAvailablePlaceholder
+                : DisplayFormatter.Text(BuildPersonName(employee.Person), DisplayFormatter.NotAvailablePlaceholder);
 
             if (_user.IsActive)
             {
@@ -103,13 +110,14 @@ namespace UI.Forms.Users
 
         private string BuildPersonName(PersonDto person)
         {
-            return string.Join(" ", new[]
-            {
-                Convert.ToString(person.FirstName),
-                Convert.ToString(person.SecondName),
-                Convert.ToString(person.ThirdName),
-                Convert.ToString(person.LastName)
-            }.Where(x => !string.IsNullOrWhiteSpace(x)));
+            if (person == null)
+                return string.Empty;
+
+            return TextFormattingHelper.BuildFullName(
+                person.FirstName,
+                person.SecondName,
+                person.ThirdName,
+                person.LastName);
         }
         private void btnEdit_Click(object sender, EventArgs e)
         {
@@ -121,7 +129,10 @@ namespace UI.Forms.Users
         }
         private void btnResetPassword_Click(object sender, EventArgs e)
         {
-            using (var frm = new frmResetUserPassword(_userId, Convert.ToString(_user.Username)))
+            if (_user == null)
+                return;
+
+            using (var frm = new frmResetUserPassword(_userId, _user.Username))
             {
                 frm.ShowDialog();
             }
@@ -134,6 +145,13 @@ namespace UI.Forms.Users
 
         private void btnEmployeeData_Click(object sender, EventArgs e)
         {
+            if (_user == null || _user.EmployeeId == Guid.Empty)
+            {
+                MessageBox.Show("This user is not linked to an employee record.", "Not Available",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             using (var frm = new frmEmployeeDetails(_user.EmployeeId))
             {
                  if (

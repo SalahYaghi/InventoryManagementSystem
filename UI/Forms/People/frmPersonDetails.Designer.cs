@@ -1,4 +1,4 @@
-﻿using UI.Forms.Refrences.Documents;
+﻿using UI.Forms.References.Documents;
 
 namespace UI.Forms.People
 {
@@ -33,8 +33,8 @@ namespace UI.Forms.People
             private System.Windows.Forms.Label lblDateOfBirthValue;
             private System.Windows.Forms.Label lblGenderValue;
 
-            private UI.Forms.Refrences.Contacts.ctrlContactDetails ctrlContactDetails1;
-            private UI.Forms.Refrences.Contacts.ctrlAddressDetails ctrlAddressDetails1;
+            private UI.Forms.References.Contacts.ctrlContactDetails ctrlContactDetails1;
+            private UI.Forms.References.Contacts.ctrlAddressDetails ctrlAddressDetails1;
             private  ctrlDocumentDetails ctrlDocumentDetails1;
 
             private System.Windows.Forms.Label lblStatus;
@@ -76,9 +76,9 @@ namespace UI.Forms.People
             this.lblPersonSubTitle = new System.Windows.Forms.Label();
             this.lblPersonName = new System.Windows.Forms.Label();
             this.lblUpdateImage = new System.Windows.Forms.LinkLabel();
-            this.ctrlContactDetails1 = new UI.Forms.Refrences.Contacts.ctrlContactDetails();
-            this.ctrlAddressDetails1 = new UI.Forms.Refrences.Contacts.ctrlAddressDetails();
-            this.ctrlDocumentDetails1 = new UI.Forms.Refrences.Documents.ctrlDocumentDetails();
+            this.ctrlContactDetails1 = new UI.Forms.References.Contacts.ctrlContactDetails();
+            this.ctrlAddressDetails1 = new UI.Forms.References.Contacts.ctrlAddressDetails();
+            this.ctrlDocumentDetails1 = new UI.Forms.References.Documents.ctrlDocumentDetails();
             this.panelRoot.SuspendLayout();
             this.flowBody.SuspendLayout();
             this.panelBasic.SuspendLayout();
