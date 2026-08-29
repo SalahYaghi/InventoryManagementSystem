@@ -55,10 +55,20 @@ namespace Contract.Features.Transactions.Orders.Commands.CreateOrder
             }
             else
             {
-                versions = await _context.WarehouseStocks
+               
+                var dbStock  = await _context.WarehouseStocks
+                    .Include(r => r.Product)
                     .Where(p => productIds.Contains(p.ProductId) && p.WarehouseId == request.SourceWarehouseId)
-                    .Select(p => new ProductVersionInfo(p.ProductId, p.Product!.SellingPrice, p.RowVersion))
                     .ToListAsync(cancellationToken);
+
+                versions = new List<ProductVersionInfo>(); 
+ 
+                foreach (var stock in dbStock) {
+                    versions.Add(new ProductVersionInfo(stock.ProductId, stock.Product!.SellingPrice, stock.RowVersion));
+                    _context.Entry(stock).Property(r => r.LastModifiedBy).IsModified = true; 
+                }
+
+
             }
 
             foreach (var detail in request.OrderDetails)
@@ -67,7 +77,7 @@ namespace Contract.Features.Transactions.Orders.Commands.CreateOrder
 
                 if (record is null)
                 {
-                    _logger.LogWarning(
+                    _logger.LogWarning( 
                         "CreateOrderCommandHandler stopped: product {ProductId} is not available in the selected source.",
                         detail.ProductId);
                     return ApplicationErrors.ProductNotFound;
@@ -93,7 +103,6 @@ namespace Contract.Features.Transactions.Orders.Commands.CreateOrder
             }
 
             
-   
             var entityResult = Domain.Orders.Order.Create(
                 Guid.NewGuid(),
                 request.OrderType,
@@ -197,9 +206,11 @@ namespace Contract.Features.Transactions.Orders.Commands.CreateOrder
                     return ApplicationErrors.UnsupportedOrderType;
             }
 
+
             _logger.LogInformation("CreateOrderCommandHandler is adding new entity data to the context.");
             await _context.OrderDetails.AddRangeAsync(orderDetails, cancellationToken);
             await _context.Orders.AddAsync(order, cancellationToken);
+
 
             await _context.SaveChangesAsync(cancellationToken);
 

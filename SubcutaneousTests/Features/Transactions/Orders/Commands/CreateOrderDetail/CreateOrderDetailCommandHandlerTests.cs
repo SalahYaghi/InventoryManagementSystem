@@ -1,5 +1,6 @@
 using Contract.Common.Interfaces;
 using Contract.Features.Transactions.Order.Commands.CreateOrderDetail;
+using Contract.Features.Transactions.Orders.Commands.CreateOrder;
 using Domain.Contacts.Address;
 using Domain.Contacts.Address.Country;
 using Domain.Customer;
@@ -10,12 +11,15 @@ using InventoryManagement.Tests.Common.Factories.Orders;
 using InventoryManagement.Tests.Common.Factories.Products;
 using InventoryManagement.Tests.Common.Factories.Suppliers;
 using InventoryManagement.Tests.Common.Factories.Warehouses;
+using MechanicShop.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 using SubcutaneousTests.Common;
 using Xunit;
 using Xunit.Abstractions;
-
+using Contract.Features.Transactions.Orders.DTOs;
+using Domain.Warehouses;
 
 namespace SubcutaneousTests.Features.Transactions.Order.Commands.CreateOrderDetail;
 
@@ -175,3 +179,4 @@ public class CreateOrderDetailCommandHandlerTests
         Assert.True(result.IsError);
     }
 }
+

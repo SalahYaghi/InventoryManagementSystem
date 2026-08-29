@@ -6,12 +6,14 @@ using Domain.Contacts.Address.Country;
 using Domain.Customer;
 using Domain.Orders;
 using Domain.Suppliers;
+using Infrastructure.Data;
 using InventoryManagement.Tests.Common.Factories.Contacts;
 using InventoryManagement.Tests.Common.Factories.Products;
 using InventoryManagement.Tests.Common.Factories.Suppliers;
 using InventoryManagement.Tests.Common.Factories.Warehouses;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using SubcutaneousTests.Common;
 using Xunit;
 using Xunit.Abstractions;
@@ -406,4 +408,115 @@ public class CreateOrderCommandHandlerTests
 
         Assert.True(result.IsError);
     }
+
+
+
+}
+
+
+[Collection(WebAppFactoryCollection.CollectionName)]
+public class CreateOrderConcurrencyTest
+{
+    private readonly WebAppFactory _factory;
+    private readonly IAppDbContext _context;
+    private readonly ITestOutputHelper _output;
+
+    public CreateOrderConcurrencyTest(WebAppFactory factory, ITestOutputHelper output)
+    {
+        _factory = factory;
+        _context = factory.CreateAppDbContext();
+        _output = output;
+    }
+
+    private sealed record World(Guid CustomerId, Guid WarehouseId, Guid ProductId, byte[] StockRowVersion);
+
+    private async Task<World> SeedProductWithStockAsync(decimal quantity = 10m)
+    {
+        var unique = Guid.NewGuid().ToString("N")[..8];
+
+        var country = Country.Create($"Palestine-{unique}").Value;
+        var city = City.Create(Guid.NewGuid(), country.Id, $"Gaza-{unique}").Value;
+        var address = Address.Create(Guid.NewGuid(), country.Id, city.Id, "Salah", "Mazen", $"Street-{unique}", "Valid address").Value;
+
+        var category = CategoryFactory.CreateValid(name: $"Category-{unique}");
+        var product = ProductFactory.CreateValid(
+            sku: $"{unique}", barCode: $"BAR-{unique}", productName: $"Product-{unique}",
+            categoryId: category.Id, sellingPrice: 20m);
+
+        var customer = Customer.Create(Guid.NewGuid(), $"Customer-{unique}", $"CUS-{unique}",
+            ContactInfoFactory.CreateValid(), address, "Valid customer").Value;
+
+        var warehouse = WarehouseFactory.CreateValid(Guid.NewGuid(), $"Warehouse-{unique}", $"WH-{unique}", address);
+        var stock = WarehouseStockFactory.CreateValid(
+    warehouseId: warehouse.Id,
+    productId: product.Id,
+    quantity: quantity);
+        await _context.Countries.AddAsync(country, CancellationToken.None);
+        await _context.Cities.AddAsync(city, CancellationToken.None);
+        await _context.Addresses.AddAsync(address, CancellationToken.None);
+        await _context.Categories.AddAsync(category, CancellationToken.None);
+        await _context.Products.AddAsync(product, CancellationToken.None);
+        await _context.Customers.AddAsync(customer, CancellationToken.None);
+        await _context.Warehouses.AddAsync(warehouse, CancellationToken.None);
+        await _context.WarehouseStocks.AddAsync(stock, CancellationToken.None);
+        await _context.SaveChangesAsync(CancellationToken.None);
+
+        var savedStock = await _context.WarehouseStocks
+            .FirstAsync(s => s.WarehouseId == warehouse.Id && s.ProductId == product.Id, CancellationToken.None);
+
+        return new World(customer.Id, warehouse.Id, product.Id, savedStock.RowVersion);
+    }
+
+    private async Task<bool> CreateSaleOrderAsync(IMediator mediator, World world, decimal quantity ,  string label)
+    {
+        
+        var command = new CreateOrderCommand
+        {
+            CustomerId = world.CustomerId,
+            SourceWarehouseId = world.WarehouseId,
+            OrderType = OrderType.Sale,
+            DueDate = DateTimeOffset.UtcNow.AddDays(1),
+            Notes = "Concurrency test",
+            Discount = 0m,
+            OrderDetails =
+            [
+                new CreateOrderDetailCommand
+                {
+                    ProductId = world.ProductId,
+                    Quantity = quantity,
+                    RowVersion = world.StockRowVersion
+                }
+            ]
+        };
+
+        try
+        {
+            var result = await mediator.Send(command, CancellationToken.None);
+            _output.WriteLine($"{label}: {(result.IsSuccess ? "CREATED" : "rejected - " + string.Join(", ", result.Errors.Select(e => e.Code)))}");
+            return result.IsSuccess;
+        }
+        catch (Exception ex)
+        {
+            _output.WriteLine($"{label}: threw {ex.GetType().Name}");
+            return false;
+        }
+    }
+
+    [Fact]
+    public async Task TwoConcurrentSaleOrders_ForTheEntireStock_OnlyOneMaySucceed()
+    {
+        var world = await SeedProductWithStockAsync(quantity: 10m);
+
+
+        var taskA = CreateSaleOrderAsync(_factory.CreateMediator(), world, 10m,  "A");
+        var taskB = CreateSaleOrderAsync(_factory.CreateMediator(), world, 10m,  "B");
+
+        var results = await Task.WhenAll(taskA, taskB);
+        var succeeded = results.Count(r => r);
+
+        Assert.Equal(1, succeeded);
+    }
+
+
+
 }

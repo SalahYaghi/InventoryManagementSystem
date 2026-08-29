@@ -9,6 +9,7 @@ using MechanicShop.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Polly;
 
 namespace Contract.Features.Transactions.Order.Commands.CreateOrderDetail
 {
@@ -49,8 +50,9 @@ namespace Contract.Features.Transactions.Order.Commands.CreateOrderDetail
             if (entity.OrderType != OrderType.Purchase && entity.OrderType != OrderType.ReturnOut)
             {
                 var stock = await context.WarehouseStocks
+                    .Include(r => r.Product)
                     .Where(p => p.ProductId == request.ProductId && p.WarehouseId == entity.SourceWarehouseId)
-                    .Select(p => new { UnitPrice = p.Product!.SellingPrice, p.RowVersion })
+                  
                     .FirstOrDefaultAsync(cancellationToken);
 
                 if (stock is null)
@@ -61,8 +63,9 @@ namespace Contract.Features.Transactions.Order.Commands.CreateOrderDetail
                     return ApplicationErrors.WarehouseStockNotFound;
                 }
 
+                context.Entry(stock).Property(r => r.LastModifiedUtc).IsModified = true;
                 rowVersion = stock.RowVersion;
-                unitPrice = stock.UnitPrice;
+                unitPrice = stock.Product!.SellingPrice;
             }
             else
             {

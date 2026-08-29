@@ -6,10 +6,12 @@ using Contract.Features.Transactions.Orders.Mappers;
 using Domain.Orders;
 using Domain.Orders.Events;
 using Domain.Warehouses;
+using MechanicShop.Domain.Common;
 using MechanicShop.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.ComponentModel.Design;
 
 namespace Contract.Features.Transactions.Orders.Commands.UpdateOrder
 {
@@ -66,7 +68,28 @@ namespace Contract.Features.Transactions.Orders.Commands.UpdateOrder
             }
 
             _logger.LogInformation("UpdateOrderStatusCommandHandler is saving changes to the database.");
-            await _context.SaveChangesAsync(cancellationToken);
+
+            if (entity.OrderStatus == OrderStatus.Completed) {
+            
+                for (int attempt = 0; attempt <= 3; attempt++) {
+                    try
+                    {
+                        await _context.SaveChangesAsync(cancellationToken);
+                        break;
+                    }
+                    catch (DbUpdateConcurrencyException ex) when (attempt < 3)
+                    {
+                        foreach (var entry in ex.Entries) {
+                            await entry.ReloadAsync(cancellationToken);
+                        }
+                        var movement = await ApplyStockMovementsAsync(entity, cancellationToken);
+                        if (movement.IsError) return movement.Errors;
+                    }
+                }
+           
+            }else {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
 
             await _cache.RemoveByTagAsync(CacheFanout.Expand(CacheEntities.Order), cancellationToken);
 
@@ -74,6 +97,8 @@ namespace Contract.Features.Transactions.Orders.Commands.UpdateOrder
 
             return entity.ToDto();
         }
+
+        
 
         private async Task<Result<Success>> ApplyStockMovementsAsync(Domain.Orders.Order entity, CancellationToken ct)
         {

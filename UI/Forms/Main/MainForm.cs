@@ -46,6 +46,7 @@ namespace InventorySystemUI.Main
                 _login.Visible = false;
 
             _ = SetupUI();
+ 
         }
 
         #region Setup

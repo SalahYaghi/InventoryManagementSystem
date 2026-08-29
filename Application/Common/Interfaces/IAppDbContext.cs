@@ -18,12 +18,16 @@ using Domain.Suppliers;
 using Domain.Suppliers.SupplierProducts;
 using Domain.Warehouses;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.ComponentModel.DataAnnotations;
 
 namespace Contract.Common.Interfaces
 {
     public interface IAppDbContext
     {
+        public EntityEntry<TEntity> Entry<TEntity>(TEntity entity)
+        where TEntity : class;
+
         public DbSet<User> Users { get; }
         public DbSet<Employee> Employees { get; }
         public DbSet<UserLoginAuditLog> UserLoginAuditLoggs { get; }

@@ -18,6 +18,7 @@ using Xunit;
 using Xunit.Abstractions;
 
 using Contract.Features.Transactions.Order.Commands.UpdateOrderDetail;
+using Contract.Features.Inventory.Adjustment.Commands.UpdateAdjustmentDetailsQuantity;
 
 namespace SubcutaneousTests.Features.Transactions.Order.Commands.UpdateOrderDetailQuantity;
 
@@ -179,5 +180,202 @@ public class UpdateOrderDetailQuantityCommandHandlerTests
         var command = new UpdateOrderDetailCommand { Id = detail.Id, Quantity = 100m, RowVersion = detail.RowVersion };
         var result = await _mediator.Send(command, CancellationToken.None);
         Assert.True(result.IsError);
+    }
+}
+ 
+
+[Collection(WebAppFactoryCollection.CollectionName)]
+public class OrderDetailConcurrencyTest
+{
+    private readonly WebAppFactory _factory;
+    private readonly IAppDbContext _context;
+    private readonly ITestOutputHelper _output;
+
+    public OrderDetailConcurrencyTest(WebAppFactory factory, ITestOutputHelper output)
+    {
+        _factory = factory;
+        _context = factory.CreateAppDbContext();
+        _output = output;
+    }
+
+     private sealed record World(
+        Guid CustomerId,
+        Guid WarehouseId,
+        Guid ContestedProductId,
+        Guid FillerProductId,
+        Guid StockId);
+
+ 
+    private async Task<World> SeedProductWithStockAsync(decimal quantity = 10m)
+    {
+        var unique = Guid.NewGuid().ToString("N")[..8];
+
+        var country = Country.Create($"Palestine-{unique}").Value;
+        var city = City.Create(Guid.NewGuid(), country.Id, $"Gaza-{unique}").Value;
+        var address = Address.Create(Guid.NewGuid(), country.Id, city.Id, "Salah", "Mazen", $"Street-{unique}", "Valid address").Value;
+
+        var category = CategoryFactory.CreateValid(name: $"Category-{unique}");
+
+        var contested = ProductFactory.CreateValid(
+            sku: $"{unique}", barCode: $"BAR-{unique}", productName: $"Contested-{unique}",
+            categoryId: category.Id, sellingPrice: 20m);
+
+        var filler = ProductFactory.CreateValid(
+            sku: $"F{unique}", barCode: $"FBAR-{unique}", productName: $"Filler-{unique}",
+            categoryId: category.Id, sellingPrice: 5m);
+
+        var customer = Customer.Create(Guid.NewGuid(), $"Customer-{unique}", $"CUS-{unique}",
+            ContactInfoFactory.CreateValid(), address, "Valid customer").Value;
+
+        var warehouse = WarehouseFactory.CreateValid(Guid.NewGuid(), $"Warehouse-{unique}", $"WH-{unique}", address);
+
+        var stock = WarehouseStockFactory.CreateValid(
+            warehouseId: warehouse.Id, productId: contested.Id, quantity: quantity);
+
+        await _context.Countries.AddAsync(country, CancellationToken.None);
+        await _context.Cities.AddAsync(city, CancellationToken.None);
+        await _context.Addresses.AddAsync(address, CancellationToken.None);
+        await _context.Categories.AddAsync(category, CancellationToken.None);
+        await _context.Products.AddAsync(contested, CancellationToken.None);
+        await _context.Products.AddAsync(filler, CancellationToken.None);
+        await _context.Customers.AddAsync(customer, CancellationToken.None);
+        await _context.Warehouses.AddAsync(warehouse, CancellationToken.None);
+        await _context.WarehouseStocks.AddAsync(stock, CancellationToken.None);
+        await _context.SaveChangesAsync(CancellationToken.None);
+
+        return new World(customer.Id, warehouse.Id, contested.Id, filler.Id, stock.Id);
+    }
+
+ 
+    private async Task<(Guid OrderId, Guid DetailId)> SeedPendingSaleOrderAsync(
+        World world, Guid productId, decimal quantity)
+    {
+        var detail = OrderDetailFactory.CreateValid(productId: productId, quantity: quantity, unitPrice: 20m);
+
+        var order = OrderFactory.CreateSale(
+            customerId: world.CustomerId,
+            sourceWarehouseId: world.WarehouseId,
+            orderDetails: [detail]);
+
+        await _context.Orders.AddAsync(order, CancellationToken.None);
+        await _context.SaveChangesAsync(CancellationToken.None);
+
+        return (order.Id, detail.Id);
+    }
+
+    private async Task<byte[]> ReadStockRowVersionAsync(World world)
+    {
+        var fresh = _factory.CreateAppDbContext();
+
+        return await fresh.WarehouseStocks
+            .Where(s => s.Id == world.StockId)
+            .Select(s => s.RowVersion)
+            .FirstAsync(CancellationToken.None);
+    }
+
+    private async Task<byte[]> ReadDetailRowVersionAsync(Guid detailId)
+    {
+        var fresh = _factory.CreateAppDbContext();
+
+        return await fresh.OrderDetails
+            .Where(d => d.Id == detailId)
+            .Select(d => d.RowVersion)
+            .FirstAsync(CancellationToken.None);
+    }
+
+    private async Task<bool> AddOrderDetailAsync(
+        IMediator mediator, Guid orderId, Guid productId, decimal quantity, byte[] stockRowVersion, string label)
+    {
+        var command = new Contract.Features.Transactions.Order.Commands.CreateOrderDetail.CreateOrderDetailCommand
+        {
+            OrderId = orderId,
+            ProductId = productId,
+            Quantity = quantity,
+            RowVersion = stockRowVersion
+        };
+
+        try
+        {
+            var result = await mediator.Send(command, CancellationToken.None);
+
+            _output.WriteLine(result.IsSuccess
+                ? $"{label}: ADDED"
+                : $"{label}: rejected - {string.Join(", ", result.Errors.Select(e => e.Code))}");
+
+            return result.IsSuccess;
+        }
+        catch (Exception ex)
+        {
+            _output.WriteLine($"{label}: threw {ex.GetType().Name}");
+            return false;
+        }
+    }
+
+    private async Task<bool> UpdateOrderDetailQuantityAsync(
+        IMediator mediator, Guid detailId, decimal quantity, byte[] detailRowVersion, string label)
+    {
+        var command = new Contract.Features.Transactions.Order.Commands.UpdateOrderDetail.UpdateOrderDetailCommand
+        {
+            Id = detailId,
+            Quantity = quantity,
+            RowVersion = detailRowVersion
+        };
+
+        try
+        {
+            var result = await mediator.Send(command, CancellationToken.None);
+
+            _output.WriteLine(result.IsSuccess
+                ? $"{label}: UPDATED"
+                : $"{label}: rejected - {string.Join(", ", result.Errors.Select(e => e.Code))}");
+
+            return result.IsSuccess;
+        }
+        catch (Exception ex)
+        {
+            _output.WriteLine($"{label}: threw {ex.GetType().Name}");
+            return false;
+        }
+    }
+
+   
+    [Fact]
+    public async Task TwoConcurrentOrderDetails_ForTheEntireStock_OnlyOneMaySucceed()
+    {
+        var world = await SeedProductWithStockAsync(quantity: 10m);
+
+        var (orderA, _) = await SeedPendingSaleOrderAsync(world, world.FillerProductId, 1m);
+        var (orderB, _) = await SeedPendingSaleOrderAsync(world, world.FillerProductId, 1m);
+
+        var stockRowVersion = await ReadStockRowVersionAsync(world);
+
+        var taskA = AddOrderDetailAsync(_factory.CreateMediator(), orderA, world.ContestedProductId, 10m, stockRowVersion, "A");
+        var taskB = AddOrderDetailAsync(_factory.CreateMediator(), orderB, world.ContestedProductId, 10m, stockRowVersion, "B");
+
+        var results = await Task.WhenAll(taskA, taskB);
+        var succeeded = results.Count(r => r);
+
+        Assert.Equal(1, succeeded);
+    }
+
+   
+    [Fact]
+    public async Task TwoConcurrentQuantityRaises_BeyondAvailableStock_OnlyOneMaySucceed()
+    {
+        var world = await SeedProductWithStockAsync(quantity: 10m);
+
+        var (_, detailA) = await SeedPendingSaleOrderAsync(world, world.ContestedProductId, 1m);
+        var (_, detailB) = await SeedPendingSaleOrderAsync(world, world.ContestedProductId, 1m);
+
+        var rowVersionA = await ReadDetailRowVersionAsync(detailA);
+        var rowVersionB = await ReadDetailRowVersionAsync(detailB);
+
+        var taskA = UpdateOrderDetailQuantityAsync(_factory.CreateMediator(), detailA, 6m, rowVersionA, "A");
+        var taskB = UpdateOrderDetailQuantityAsync(_factory.CreateMediator(), detailB, 6m, rowVersionB, "B");
+
+        var results = await Task.WhenAll(taskA, taskB);
+        var succeeded = results.Count(r => r);
+
+        Assert.Equal(1, succeeded);
     }
 }

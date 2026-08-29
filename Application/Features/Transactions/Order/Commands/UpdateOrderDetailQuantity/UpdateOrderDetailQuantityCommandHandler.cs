@@ -1,13 +1,15 @@
 using Contract.Common.Constants;
+using Contract.Common.Errors;
 using Contract.Common.Interfaces;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using MechanicShop.Domain.Common.Results;
 using Contract.Features.Transactions.Order.DTOs;
 using Contract.Features.Transactions.Order.Mappers;
 using Domain.Orders;
-using Contract.Common.Errors;
+using MechanicShop.Domain.Common.Results;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Polly;
+using System.Collections;
 
 namespace Contract.Features.Transactions.Order.Commands.UpdateOrderDetail
 {
@@ -38,6 +40,7 @@ namespace Contract.Features.Transactions.Order.Commands.UpdateOrderDetail
             var entity = await _context.OrderDetails
                 .Include(o => o.Order)
                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+           
 
             if (entity is null)
             {
@@ -50,7 +53,8 @@ namespace Contract.Features.Transactions.Order.Commands.UpdateOrderDetail
                 _logger.LogWarning("UpdateOrderDetailQuantityCommandHandler stopped: stale row version for order detail {Id}.", request.Id);
                 return ApplicationErrors.UpdateOccursOnProducts;
             }
-            
+
+
             if (entity.Order!.IsLocked)
             
             {
@@ -59,6 +63,19 @@ namespace Contract.Features.Transactions.Order.Commands.UpdateOrderDetail
                 return OrderErrors.OrderIsLocked;
             
             }
+
+
+            var stock = await _context.WarehouseStocks
+                .Where(p => p.ProductId == entity.ProductId && p.WarehouseId == entity.Order.SourceWarehouseId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (stock == null) {
+
+                return ApplicationErrors.WarehouseStockNotFound;
+            }
+
+           _context.Entry(stock).Property(r => r.LastModifiedUtc).IsModified = true;
+
 
             var netQuantity = request.Quantity - entity.Quantity;
 
