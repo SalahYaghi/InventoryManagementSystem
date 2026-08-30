@@ -1,0 +1,14 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# NuGet packages.config restore folder (restored by `nuget restore` in CI)
+packages/
+*.nupkg
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.cache
+*.log
