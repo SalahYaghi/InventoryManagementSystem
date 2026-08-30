@@ -22,10 +22,10 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Restore dependencies
-        run: dotnet restore MechanicShop.slnx
+        run: dotnet restore InventoryManagementSystemAPI.slnx
 
       - name: Build solution
-        run: dotnet build MechanicShop.slnx --configuration Release --no-restore
+        run: dotnet build InventoryManagementSystemAPI.slnx --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test MechanicShop.slnx --configuration Release --no-build --verbosity normal
+        run: dotnet test InventoryManagementSystemAPI.slnx --configuration Release --no-build --verbosity normal
