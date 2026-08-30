@@ -9,8 +9,11 @@
   <ItemGroup>
     <None Include="Features\Transactions\Order\Commands\UpdateOrderDetailQuantity\UpdateOrderDetailQuantityCommand.cs" />
   </ItemGroup>
+	<ItemGroup>
+		<PackageReference Update="StyleCop.Analyzers" Version="1.1.118" />
+	</ItemGroup>
 
-  <ItemGroup>
+	<ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="MediatR" Version="14.1.0" />

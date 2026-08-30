@@ -34,7 +34,7 @@ The system tracks stock across multiple warehouses, manages the full order lifec
 
 This project manages the operational side of a distribution business: what stock exists, where it sits, how it moves, and who is allowed to move it.
 
-It is built as a **layered monolith** with strict dependency rules. Business rules live in a pure domain layer with no framework dependencies. Use cases are modelled as explicit commands and queries. Infrastructure concerns — persistence, caching, PDF generation, email — sit behind interfaces the inner layers own.
+It is built as a **layered monolith** with strict dependency rules. Business rules live in a pure domain layer with no framework dependencies. Use cases are modelled as explicit commands and queries. Infrastructure concerns — persistence, caching, PDF generation — sit behind interfaces the inner layers own.
 
 **By the numbers:**
 
@@ -174,9 +174,7 @@ Request
 | Logging | Serilog → Console + Seq |
 | Telemetry | OpenTelemetry → OTLP traces, Prometheus metrics, Grafana |
 | PDF | QuestPDF |
-| Email | MimeKit |
 | Docs | OpenAPI, Scalar, Swagger UI |
-| Resilience | Polly |
 | Testing | xUnit, FluentAssertions, Testcontainers, WebApplicationFactory |
 | Desktop client | WinForms (.NET Framework 4.8) |
 | Orchestration | Docker Compose |
@@ -387,7 +385,6 @@ The handler validates the request, checks **available** stock (on-hand minus res
 
 - [ ] CI/CD pipeline with automated test runs and coverage reporting
 - [ ] Web front-end (Blazor or React) to complement the desktop client
-- [ ] Barcode / QR scanning for stock operations
 - [ ] Purchase-order approval workflows
 - [ ] Advanced reporting and data export
 - [ ] Multi-tenancy support
@@ -400,4 +397,4 @@ This project is licensed under the MIT License.
 
 ## Contact
 
-Built by **[Salah Mohammed Yaghi]** — [https://www.linkedin.com/in/salah-yaghi-3935b3364/](#) · [yaghimohsalah@gmail.com](#)
+Built by **Salah Mohammed Yaghi** — [https://www.linkedin.com/in/salah-yaghi-3935b3364/](#) · [yaghimohsalah@gmail.com](#)

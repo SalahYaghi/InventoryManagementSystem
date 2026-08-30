@@ -1,0 +1,10 @@
+<Project>
+
+	<ItemGroup>
+		<PackageReference Include="StyleCop.Analyzers">
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
+	
+	
+</Project>
