@@ -5,7 +5,7 @@ using Contract.Features.Parties.Supplier.Mappers;
 using Domain.Contacts.Address;
 using Domain.Contacts.ContactInfo;
 using Domain.Suppliers;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

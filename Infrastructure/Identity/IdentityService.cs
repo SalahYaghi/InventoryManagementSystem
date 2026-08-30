@@ -2,7 +2,7 @@
 using Contract.Common.Interfaces;
 using Domain.Identity.Users;
 using Infrastructure.Common.Options;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

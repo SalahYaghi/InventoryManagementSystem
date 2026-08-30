@@ -1,5 +1,5 @@
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Contract.Features.Inventory.Warehouses.DTOs;
 using Domain.Contacts.Address;
 using Contract.Features.References.Addresses.Commands.CreateAddress;

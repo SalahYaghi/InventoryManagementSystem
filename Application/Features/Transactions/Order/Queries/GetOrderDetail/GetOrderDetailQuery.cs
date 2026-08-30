@@ -1,7 +1,7 @@
 using Contract.Common.Constants;
 using Contract.Common.Interfaces;
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Contract.Features.Transactions.Order.DTOs;
 
 namespace Contract.Features.Transactions.Order.Queries.GetOrderDetail

@@ -6,7 +6,7 @@ using Contract.Features.Inventory.Warehouses.Mappers;
 using Contract.Features.Inventory.WarehouseStocks.DTOs;
 using Contract.Features.Inventory.WarehouseStocks.Mappers;
 using Domain.Warehouses;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

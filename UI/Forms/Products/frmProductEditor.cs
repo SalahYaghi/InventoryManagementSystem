@@ -22,11 +22,18 @@ namespace UI.Forms.Products
             private readonly bool _isUpdateMode;
             private readonly Guid _productId;
             private  Guid? _warehouseId;
+        private Guid? _warehouseStockId; 
 
             public void DefineWarehouse(Guid warehouseId) {
 
             this._warehouseId = warehouseId;
         }
+
+            public void DefineWarehouseStock(Guid warehouseStockId)
+            {
+            this._warehouseStockId = warehouseStockId;
+            }
+
             public frmProductEditor()
             {
                 InitializeComponent();
@@ -74,6 +81,9 @@ namespace UI.Forms.Products
 
                 chkIsActive.Checked = true;
                 lblStatus.Text = "Ready";
+            if (!_isUpdateMode) {
+                lblMinimumStockLevel.Visible = false; 
+            }
             }
 
             private void StyleButton(Button button, Color backColor, Color foreColor)
@@ -317,6 +327,15 @@ namespace UI.Forms.Products
                 Close();
             }
 
+        private void lblMinimumStockLevel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            if (!_warehouseStockId.HasValue || !_isUpdateMode) {
+                return;
+            }
+
+            frmProductMinimumStockEditor frm = new frmProductMinimumStockEditor(_warehouseStockId.Value);
+            frm.ShowDialog();
+        }
     }
     }
 

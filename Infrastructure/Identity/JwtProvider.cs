@@ -3,7 +3,7 @@ using Contract.Common.Interfaces;
 using Domain.Identity.RefreshToken;
 using Domain.Identity.Users;
 using Infrastructure.Common.Options;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;

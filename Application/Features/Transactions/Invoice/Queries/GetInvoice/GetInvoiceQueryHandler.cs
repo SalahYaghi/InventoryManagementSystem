@@ -4,7 +4,7 @@ using Contract.Features.Transactions.Invoice.DTOs;
 using Contract.Features.Transactions.Invoice.Mappers;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Microsoft.Extensions.Logging;
 
 namespace Contract.Features.Transactions.Invoice.Queries.GetInvoice

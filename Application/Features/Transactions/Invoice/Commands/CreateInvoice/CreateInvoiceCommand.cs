@@ -1,5 +1,5 @@
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Contract.Features.Transactions.Invoice.DTOs;
 
 namespace Contract.Features.Transactions.Invoice.Commands.CreateInvoice

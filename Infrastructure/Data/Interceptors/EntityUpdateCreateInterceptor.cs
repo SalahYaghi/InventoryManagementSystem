@@ -1,5 +1,5 @@
 ﻿using Infrastructure.Common.Options;
-using MechanicShop.Domain.Common;
+using Inventory.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System;

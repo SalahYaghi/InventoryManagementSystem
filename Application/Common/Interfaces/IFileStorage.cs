@@ -1,5 +1,5 @@
 using Contract.Common.Files;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;

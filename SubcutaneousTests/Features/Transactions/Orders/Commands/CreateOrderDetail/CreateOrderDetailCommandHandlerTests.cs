@@ -11,7 +11,7 @@ using InventoryManagement.Tests.Common.Factories.Orders;
 using InventoryManagement.Tests.Common.Factories.Products;
 using InventoryManagement.Tests.Common.Factories.Suppliers;
 using InventoryManagement.Tests.Common.Factories.Warehouses;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;

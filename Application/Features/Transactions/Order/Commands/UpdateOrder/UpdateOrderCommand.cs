@@ -1,5 +1,5 @@
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Contract.Features.Transactions.Orders.DTOs;
 
 namespace Contract.Features.Transactions.Orders.Commands.UpdateOrder

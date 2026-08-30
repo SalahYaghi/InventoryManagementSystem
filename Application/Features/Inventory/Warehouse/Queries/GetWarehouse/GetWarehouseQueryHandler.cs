@@ -3,7 +3,7 @@ using Contract.Features.Inventory.Warehouses.DTOs;
 using Contract.Features.Inventory.Warehouses.Mappers;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Microsoft.Extensions.Logging;
 
 namespace Contract.Features.Inventory.Warehouses.Queries.GetWarehouse

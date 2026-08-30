@@ -247,7 +247,6 @@ namespace UI.Forms.Orders
             RecalculateSummary();
 
             lblStatus.Text = "Ready";
-            lblQuantity.Text = "0"; 
         }
 
         private void ApplyDueDate(DateTime dueDate)

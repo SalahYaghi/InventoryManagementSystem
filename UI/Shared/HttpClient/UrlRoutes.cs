@@ -132,7 +132,9 @@ namespace HotelSystemUI.HttpClients
                     public static string WarehouseStocksRoute = $"{BaseRoute}/warehouse-stocks";
 
                     public static string ByWarehouse(Guid warehouseId) =>
-                        $"{WarehouseStocksRoute}/{warehouseId}";
+                        $"{WarehouseStocksRoute}/warehouse/{warehouseId}";
+                    public static string ByIdWarehouseStock(Guid warehouseId) =>
+                    $"{WarehouseStocksRoute}/{warehouseId}";
 
                     public static string GetById(Guid warehouseStockId) =>
                         $"{WarehouseStocksRoute}/{warehouseStockId}";

@@ -17,7 +17,7 @@ using Contract.Requests.Documents;
 using Contract.Requests.People;
 using Domain.Common.Constants;
 using InventoryManagementSystemAPI.Shared.Helpers;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

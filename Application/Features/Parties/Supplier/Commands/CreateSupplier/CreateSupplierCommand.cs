@@ -3,7 +3,7 @@ using Contract.Features.References.Addresses.Commands.CreateAddress;
 using Contract.Features.References.ContactInfos.Commands.CreateContactInfo;
 using Domain.Contacts.Address;
 using Domain.Contacts.ContactInfo;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 
 namespace Contract.Features.Parties.Supplier.Commands.CreateSupplier

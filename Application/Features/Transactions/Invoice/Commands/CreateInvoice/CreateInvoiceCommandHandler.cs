@@ -5,11 +5,11 @@ using Contract.Features.Transactions.Invoice.DTOs;
 using Contract.Features.Transactions.Invoice.Mappers;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Microsoft.EntityFrameworkCore;
 using Contract.Common.Errors;
 using Domain.Orders;
-using MechanicShop.Domain.Common.Constamts;
+using Inventory.Domain.Common.Constamts;
 
 namespace Contract.Features.Transactions.Invoice.Commands.CreateInvoice
 {

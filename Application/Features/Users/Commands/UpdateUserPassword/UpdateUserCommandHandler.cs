@@ -8,7 +8,7 @@ using Domain.Common.Helpers;
 using Domain.Identity.Employee;
 using Domain.Identity.Users;
 using Domain.Products.Enums;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;

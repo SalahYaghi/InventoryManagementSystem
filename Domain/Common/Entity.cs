@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MechanicShop.Domain.Common;
+namespace Inventory.Domain.Common;
 
 public abstract class Entity
 {

@@ -3,7 +3,7 @@ using Contract.Common.Interfaces;
 using Contract.Common.Models;
 using Contract.Features.Parties.People.DTOs;
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Contract.Features.Parties.Person.DTOs;
 
 namespace Contract.Features.Parties.People.Queries.GetPersonPaged

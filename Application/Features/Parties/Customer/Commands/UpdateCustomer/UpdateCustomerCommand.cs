@@ -1,7 +1,7 @@
 using Contract.Features.Parties.Customers.DTOs;
 using Contract.Features.References.Addresses.Commands.UpdateAddress;
 using Contract.Features.References.ContactInfos.Commands.UpdateContactInfo;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 
 namespace Contract.Features.Parties.Customers.Commands.UpdateCustomer

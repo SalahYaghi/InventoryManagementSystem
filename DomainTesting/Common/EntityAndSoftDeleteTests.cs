@@ -1,6 +1,6 @@
 using Domain.Common.Results.Interfaces;
 using InventoryManagement.Application.DomainTesting.TestHelpers;
-using MechanicShop.Domain.Common;
+using Inventory.Domain.Common;
 using Xunit;
 
 namespace InventoryManagement.Application.DomainTesting.Common;

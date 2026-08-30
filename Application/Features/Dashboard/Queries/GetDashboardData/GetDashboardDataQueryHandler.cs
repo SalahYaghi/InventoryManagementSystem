@@ -1,7 +1,7 @@
 using Contract.Common.Interfaces;
 using Contract.Features.Dashboard.Dtos;
 using Domain.Orders;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 

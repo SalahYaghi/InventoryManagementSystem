@@ -1,5 +1,5 @@
 using Domain.Identity.Users;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;

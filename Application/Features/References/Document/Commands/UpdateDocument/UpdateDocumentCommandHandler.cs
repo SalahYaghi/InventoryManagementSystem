@@ -3,7 +3,7 @@ using Contract.Common.Interfaces;
 using Contract.Features.References.Document;
 using Contract.Features.References.Documents.DTOs;
 using Contract.Features.References.Documents.Mappers;
- using MechanicShop.Domain.Common.Results;
+ using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

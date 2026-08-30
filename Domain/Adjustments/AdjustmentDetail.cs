@@ -1,6 +1,6 @@
 ﻿using Domain.Products;
-using MechanicShop.Domain.Common;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common;
+using Inventory.Domain.Common.Results;
 using System;
 
 namespace Domain.Adjustments

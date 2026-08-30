@@ -3,7 +3,7 @@ using Contract.Common.Interfaces;
 using Contract.Common.Models;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Contract.Features.Inventory.Adjustment.DTOs;
 using Contract.Features.Inventory.Adjustment.Mappers;
 using Microsoft.Extensions.Logging;

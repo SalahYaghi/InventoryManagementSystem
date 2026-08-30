@@ -1,6 +1,6 @@
 using Contract.Features.Parties.People.DTOs;
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Domain.Contacts.ContactInfo;
 using Contract.Features.References.ContactInfos.Commands.UpdateContactInfo;
 using Contract.Features.References.Addresses.Commands.UpdateAddress;

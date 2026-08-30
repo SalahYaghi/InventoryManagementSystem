@@ -1,4 +1,4 @@
-﻿namespace MechanicShop.Domain.Common.Results;
+﻿namespace Inventory.Domain.Common.Results;
 
 public enum ErrorKind
 {

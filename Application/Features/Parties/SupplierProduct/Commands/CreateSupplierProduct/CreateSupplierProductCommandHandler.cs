@@ -5,7 +5,7 @@ using Contract.Features.Parties.SupplierProducts.DTOs;
 using Contract.Features.Parties.SupplierProducts.Mappers;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Domain.Suppliers;
 using Contract.Features.References.Document;
 using Contract.Common.Errors;

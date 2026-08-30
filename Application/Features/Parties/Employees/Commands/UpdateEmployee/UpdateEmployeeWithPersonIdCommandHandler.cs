@@ -4,7 +4,7 @@ using Contract.Common.Interfaces;
 using Contract.Features.Parties.Employees.Dtos;
 using Contract.Features.Parties.Employees.Mappers;
 using Domain.Identity.Employee;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

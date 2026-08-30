@@ -88,6 +88,7 @@ namespace UI.Forms.Products
             this.cmbOrderBy.Name = "cmbOrderBy";
             this.cmbOrderBy.Size = new System.Drawing.Size(315, 54);
             this.cmbOrderBy.TabIndex = 6;
+            this.cmbOrderBy.Title = "Order By";
             // 
             // cmbUnit
             // 

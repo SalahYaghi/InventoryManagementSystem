@@ -2,7 +2,7 @@ using Contract.Common.Extensions;
 using Contract.Common.Interfaces;
 using Contract.Common.Models;
 using Contract.Features.Inventory.Product.DTOs;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

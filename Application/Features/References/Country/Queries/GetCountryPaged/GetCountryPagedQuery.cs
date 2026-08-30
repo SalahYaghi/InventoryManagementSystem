@@ -2,7 +2,7 @@ using Contract.Common.Constants;
 using Contract.Common.Interfaces;
 using Contract.Common.Models;
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Contract.Features.References.Countries.DTOs;
 
 namespace Contract.Features.References.Countries.Queries.GetCountryPaged

@@ -1,6 +1,6 @@
 using Contract.Common.Files;
 using Contract.Features.Inventory.Product.DTOs;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using System;
 using System.Collections.Generic;

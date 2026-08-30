@@ -1,4 +1,4 @@
-﻿namespace MechanicShop.Domain.Common;
+﻿namespace Inventory.Domain.Common;
 
 public abstract class AuditableEntity : Entity
 {

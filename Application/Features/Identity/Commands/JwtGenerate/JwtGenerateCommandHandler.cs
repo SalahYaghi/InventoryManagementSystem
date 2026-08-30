@@ -4,7 +4,7 @@ using Contract.Features.Identity.Commands.JwtGenerate;
 using Domain.Identity.Users;
 using Domain.Products.Enums;
 using Infrastructure.Identity;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;

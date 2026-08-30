@@ -5,7 +5,7 @@ using Contract.Features.Inventory.Product.DTOs;
 using Contract.Features.Inventory.Product.Mappers;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Microsoft.EntityFrameworkCore;
 using Contract.Common.Errors;
 namespace Contract.Features.Inventory.Product.Commands.CreateProduct

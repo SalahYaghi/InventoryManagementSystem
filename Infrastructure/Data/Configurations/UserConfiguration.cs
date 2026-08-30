@@ -1,5 +1,5 @@
 ﻿using Domain.Identity.Users;
-using MechanicShop.Domain.Common;
+using Inventory.Domain.Common;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.Identity.Client;

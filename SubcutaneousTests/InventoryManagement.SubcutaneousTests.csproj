@@ -8,6 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Features\Inventory\_Shared\**" />
+    <Compile Remove="Features\Parties\_Shared\**" />
+    <EmbeddedResource Remove="Features\Inventory\_Shared\**" />
+    <EmbeddedResource Remove="Features\Parties\_Shared\**" />
+    <None Remove="Features\Inventory\_Shared\**" />
+    <None Remove="Features\Parties\_Shared\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.8" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
@@ -22,11 +31,6 @@
     <ProjectReference Include="..\CommonTesting\InventoryManagement.CommonTesting.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
     <ProjectReference Include="..\InventoryManagementSystemAPI\InventoryManagementSystemAPI.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Features\Inventory\_Shared\" />
-    <Folder Include="Features\Parties\_Shared\" />
   </ItemGroup>
 
   <ItemGroup>

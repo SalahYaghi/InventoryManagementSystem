@@ -5,7 +5,7 @@ using Contract.Features.References.Countries.DTOs;
 using Contract.Features.References.Countries.Mappers;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 
 namespace Contract.Features.References.Countries.Commands.CreateCountry
 {

@@ -1,4 +1,4 @@
-﻿namespace MechanicShop.Domain.Common.Results.Abstractions;
+﻿namespace Inventory.Domain.Common.Results.Abstractions;
 
 public interface IResult
 {

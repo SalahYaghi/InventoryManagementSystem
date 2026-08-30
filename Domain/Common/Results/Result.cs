@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel;
 using System.Text.Json.Serialization;
 
-using MechanicShop.Domain.Common.Results.Abstractions;
+using Inventory.Domain.Common.Results.Abstractions;
 
-namespace MechanicShop.Domain.Common.Results;
+namespace Inventory.Domain.Common.Results;
 
 public static class Result
 {

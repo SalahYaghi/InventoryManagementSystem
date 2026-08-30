@@ -3,7 +3,7 @@ using Contract.Common.Interfaces;
 using Contract.Common.Models;
 using Contract.Features.Inventory.Adjustment.DTOs;
 using Contract.Features.Inventory.Adjustments.DTOs;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 
 namespace Contract.Features.Inventory.Adjustments.Queries.GetAdjustmentPaged

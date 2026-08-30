@@ -1,5 +1,5 @@
 using Contract.Features.Identity.Commands.JwtGenerate;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

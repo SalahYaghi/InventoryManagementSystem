@@ -1,7 +1,7 @@
 using Contract.Features.Parties.Employees.Dtos;
 using Domain.Warehouses;
 
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using System;
 using System.Collections.Generic;

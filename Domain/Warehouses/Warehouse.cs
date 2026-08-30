@@ -1,6 +1,6 @@
-﻿using MechanicShop.Domain.Common;
+﻿using Inventory.Domain.Common;
 using System;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Domain.Contacts.Address;
 using Domain.Identity.Employee;
 

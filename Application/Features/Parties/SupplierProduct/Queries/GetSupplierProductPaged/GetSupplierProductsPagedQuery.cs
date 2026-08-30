@@ -4,7 +4,7 @@ using Contract.Common.Models;
 using Contract.Features.Inventory.Product.DTOs;
 using Contract.Features.Parties.SupplierProduct.DTOs;
 using Contract.Features.Parties.SupplierProducts.DTOs;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 
 namespace Contract.Features.Parties.SupplierProducts.Queries.GetSupplierProductPaged

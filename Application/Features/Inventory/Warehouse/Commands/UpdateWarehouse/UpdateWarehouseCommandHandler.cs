@@ -3,7 +3,7 @@ using Contract.Common.Interfaces;
 using Contract.Features.Inventory.Warehouses.DTOs;
 using Contract.Features.Inventory.Warehouses.Mappers;
 using Domain.Contacts.Address;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

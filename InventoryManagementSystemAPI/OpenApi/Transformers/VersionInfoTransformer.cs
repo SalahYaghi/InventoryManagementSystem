@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.OpenApi;
 
-namespace MechanicShop.Api.OpenApi.Transformers;
+namespace Inventory.Api.OpenApi.Transformers;
 
 internal sealed class VersionInfoTransformer : IOpenApiDocumentTransformer
 {

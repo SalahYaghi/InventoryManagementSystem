@@ -4,7 +4,7 @@ using Contract.Features.Inventory.Warehouses.DTOs;
 using Contract.Features.Inventory.Warehouses.Mappers;
 using Domain.Contacts.Address;
 using Domain.Warehouses;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

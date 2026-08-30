@@ -5,7 +5,7 @@ using Contract.Features.References.Cities.DTOs;
 using Contract.Features.References.Cities.Mappers;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 
 namespace Contract.Features.References.Cities.Commands.CreateCity
 {

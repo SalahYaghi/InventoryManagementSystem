@@ -5,7 +5,7 @@ using Contract.Features.Inventory.Adjustments.Mappers;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Contract.Common.Errors;
 using Contract.Features.Inventory.Adjustment.Commands.UpdateAdjustment;
 

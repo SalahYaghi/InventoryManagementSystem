@@ -3,7 +3,7 @@ using Contract.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 
 namespace Contract.Features.References.Cities.Commands.DeleteCity
 {

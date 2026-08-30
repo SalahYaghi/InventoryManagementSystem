@@ -1,7 +1,7 @@
 using Contract.Common.Constants;
 using Contract.Common.Errors;
 using Contract.Common.Interfaces;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;

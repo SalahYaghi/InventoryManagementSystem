@@ -1,4 +1,4 @@
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Xunit;
 
 namespace InventoryManagement.Application.DomainTesting.Common;

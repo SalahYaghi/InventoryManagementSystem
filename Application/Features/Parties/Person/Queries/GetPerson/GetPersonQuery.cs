@@ -2,7 +2,7 @@ using Contract.Common.Constants;
 using Contract.Common.Interfaces;
 using Contract.Features.Parties.People.DTOs;
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 
 namespace Contract.Features.Parties.People.Queries.GetPerson
 {

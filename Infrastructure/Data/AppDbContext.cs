@@ -18,7 +18,7 @@ using Domain.Products.Domain.Products;
 using Domain.Suppliers;
 using Domain.Suppliers.SupplierProducts;
 using Domain.Warehouses;
-using MechanicShop.Domain.Common;
+using Inventory.Domain.Common;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;

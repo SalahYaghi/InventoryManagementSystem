@@ -7,7 +7,7 @@ using InventoryManagementSystemAPI.Shared.Converters;
 using InventoryManagementSystemAPI.Shared.Interfaces;
 using InventoryManagementSystemAPI.Shared.Middewares;
 using InventoryManagementSystemAPI.Shared.Middlewares;
-using MechanicShop.Api.OpenApi.Transformers;
+using Inventory.Api.OpenApi.Transformers;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning.Conventions;

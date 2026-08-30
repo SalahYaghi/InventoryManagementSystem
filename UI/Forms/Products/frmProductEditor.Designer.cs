@@ -42,6 +42,7 @@
             this.lblSubtitle = new System.Windows.Forms.Label();
             this.lblTitle = new System.Windows.Forms.Label();
             this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
+            this.lblMinimumStockLevel = new System.Windows.Forms.LinkLabel();
             this.panelRoot.SuspendLayout();
             this.panelBody.SuspendLayout();
             this.groupDescription.SuspendLayout();
@@ -327,6 +328,7 @@
             // panelHeader
             // 
             this.panelHeader.BackColor = System.Drawing.Color.White;
+            this.panelHeader.Controls.Add(this.lblMinimumStockLevel);
             this.panelHeader.Controls.Add(this.lblSubtitle);
             this.panelHeader.Controls.Add(this.lblTitle);
             this.panelHeader.Dock = System.Windows.Forms.DockStyle.Top;
@@ -360,6 +362,17 @@
             // 
             this.errorProvider.ContainerControl = this;
             // 
+            // lblMinimumStockLevel
+            // 
+            this.lblMinimumStockLevel.AutoSize = true;
+            this.lblMinimumStockLevel.Location = new System.Drawing.Point(594, 62);
+            this.lblMinimumStockLevel.Name = "lblMinimumStockLevel";
+            this.lblMinimumStockLevel.Size = new System.Drawing.Size(142, 20);
+            this.lblMinimumStockLevel.TabIndex = 5;
+            this.lblMinimumStockLevel.TabStop = true;
+            this.lblMinimumStockLevel.Text = "MinimumStockLevel";
+            this.lblMinimumStockLevel.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.lblMinimumStockLevel_LinkClicked);
+            // 
             // frmProductEditor
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
@@ -381,6 +394,7 @@
             this.groupIdentity.PerformLayout();
             this.panelFooter.ResumeLayout(false);
             this.panelHeader.ResumeLayout(false);
+            this.panelHeader.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.ResumeLayout(false);
 
@@ -413,5 +427,6 @@
             private System.Windows.Forms.Button btnCancel;
             private System.Windows.Forms.Label lblStatus;
             private System.Windows.Forms.ErrorProvider errorProvider;
-        }
+        private System.Windows.Forms.LinkLabel lblMinimumStockLevel;
+    }
     } 

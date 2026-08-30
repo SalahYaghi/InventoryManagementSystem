@@ -4,7 +4,7 @@ using Contract.Features.References.ContactInfos.Commands.CreateContactInfo;
 using Contract.Features.References.Documents.Commands.CreateDocument;
 using Domain.Contacts.Address;
 using Domain.Contacts.ContactInfo;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using System.Reflection.Metadata;
 

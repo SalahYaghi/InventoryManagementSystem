@@ -2,7 +2,7 @@ using Contract.Common.Errors;
 using Contract.Common.Interfaces;
 using Contract.Features.User.Dtos;
 using Contract.Features.Users.Mappers;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;

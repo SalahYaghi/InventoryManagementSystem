@@ -4,7 +4,7 @@ using Contract.Common.Models;
 using Contract.Features.Transactions.Order.DTOs;
 using Contract.Features.Transactions.Orders.DTOs;
 using Domain.Orders;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 
 namespace Contract.Features.Transactions.Orders.Queries.GetOrderPaged

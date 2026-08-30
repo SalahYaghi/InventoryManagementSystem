@@ -1,5 +1,5 @@
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 
 namespace Contract.Features.Inventory.Warehouses.Commands.DeleteWarehouse
 {

@@ -1,6 +1,6 @@
 using Application.Common.Dtos.Loggs;
 using Contract.Common.Interfaces;
-using MechanicShop.Domain.Common.Results.Abstractions;
+using Inventory.Domain.Common.Results.Abstractions;
 using MediatR;
 using MediatR.Pipeline;
 using Microsoft.AspNetCore.Http;

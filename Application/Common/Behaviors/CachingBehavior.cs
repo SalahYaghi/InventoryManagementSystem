@@ -1,6 +1,6 @@
 using Application.Common.Interfaces;
 using Contract.Common.Interfaces;
-using MechanicShop.Domain.Common.Results.Abstractions;
+using Inventory.Domain.Common.Results.Abstractions;
 using MediatR;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Logging;

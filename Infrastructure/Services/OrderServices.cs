@@ -2,7 +2,7 @@
 using Contract.Common.Interfaces;
 using Domain.Adjustments;
 using Domain.Orders;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;

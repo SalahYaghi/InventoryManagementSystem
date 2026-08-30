@@ -5,7 +5,7 @@ using Contract.Features.Users.Mappers;
 using Domain.Common.Helpers;
 using Domain.Identity.Employee;
 using Domain.Identity.Users;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

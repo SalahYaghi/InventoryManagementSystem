@@ -1,5 +1,5 @@
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Contract.Features.References.ContactInfos.DTOs;
 
 namespace Contract.Features.References.ContactInfos.Commands.CreateContactInfo

@@ -5,7 +5,7 @@ using Contract.Features.References.Documents.DTOs;
 using Contract.Features.References.Documents.Mappers;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Microsoft.Extensions.Logging;
 
 namespace Contract.Features.References.Documents.Queries.GetDocumentPaged

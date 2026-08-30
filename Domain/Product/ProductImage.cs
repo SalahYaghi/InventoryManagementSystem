@@ -5,8 +5,8 @@ using System.Text;
 namespace Domain.Products
 {
     using global::Domain.Common.Helpers;
-    using MechanicShop.Domain.Common;
-    using MechanicShop.Domain.Common.Results;
+    using Inventory.Domain.Common;
+    using Inventory.Domain.Common.Results;
     using System;
 
     namespace Domain.Products

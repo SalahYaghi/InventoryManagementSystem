@@ -251,12 +251,13 @@ namespace UI.Forms.Products
             }
 
             using (var frm = new frmProductEditor(selected.ProductId))
-            {
+            {
+                frm.DefineWarehouseStock(selected.Id);
                 if (frm.ShowDialog() == DialogResult.OK)
                     await dgvProducts.LoadDataGridViewData();
             }
         }
-            private void btnView_Click(object sender, EventArgs e)
+            private async void btnView_Click(object sender, EventArgs e)
             {
             var selected = dgvProducts.DgvCustom.GetSelectedItem<WarehouseStockDtoForList>();
 
@@ -265,7 +266,8 @@ namespace UI.Forms.Products
                 MessageBox.Show("Please select a product first.");
                 return;
             }
-
+
+
             using (var frm = new frmProductDetails(selected.ProductId))
             {
                 frm.ShowDialog();

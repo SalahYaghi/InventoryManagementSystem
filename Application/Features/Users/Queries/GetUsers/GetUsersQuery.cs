@@ -1,8 +1,8 @@
 using Contract.Common.Constants;
 using Contract.Common.Interfaces;
 using Contract.Features.User.Dtos;
-using MechanicShop.Domain.Common.Results;
-using MechanicShop.Domain.Common.Results.Abstractions;
+using Inventory.Domain.Common.Results;
+using Inventory.Domain.Common.Results.Abstractions;
 using MediatR;
 using System;
 using System.Collections.Generic;

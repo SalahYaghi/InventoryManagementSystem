@@ -1,4 +1,4 @@
-using MechanicShop.Domain.Common.Results; 
+using Inventory.Domain.Common.Results; 
     public interface IUser
     {
         public Guid? UserId { get;}

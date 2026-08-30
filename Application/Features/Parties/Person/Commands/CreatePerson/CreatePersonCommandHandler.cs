@@ -7,7 +7,7 @@ using Domain.Document;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Domain.Contacts.ContactInfo;
 using System.Reflection.Metadata;
 using Domain.Contacts.Address;

@@ -3,7 +3,7 @@ using Contract.Features.Parties.Customers.DTOs;
 using Contract.Features.Parties.Customers.Mappers;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Microsoft.Extensions.Logging;
 
 namespace Contract.Features.Parties.Customers.Queries.GetCustomer

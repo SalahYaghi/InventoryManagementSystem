@@ -1,17 +1,20 @@
-using Domain.Common.Constants;
+using Application.Features.Inventory.WarehouseStock.Queries.GetWarehouseStockById;
 using Contract.Common.Constants;
 using Contract.Features.Inventory.Product.Commands.CreateProduct;
+using Contract.Features.Inventory.Product.Queries.GetProduct;
 using Contract.Features.Inventory.WarehouseStock.Commands.AddWarehouseProducts;
 using Contract.Features.Inventory.WarehouseStocks.Commands.DeleteWarehouseStock;
 using Contract.Features.Inventory.WarehouseStocks.Commands.UpdateWarehouseStock;
+using Contract.Features.Inventory.WarehouseStocks.DTOs;
 using Contract.Features.Inventory.WarehouseStocks.Queries.GetWarehouseStockPaged;
 using Contract.Requests.Warehouses;
+using Domain.Common.Constants;
+using Infrastructure.Policies.OutputCachePolicies;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
-using Microsoft.AspNetCore.Http;
-using Infrastructure.Policies.OutputCachePolicies;
 namespace InventoryManagementSystemAPI.Controllers
 {
      
@@ -22,7 +25,7 @@ namespace InventoryManagementSystemAPI.Controllers
     [Authorize]
     public sealed class WarehouseStocksController(ISender sender) : ApiController
     {
-    [HttpGet("{warehouseId:guid}")]
+    [HttpGet("warehouse/{warehouseId:guid}")]
      [OutputCache(Tags = [CacheEntities.WarehouseStock], PolicyName = nameof(AuthenticatedUserCachePolicy), VaryByQueryKeys = ["pageNumber", "pageSize"], VaryByRouteValueNames = ["warehouseId"])]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -45,7 +48,30 @@ namespace InventoryManagementSystemAPI.Controllers
 
             return result.Match(response => Ok(response), Problem);
         }
-    [HttpPost]
+
+
+
+        [HttpGet("{warehouseStockId:guid}", Name = "GetWarehouseStockById")]
+        [OutputCache(Tags = [CacheEntities.WarehouseStock], PolicyName = nameof(AuthenticatedUserCachePolicy), VaryByRouteValueNames = ["warehouseStockId"])]
+        [ProducesResponseType(typeof(WarehouseStockDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+        [EndpointSummary("Retrieves a warehouse stock by ID.")]
+        [EndpointDescription("Returns detailed information about the specified product.")]
+        [EndpointName("GetWarehouseStockById")]
+        [MapToApiVersion("1.0")]
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.SalesUser + "," + RoleConstants.PurchasesUser + "," + RoleConstants.WarehouseUser + "," + RoleConstants.Viewer)]
+        public async Task<IActionResult> GetById(Guid warehouseStockId, CancellationToken ct)
+        {
+            var result = await sender.Send(new GetWarehouseStockByIdQuery(warehouseStockId), ct);
+            return result.Match(response => Ok(response), Problem);
+        }
+
+
+
+        [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status403Forbidden)]
@@ -77,6 +103,7 @@ namespace InventoryManagementSystemAPI.Controllers
                 _ => StatusCode(StatusCodes.Status201Created),
                 Problem);
         }
+    
     [HttpPut("{warehouseStockId:guid}/minimum-level")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -99,6 +126,8 @@ namespace InventoryManagementSystemAPI.Controllers
                 _ => Ok(),
                 Problem);
         }
+
+
     [HttpDelete("{warehouseStockId:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]

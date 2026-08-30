@@ -16,9 +16,20 @@ namespace UI.Services
     {
         public static async Task<ApiResult<PaginatedList<WarehouseStockDtoForList>>> GetByWarehouse(Guid warehouseId, int pageNumber = 1, int pageSize = 60)
         {
+            
             var response = await _inventoryClient.GetAsync($"{ByWarehouse(warehouseId)}?pageNumber={pageNumber}&pageSize={pageSize}");
             return await ReadResponse<PaginatedList<WarehouseStockDtoForList>>(response);
         }
+
+
+        public static async Task<ApiResult<WarehouseStockDto>> GetByWarehouseStockById(Guid id)
+        {
+
+            var response = await _inventoryClient.GetAsync($"{ByIdWarehouseStock(id)}");
+            return await ReadResponse<WarehouseStockDto>(response);
+        }
+
+
 
         public static async Task<ApiResult<bool>> AddProduct(AddWarehouseProductRequest request)
         {

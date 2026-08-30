@@ -6,7 +6,7 @@ using Castle.Core.Logging;
 using FluentValidation;
 using FluentValidation.Results;
 using InventoryManagement.Tests.Common.Factories.Orders;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestPlatform.Common;

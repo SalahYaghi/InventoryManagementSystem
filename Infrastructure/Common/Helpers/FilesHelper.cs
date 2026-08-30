@@ -1,7 +1,7 @@
 ﻿using Contract.Common.Files;
 using Contract.Common.Interfaces;
-using MechanicShop.Domain.Common;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common;
+using Inventory.Domain.Common.Results;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;

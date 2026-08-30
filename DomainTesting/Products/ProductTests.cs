@@ -28,7 +28,7 @@ public class ProductTests
         }
     }
 
-    private static MechanicShop.Domain.Common.Results.Result<Product> Create(Result_Helpers.ProductArgs a)
+    private static Inventory.Domain.Common.Results.Result<Product> Create(Result_Helpers.ProductArgs a)
         => Product.Create(a.Id, a.Sku, a.BarCode, a.Name, a.Description,
                           a.CategoryId, a.SellingPrice, a.IsActive, a.Unit);
 

@@ -5,7 +5,7 @@ using Contract.Features.Transactions.Orders.DTOs;
 using Contract.Features.Transactions.Orders.Mappers;
 using Domain.Orders;
 using Domain.Warehouses;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

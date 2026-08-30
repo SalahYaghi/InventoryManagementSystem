@@ -3,7 +3,7 @@ using Contract.Common.Interfaces;
 using Contract.Common.Models;
 using Contract.Features.Inventory.WarehouseStock.DTOs;
 using Contract.Features.Inventory.WarehouseStocks.DTOs;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 
 namespace Contract.Features.Inventory.WarehouseStocks.Queries.GetWarehouseStockPaged

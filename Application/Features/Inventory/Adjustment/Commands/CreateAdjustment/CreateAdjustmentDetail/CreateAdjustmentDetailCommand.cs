@@ -1,5 +1,5 @@
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using System.Data;
 using Contract.Features.Inventory.Adjustment.DTOs;
 

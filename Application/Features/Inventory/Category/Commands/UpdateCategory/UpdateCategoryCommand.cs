@@ -1,5 +1,5 @@
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Contract.Features.Inventory.Categories.DTOs;
 
 namespace Contract.Features.Inventory.Categories.Commands.UpdateCategory

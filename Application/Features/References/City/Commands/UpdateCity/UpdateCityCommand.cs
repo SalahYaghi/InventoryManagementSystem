@@ -1,5 +1,5 @@
 using MediatR;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Contract.Features.References.Cities.DTOs;
 
 namespace Contract.Features.References.Cities.Commands.UpdateCity

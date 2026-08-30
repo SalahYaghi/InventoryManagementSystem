@@ -1,4 +1,4 @@
-﻿namespace MechanicShop.Domain.Common.Constamts;
+﻿namespace Inventory.Domain.Common.Constamts;
 
 public static class InventoryManagementConstants
 {

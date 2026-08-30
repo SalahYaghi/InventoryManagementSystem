@@ -1,7 +1,7 @@
 using FluentValidation;
 using MediatR;
-using MechanicShop.Domain.Common.Results;
-using MechanicShop.Domain.Common.Results.Abstractions;
+using Inventory.Domain.Common.Results;
+using Inventory.Domain.Common.Results.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace Contract.Common.Behaviors

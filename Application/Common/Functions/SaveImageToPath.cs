@@ -1,7 +1,7 @@
 using Contract.Common.Interfaces;
 using Domain.Common.Helpers;  
 using Contract.Features.References.Document;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 

@@ -2,7 +2,7 @@ using Application.Common.Dtos.Loggs;
 using Contract.Common.Interfaces;
 using Contract.Features.Identity.Commands.JwtGenerate;
 using Infrastructure.Identity;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;

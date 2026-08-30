@@ -5,7 +5,7 @@ using Contract.Features.References.ContactInfos.DTOs;
 using Contract.Features.References.ContactInfos.Mappers;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using MechanicShop.Domain.Common.Results;
+using Inventory.Domain.Common.Results;
 
 namespace Contract.Features.References.ContactInfos.Commands.CreateContactInfo
 {
