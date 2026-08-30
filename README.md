@@ -1,8 +1,8 @@
 # Inventory Management System
 
-A production-oriented inventory and order management platform built on **.NET 10** with **Clean Architecture**, **CQRS**, and **Domain-Driven Design**, exposed through a versioned REST API and consumed by a Windows desktop client.
+A production-oriented inventory and order management platform built on **.NET 10** with **Clean Architecture**, **CQRS**, exposed through a versioned REST API and consumed by a Windows desktop client.
 
-The system tracks stock across multiple warehouses, manages the full order lifecycle (purchase, sale, transfer, returns), issues invoices as PDFs, and enforces role-based access with JWT authentication — backed by ~1,300 automated tests including full end-to-end integration tests against a real SQL Server instance.
+The system tracks stock across multiple warehouses, manages the full order lifecycle (purchase, sale, transfer, returns), issues invoices as PDFs, and enforces role-based access with JWT authentication — backed by ~1,300 automated tests including subcutaneous tests against a real SQL Server test container.
 
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)
 ![EF Core](https://img.shields.io/badge/EF%20Core-10.0-512BD4)
@@ -396,8 +396,8 @@ The handler validates the request, checks **available** stock (on-hand minus res
 
 ## License
 
-Add a license file before publishing — [choosealicense.com](https://choosealicense.com/) is a good starting point.
+This project is licensed under the MIT License.
 
 ## Contact
 
-Built by **[Your Name]** — [LinkedIn](#) · [Email](#) · [Portfolio](#)
+Built by **[Salah Mohammed Yaghi]** — [https://www.linkedin.com/in/salah-yaghi-3935b3364/](#) · [yaghimohsalah@gmail.com](#)
