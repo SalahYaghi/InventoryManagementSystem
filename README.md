@@ -83,6 +83,9 @@ It is built as a **layered monolith** with strict dependency rules. Business rul
 - **PDF generation via QuestPDF**, with embedded fonts for Arabic and emoji rendering
 - One-invoice-per-order invariant enforced in the aggregate
 
+![Generated invoice PDF](docs/images/invoice-page.png)
+*Invoice generated with QuestPDF — line items, totals, and embedded Arabic font support.*
+
 ### Identity & Authorization
 - JWT bearer authentication with **refresh token rotation** and background revocation of expired tokens
 - Five roles: `Admin`, `SalesUser`, `PurchasesUser`, `WarehouseUser`, `Viewer`
