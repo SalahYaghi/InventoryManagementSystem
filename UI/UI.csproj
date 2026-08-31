@@ -25,11 +25,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <!-- Required so GenerateResource can handle binary data in .resx files.
-         Must be paired with the System.Resources.Extensions reference below. -->
-    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
-  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
@@ -738,7 +733,9 @@
     <None Include="Resources\icons8-stocks-growth-96.png" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="inventory_x_icon.ico" />
+    <Content Include="inventory_x_icon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\inventory_x_icon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -6,6 +6,8 @@ services:
       target: final
     ports:
       - "5001:80"
+    volumes:
+      - uplaods-data:/app/Images 
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:80
@@ -24,7 +26,7 @@ services:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "Your_strong_password123!"
     ports:
-      - "1433:1433"
+      - "9899:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
     restart: always
@@ -33,7 +35,7 @@ services:
     image: redis:latest
     container_name: redis
     ports:
-      - "6379:6379"
+      - "5674:6379"
     restart: unless-stopped
 
   seq:
@@ -44,7 +46,7 @@ services:
       ACCEPT_EULA: "Y"
       SEQ_FIRSTRUN_NOAUTHENTICATION: "true"
     ports:
-      - "5341:80"
+      - "6784:80"
     restart: unless-stopped
 
   prometheus:
@@ -63,7 +65,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: "YourStrongPwd"
     ports:
-      - "3000:3000"
+      - "9775:3000"
     volumes:
       - grafana-data:/var/lib/grafana
     depends_on:
@@ -74,4 +76,5 @@ volumes:
   sqlserver-data:
   grafana-data:
   seq-data:
+  uplaods-data:
   prometheus-data:

@@ -48,7 +48,6 @@ public sealed class ApplicationDbContextInitialiser(
         try
         {
             if (await context.Users.AnyAsync(
-                    x => x.Username == SeedAdminUsername,
                     cancellationToken))
             {
                 return;

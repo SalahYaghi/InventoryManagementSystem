@@ -1,4 +1,8 @@
-﻿namespace HotelSystemUI.Login
+﻿using System.Drawing;
+using System.IO;
+using System.Windows.Forms;
+
+namespace HotelSystemUI.Login
 {
     
         partial class frmLogin
@@ -242,7 +246,7 @@
             this.lblAppName.Name = "lblAppName";
             this.lblAppName.Size = new System.Drawing.Size(180, 34);
             this.lblAppName.TabIndex = 0;
-            this.lblAppName.Text = "Inventory X";
+            this.lblAppName.Text = "Inventory";
             this.lblAppName.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // lblTopCaption
@@ -287,7 +291,8 @@
             this.Controls.Add(this.pnlRoot);
             this.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Icon = new Icon(
+              Path.Combine(Application.StartupPath, "inventory_x_icon.ico"));
             this.Name = "frmLogin";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Login";
