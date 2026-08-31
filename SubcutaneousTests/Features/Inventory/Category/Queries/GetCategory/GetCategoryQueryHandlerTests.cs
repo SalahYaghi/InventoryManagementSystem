@@ -154,16 +154,20 @@ public class GetCategoryQueryHandlerTests
     [Fact]
     public async Task GetPaged_WithCategories_ShouldReturnList()
     {
-        var unique = Guid.NewGuid().ToString("N")[..8];
-        var category1 = CategoryFactory.CreateValid(name: $"P1-{unique}");
-        var category2 = CategoryFactory.CreateValid(name: $"P2-{unique}");
-        await _context.Categories.AddRangeAsync([category1, category2], CancellationToken.None);
+        var unique = Guid.NewGuid().ToString("N")[..2];
+
+        var created1 = await _mediator.Send(new CreateCategoryCommand { Name = $"P1-{unique}" }, CancellationToken.None);
+        var created2 = await _mediator.Send(new CreateCategoryCommand { Name = $"P2-{unique}" }, CancellationToken.None);
+        Assert.True(created1.IsSuccess);
+        Assert.True(created2.IsSuccess);
+
         await _context.SaveChangesAsync(CancellationToken.None);
+
 
         var result = await _mediator.Send(new GetCategoryPagedQuery(), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Contains(result.Value, x => x.Id == category1.Id);
-        Assert.Contains(result.Value, x => x.Id == category2.Id);
+        Assert.Contains(result.Value, x => x.Id == created1.Value.Id);
+        Assert.Contains(result.Value, x => x.Id == created2.Value.Id);
     }
 }
