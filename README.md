@@ -290,9 +290,9 @@ This starts the API alongside SQL Server, Redis, Seq, Prometheus, and Grafana. T
 | Swagger UI | http://localhost:5001/swagger |
 | Health check | http://localhost:5001/health |
 | Prometheus metrics | http://localhost:5001/metrics |
-| Seq (logs & traces) | http://localhost:5111 |
+| Seq (logs & traces) | http://localhost:5341 |
 | Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:5005 |
+| Grafana | http://localhost:3000 |
 
 ### Run locally
 
