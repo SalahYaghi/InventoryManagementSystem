@@ -4,7 +4,6 @@ A production-oriented inventory and order management platform built on **.NET 10
 
 The system tracks stock across multiple warehouses, manages the full order lifecycle (purchase, sale, transfer, returns), issues invoices as PDFs, and enforces role-based access with JWT authentication — backed by ~1,300 automated tests including subcutaneous tests against a real SQL Server test container, all executed on every push through GitHub Actions.
 
-[![Build and Test](https://github.com/<your-username>/<your-repo>/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/<your-username>/<your-repo>/actions/workflows/build-and-test.yml)
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)
 ![EF Core](https://img.shields.io/badge/EF%20Core-10.0-512BD4)
 ![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-CC2927)
