@@ -154,7 +154,7 @@ public class CreateCategoryCommandHandlerTests
     [Fact]
     public async Task GetPaged_WithCategories_ShouldReturnList()
     {
-        var unique = Guid.NewGuid().ToString("N")[..8];
+        var unique = Guid.NewGuid().ToString("N")[..2];
 
         var created1 = await _mediator.Send(new CreateCategoryCommand { Name = $"P1-{unique}" }, CancellationToken.None);
         var created2 = await _mediator.Send(new CreateCategoryCommand { Name = $"P2-{unique}" }, CancellationToken.None);
