@@ -2,8 +2,9 @@
 
 A production-oriented inventory and order management platform built on **.NET 10** with **Clean Architecture**, **CQRS**, exposed through a versioned REST API and consumed by a Windows desktop client.
 
-The system tracks stock across multiple warehouses, manages the full order lifecycle (purchase, sale, transfer, returns), issues invoices as PDFs, and enforces role-based access with JWT authentication — backed by ~1,300 automated tests including subcutaneous tests against a real SQL Server test container.
+The system tracks stock across multiple warehouses, manages the full order lifecycle (purchase, sale, transfer, returns), issues invoices as PDFs, and enforces role-based access with JWT authentication — backed by ~1,300 automated tests including subcutaneous tests against a real SQL Server test container, all executed on every push through GitHub Actions.
 
+[![Build and Test](https://github.com/<your-username>/<your-repo>/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/<your-username>/<your-repo>/actions/workflows/build-and-test.yml)
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)
 ![EF Core](https://img.shields.io/badge/EF%20Core-10.0-512BD4)
 ![SQL Server](https://img.shields.io/badge/SQL%20Server-2022-CC2927)
@@ -22,6 +23,7 @@ The system tracks stock across multiple warehouses, manages the full order lifec
 - [Domain Model](#domain-model)
 - [Cross-Cutting Concerns](#cross-cutting-concerns)
 - [Testing Strategy](#testing-strategy)
+- [Continuous Integration](#continuous-integration)
 - [Getting Started](#getting-started)
 - [API Reference](#api-reference)
 - [Observability](#observability)
@@ -104,7 +106,7 @@ Clean Architecture with dependencies pointing strictly inward:
 │  └── UI                            (WinForms, .NET 4.8)   │
 ├──────────────────────────────────────────────────────────┤
 │  Infrastructure                                          │
-│  EF Core · Redis · JWT · QuestPDF · MimeKit · Workers     │
+│  EF Core · Redis · JWT · QuestPDF · Workers               │
 ├──────────────────────────────────────────────────────────┤
 │  Application                                             │
 │  CQRS handlers · Behaviors · Validators · Mappers · DTOs  │
@@ -176,6 +178,7 @@ Request
 | PDF | QuestPDF |
 | Docs | OpenAPI, Scalar, Swagger UI |
 | Testing | xUnit, FluentAssertions, Testcontainers, WebApplicationFactory |
+| CI | GitHub Actions (Linux + Windows jobs) |
 | Desktop client | WinForms (.NET Framework 4.8) |
 | Orchestration | Docker Compose |
 
@@ -238,6 +241,30 @@ Roughly **1,342 test methods** across four projects, organized as a test pyramid
 
 ---
 
+## Continuous Integration
+
+Every push and pull request against `main` triggers the **Build and Test** workflow in GitHub Actions. Because the solution spans two runtimes, the pipeline splits across two runners:
+
+| Job | Runner | Responsibility |
+|---|---|---|
+| `build-and-test-dotnet` | `ubuntu-latest` | Restores, builds, and tests the .NET 10 stack — Domain, Application, Infrastructure, API, and all three test projects |
+| `build-windows` | `windows-latest` | Builds the legacy .NET Framework 4.8 projects (`UI`, `ContracOldCompatibile`) with MSBuild and `nuget restore` |
+
+The Linux job runs the **full test suite**, including the ~994 subcutaneous tests. Those tests provision a real SQL Server 2022 container through Testcontainers, which works on GitHub-hosted Linux runners because the Docker daemon is available out of the box. No mocked database, no in-memory provider — the same engine the application targets in production.
+
+The split across runners is deliberate. The WinForms client and its mirrored contracts use the **legacy, non-SDK MSBuild project format**, which the `dotnet` CLI cannot build; they need `msbuild.exe` on a Windows runner. Everything else builds and tests on Linux, where Docker is available for the integration suite.
+
+Workflow definition lives at [`.github/workflows/build-and-test.yml`](.github/workflows/build-and-test.yml).
+
+```bash
+# Reproduce the CI test run locally
+dotnet test DomainTesting/InventoryManagement.Application.DomainTesting.csproj
+dotnet test ApplicationTesting/InventoryManagement.Application.UnitTests.csproj
+dotnet test SubcutaneousTests/InventoryManagement.SubcutaneousTests.csproj
+```
+
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -248,8 +275,8 @@ Roughly **1,342 test methods** across four projects, organized as a test pyramid
 ### Run with Docker Compose
 
 ```bash
-git clone https://github.com/<your-username>/inventory-management-system.git
-cd inventory-management-system
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>
 
 # Provide secrets (see Configuration below) then:
 docker compose up -d
@@ -365,9 +392,10 @@ The handler validates the request, checks **available** stock (on-hand minus res
 ## Project Structure
 
 ```
+├── .github/workflows/          CI pipeline (build + test on Linux and Windows)
 ├── Domain/                     Aggregates, domain events, errors, Result<T>
 ├── Application/                CQRS handlers, behaviors, validators, mappers
-├── Infrastructure/             EF Core, Redis, JWT, PDF, email, workers
+├── Infrastructure/             EF Core, Redis, JWT, PDF, workers
 ├── InventoryManagementSystemAPI/   Controllers, middleware, OpenAPI, DI
 ├── Contracts/                  Shared request/response contracts (.NET 10)
 ├── ContracOldCompatibile/      Mirrored contracts (.NET Framework 4.8)
@@ -383,7 +411,9 @@ The handler validates the request, checks **available** stock (on-hand minus res
 
 ## Roadmap
 
-- [ ] CI/CD pipeline with automated test runs and coverage reporting
+- [x] CI pipeline running the full test suite on every push
+- [ ] Code coverage collection and reporting in the pipeline
+- [ ] Automated container image build and publish
 - [ ] Web front-end (Blazor or React) to complement the desktop client
 - [ ] Purchase-order approval workflows
 - [ ] Advanced reporting and data export
@@ -397,4 +427,7 @@ This project is licensed under the MIT License.
 
 ## Contact
 
-Built by **Salah Mohammed Yaghi** — [https://www.linkedin.com/in/salah-yaghi-3935b3364/](#) · [yaghimohsalah@gmail.com](#)
+Built by **Salah Mohammed Yaghi**
+
+- LinkedIn: [salah-yaghi](https://www.linkedin.com/in/salah-yaghi-3935b3364/)
+- Email: [yaghimohsalah@gmail.com](mailto:yaghimohsalah@gmail.com)
