@@ -36,7 +36,7 @@ namespace Infrastructure.Data.Configurations
              builder.HasQueryFilter(x => x.IsDeleted != true);
             builder.HasIndex(x => new { x.WarehouseId, x.ProductId })
                 .IsUnique()
-                .HasFilter("[IsDeleted] IS NULL OR [IsDeleted] = 0");
+                .HasFilter("[IsDeleted] = 0");
         }
     }
 }

@@ -1,13 +1,15 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Infrastructure.Data.Migrations
 {
-     public partial class InitialBase02 : Migration
+    /// <inheritdoc />
+    public partial class InitialCreate : Migration
     {
-         protected override void Up(MigrationBuilder migrationBuilder)
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
                 name: "Categories",
@@ -505,8 +507,8 @@ namespace Infrastructure.Data.Migrations
                     ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     MinimumStockLevel = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: true),
+                    DeletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     CreatedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     LastModifiedUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -629,8 +631,8 @@ namespace Infrastructure.Data.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Token = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RevokedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    RevokedAt = table.Column<DateTimeOffset>(type: "DateTimeOffset", nullable: true),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "DateTimeOffset", nullable: false),
                     CreatedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LastModifiedUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
@@ -641,6 +643,54 @@ namespace Infrastructure.Data.Migrations
                     table.PrimaryKey("PK_RefreshTokens", x => x.Id);
                     table.ForeignKey(
                         name: "FK_RefreshTokens_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserLoginAuditLog",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Action = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IpAddress = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: true),
+                    UserAgent = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsSuccess = table.Column<bool>(type: "bit", nullable: false),
+                    ErrorMessage = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserLoginAuditLog", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserLoginAuditLog_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserOperationsAuditLog",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RequsetName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IpAddress = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: true),
+                    UserAgent = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsSuccess = table.Column<bool>(type: "bit", nullable: false),
+                    ErrorMessage = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserOperationsAuditLog", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserOperationsAuditLog_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -821,11 +871,20 @@ namespace Infrastructure.Data.Migrations
                 column: "SupplierCode",
                 unique: true);
 
-            //migrationBuilder.CreateIndex(
-            //    name: "IX_Users_EmployeeId",
-            //    table: "Users",
-            //    column: "EmployeeId",
-            //    unique: true);
+            migrationBuilder.CreateIndex(
+                name: "IX_UserLoginAuditLog_UserId",
+                table: "UserLoginAuditLog",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserOperationsAuditLog_UserId",
+                table: "UserOperationsAuditLog",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_EmployeeId",
+                table: "Users",
+                column: "EmployeeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Username",
@@ -877,6 +936,12 @@ namespace Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "SupplierProducts");
+
+            migrationBuilder.DropTable(
+                name: "UserLoginAuditLog");
+
+            migrationBuilder.DropTable(
+                name: "UserOperationsAuditLog");
 
             migrationBuilder.DropTable(
                 name: "WarehouseStocks");
