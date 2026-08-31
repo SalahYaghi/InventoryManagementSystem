@@ -14,21 +14,112 @@ using Domain.Products.Enums;
 using Domain.Suppliers;
 using Domain.Suppliers.SupplierProducts;
 using Domain.Warehouses;
+using Inventory.Domain.Common.Constamts;
+using Inventory.Domain.Common.Results;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Runtime.Intrinsics.X86;
+using ProductDefinition = (string Sku, string Barcode, string Name, string Description, decimal SellingPrice);
 
 namespace Infrastructure.Data;
-
 public sealed class ApplicationDbContextInitialiser(
     AppDbContext context,
     ILogger<ApplicationDbContextInitialiser> logger,
     IHashingHelper hashingHelper)
 {
+
     private const string SeedAdminUsername = "admin_salah";
     private const string SeedPassword = "Admin@12345";
+    private const string CompanyMailDomain = "masar-trading.ps";
+    private const string CompanyWebsite = "https://www.masar-trading.ps";
+
+    private const int EmployeesPerWarehouse = 20;
+
+    private const int UserCount = 25;
+
+    private const int ProductsPerSupplier = 40;
+
+    private const int PurchaseOrderCount = 200;
+    private const int SaleOrderCount = 260;
+    private const int ReturnInOrderCount = 200;
+    private const int ReturnOutOrderCount = 60;
+    private const int TransferOrderCount = 60;
+    private const decimal MinimumOpeningStock = 6_000m;
+
+    private const decimal OpeningStockSpread = 54_000m;
+
+    private const int RandomSeed = 20260831;
+
+    private readonly Random _random = new(RandomSeed);
+
+
+    private static readonly string[] MaleFirstNames =
+    {
+        "Salah", "Omar", "Rami", "Yousef", "Kareem", "Fadi", "Bilal", "Tariq",
+        "Ibrahim", "Nader", "Sami", "Hani", "Ayman", "Ziad", "Majed", "Anas",
+        "Basel", "Firas", "Hakim", "Jamal", "Murad", "Nizar", "Osama", "Raed",
+        "Sharif", "Tamer", "Wael", "Yazan", "Zuhair", "Adham"
+    };
+
+    private static readonly string[] FemaleFirstNames =
+    {
+        "Layla", "Rana", "Huda", "Nour", "Sara", "Dina", "Maha", "Reem",
+        "Aya", "Lina", "Salma", "Hiba", "Rula", "Nadia", "Amal", "Israa",
+        "Rawan", "Shatha", "Wafa", "Zaina"
+    };
+
+    private static readonly string[] FatherNames =
+    {
+        "Mohammad", "Khaled", "Tareq", "Adel", "Sami", "Nabil", "Jamal",
+        "Raed", "Wael", "Ahmad", "Ziad", "Ismail", "Kamal", "Bassam",
+        "Marwan", "Fathi", "Riyad", "Sameh", "Talal", "Yahya"
+    };
+
+    private static readonly string?[] GrandfatherNames =
+    {
+        "Ali", "Hussein", "Saeed", "Yaser", null, "Nasri", "Fawzi", "Rashid",
+        null, "Subhi", "Mahmoud", null, "Amin", "Hafez", null
+    };
+
+    private static readonly string[] FamilyNames =
+    {
+        "Ahmad", "Saleh", "Hassan", "Nasser", "Odeh", "Kamal", "Darwish",
+        "Barghouti", "Masri", "Khatib", "Hamdan", "Shaheen", "Zaid", "Awad",
+        "Halabi", "Qasem", "Sabbah", "Jaber", "Nimer", "Rajab", "Touqan",
+        "Shakaa", "Dweikat", "Anabtawi", "Sawalha", "Kanaan", "Hijjawi",
+        "Aloul", "Zeidan", "Tamimi", "Abdeen", "Rimawi", "Salameh", "Ashqar",
+        "Zaqzouq", "Hallaq", "Jarrar", "Amleh", "Sarsour", "Yaish"
+    };
+
+    private static readonly string[] JobTitles =
+    {
+        "Branch Manager",
+        "Assistant Branch Manager",
+        "Warehouse Supervisor",
+        "Shift Supervisor",
+        "Inventory Controller",
+        "Stock Auditor",
+        "Receiving Clerk",
+        "Dispatch Coordinator",
+        "Order Picker",
+        "Packing Clerk",
+        "Forklift Operator",
+        "Loading Bay Attendant",
+        "Sales Officer",
+        "Senior Sales Officer",
+        "Sales Representative",
+        "Purchasing Officer",
+        "Procurement Assistant",
+        "Quality Inspector",
+        "Logistics Coordinator",
+        "Fleet Coordinator",
+        "Maintenance Technician",
+        "Warehouse Accountant",
+        "Customer Service Officer",
+        "IT Support Officer",
+        "Security Officer"
+    };
 
     public async Task InitialiseAsync(CancellationToken cancellationToken = default)
     {
@@ -47,8 +138,7 @@ public sealed class ApplicationDbContextInitialiser(
     {
         try
         {
-            if (await context.Users.AnyAsync(
-                    cancellationToken))
+            if (await context.Users.AnyAsync(cancellationToken))
             {
                 return;
             }
@@ -56,17 +146,36 @@ public sealed class ApplicationDbContextInitialiser(
             await using var transaction =
                 await context.Database.BeginTransactionAsync(cancellationToken);
 
-            await SeedCountriesAsync(cancellationToken);
-            await SeedCatalogAsync(cancellationToken);
-            await SeedBusinessPartnersAsync(cancellationToken);
-            await SeedInventoryAsync(cancellationToken);
-            await SeedEmployeesAndUsersAsync(cancellationToken);
-            await SeedOrdersAndInvoicesAsync(cancellationToken);
+            SeedLocationsFunction();
+            SeedCatalogFunction();
+            SeedWarehouses();
+            SeedOpeningStock();
+            SeedSuppliers();
+            SeedCustomers();
+            SeedEmployeesAndUsers();
+            SeedOrdersAndInvoices();
 
             await context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
-            logger.LogInformation("Development seed data was created successfully.");
+            logger.LogInformation(
+                "Seed completed. Countries {Countries}, cities {Cities}, categories {Categories}, " +
+                "products {Products}, warehouses {Warehouses}, stock rows {Stock}, " +
+                "suppliers {Suppliers}, supplier products {SupplierProducts}, customers {Customers}, " +
+                "employees {Employees}, users {Users}, orders {Orders}, invoices {Invoices}.",
+                _locations.Countries.Length,
+                _locations.Cities.Count,
+                5,
+                _catalog.All.Length,
+                _warehouses.Length,
+                _stockRowCount,
+                _suppliers.Length,
+                _supplierProductCount,
+                _customers.Length,
+                _employees.Length,
+                _userCount,
+                _orderCount,
+                _invoiceCount);
         }
         catch (Exception ex)
         {
@@ -75,111 +184,124 @@ public sealed class ApplicationDbContextInitialiser(
         }
     }
 
-    private async Task SeedCountriesAsync(CancellationToken cancellationToken)
+    private static T Require<T>(Result<T> result, string what)
     {
-        var palestine = Country.Create("Palestine").Value;
-        var jordan = Country.Create("Jordan").Value;
-        var egypt = Country.Create("Egypt").Value;
+        if (result.IsError)
+        {
+            var error = result.TopError;
 
-        var nablus = City.Create(
-            Guid.NewGuid(),
-            palestine.Id,
-            "Nablus").Value;
+            throw new InvalidOperationException(
+                $"Seeding failed while creating {what}. " +
+                $"Domain rejected it with [{error.Type}] {error.Code}: {error.Description}");
+        }
 
-        var ramallah = City.Create(
-            Guid.NewGuid(),
-            palestine.Id,
-            "Ramallah").Value;
-
-        var gaza = City.Create(
-            Guid.NewGuid(),
-            palestine.Id,
-            "Gaza").Value;
-
-        var amman = City.Create(
-            Guid.NewGuid(),
-            jordan.Id,
-            "Amman").Value;
-
-        var cairo = City.Create(
-            Guid.NewGuid(),
-            egypt.Id,
-            "Cairo").Value;
-
-        context.Countries.AddRange(
-            palestine,
-            jordan,
-            egypt);
-
-        context.Cities.AddRange(
-            nablus,
-            ramallah,
-            gaza,
-            amman,
-            cairo);
-
-        _locations = new SeedLocations(
-            palestine,
-            jordan,
-            egypt,
-            nablus,
-            ramallah,
-            gaza,
-            amman,
-            cairo);
-
-        await Task.CompletedTask;
+        return result.Value;
     }
 
-    private async Task SeedCatalogAsync(CancellationToken cancellationToken)
+    private decimal Between(decimal minimum, decimal maximum)
     {
-        var electronics = Category.Create(
-            Guid.NewGuid(),
-            "Electronics").Value;
+        return minimum + ((decimal)_random.NextDouble() * (maximum - minimum));
+    }
 
-        var tools = Category.Create(
-            Guid.NewGuid(),
-            "Tools").Value;
-
-        var automotive = Category.Create(
-            Guid.NewGuid(),
-            "Automotive").Value;
-
-        var safety = Category.Create(
-            Guid.NewGuid(),
-            "Safety").Value;
-
-        var office = Category.Create(
-            Guid.NewGuid(),
-            "Office").Value;
-
-        var products = new List<Product>
+    private int Between(int minimum, int maximum)
     {
-        Product.Create(
-            Guid.NewGuid(),
-            "ELEC-001",
-            "62810001",
-            "USB-C Cable",
-            "Braided USB-C charging and data cable",
-            electronics.Id,
-            8.50m,
-            true,
-            Unit.Piece).Value,
+        return _random.Next(minimum, maximum);
+    }
 
-        Product.Create(
-            Guid.NewGuid(),
-            "ELEC-002",
-            "62810002",
-            "Power Adapter",
-            "65W universal USB-C power adapter",
-            electronics.Id,
-            29.00m,
-            true,
-            Unit.Piece).Value
-    };
+    private T Pick<T>(IReadOnlyList<T> source)
+    {
+        return source[_random.Next(source.Count)];
+    }
 
-        var electronicsProducts = new[]
+    private void SeedLocationsFunction()
+    {
+        var palestine = Require(Country.Create("Palestine"), "country Palestine");
+        var jordan = Require(Country.Create("Jordan"), "country Jordan");
+        var egypt = Require(Country.Create("Egypt"), "country Egypt");
+        var saudiArabia = Require(Country.Create("Saudi Arabia"), "country Saudi Arabia");
+        var emirates = Require(Country.Create("United Arab Emirates"), "country UAE");
+        var turkey = Require(Country.Create("Turkey"), "country Turkey");
+        var china = Require(Country.Create("China"), "country China");
+
+        var countries = new[]
         {
+            palestine, jordan, egypt, saudiArabia, emirates, turkey, china
+        };
+
+        var definitions = new (Country Country, string Name)[]
+        {
+            (palestine, "Nablus"),
+            (palestine, "Ramallah"),
+            (palestine, "Al-Bireh"),
+            (palestine, "Hebron"),
+            (palestine, "Gaza"),
+            (palestine, "Khan Younis"),
+            (palestine, "Rafah"),
+            (palestine, "Jenin"),
+            (palestine, "Tulkarm"),
+            (palestine, "Qalqilya"),
+            (palestine, "Bethlehem"),
+            (palestine, "Jericho"),
+            (palestine, "Salfit"),
+            (palestine, "Tubas"),
+            (palestine, "Jerusalem"),
+            (jordan, "Amman"),
+            (jordan, "Zarqa"),
+            (jordan, "Irbid"),
+            (jordan, "Aqaba"),
+            (egypt, "Cairo"),
+            (egypt, "Alexandria"),
+            (egypt, "Giza"),
+            (egypt, "Port Said"),
+            (saudiArabia, "Riyadh"),
+            (saudiArabia, "Jeddah"),
+            (saudiArabia, "Dammam"),
+            (emirates, "Dubai"),
+            (emirates, "Sharjah"),
+            (turkey, "Istanbul"),
+            (turkey, "Izmir"),
+            (china, "Shenzhen"),
+            (china, "Guangzhou")
+        };
+
+        var cities = new Dictionary<string, SeedCity>(StringComparer.Ordinal);
+
+        foreach (var definition in definitions)
+        {
+            var city = Require(
+                City.Create(Guid.NewGuid(), definition.Country.Id, definition.Name),
+                $"city {definition.Name}");
+
+            cities.Add(definition.Name, new SeedCity(definition.Name, definition.Country, city));
+        }
+
+        context.Countries.AddRange(countries);
+        context.Cities.AddRange(cities.Values.Select(city => city.City));
+
+        _locations = new SeedLocations(countries, cities);
+    }
+
+    private void SeedCatalogFunction()
+    {
+        var electronics = Require(
+            Category.Create(Guid.NewGuid(), "Electronics"), "category Electronics");
+
+        var tools = Require(
+            Category.Create(Guid.NewGuid(), "Tools"), "category Tools");
+
+        var automotive = Require(
+            Category.Create(Guid.NewGuid(), "Automotive"), "category Automotive");
+
+        var safety = Require(
+            Category.Create(Guid.NewGuid(), "Safety"), "category Safety");
+
+        var office = Require(
+            Category.Create(Guid.NewGuid(), "Office"), "category Office");
+
+        var electronicsProducts = new ProductDefinition[]
+        {
+        ("ELEC-001", "62810001", "USB-C Cable", "Braided USB-C charging and data cable", 8.50m),
+        ("ELEC-002", "62810002", "Power Adapter", "65W universal USB-C power adapter", 29.00m),
         ("ELEC-003", "62810003", "USB-C to USB-C Cable", "High-speed USB-C to USB-C cable", 9.50m),
         ("ELEC-004", "62810004", "USB-C to Lightning Cable", "USB-C to Lightning charging cable", 12.00m),
         ("ELEC-005", "62810005", "HDMI Cable 2m", "High-speed HDMI cable 2 meter", 7.50m),
@@ -402,488 +524,420 @@ public sealed class ApplicationDbContextInitialiser(
         ("ELEC-203", "62810203", "UPS 1500VA", "1500VA uninterruptible power supply", 185.00m),
         ("ELEC-204", "62810204", "Voltage Stabilizer", "Automatic electronic voltage stabilizer", 65.00m),
         ("ELEC-205", "62810205", "Electronic Multimeter", "Digital electronic multimeter", 35.00m)
-    };
-
-        products.AddRange(
-            electronicsProducts.Select(product =>
-                Product.Create(
-                    Guid.NewGuid(),
-                    product.Item1,
-                    product.Item2,
-                    product.Item3,
-                    product.Item4,
-                    electronics.Id,
-                    product.Item5,
-                    true,
-                    Unit.Piece).Value));
-
-        var automotiveProducts = new[]
-{
-    ("AUTO-001", "62830001", "Engine Oil 5W-30", "Full synthetic 5W-30 engine oil", 24.00m),
-    ("AUTO-002", "62830002", "Brake Pads", "Front ceramic brake pad set", 55.00m),
-    ("AUTO-003", "62830003", "Engine Oil 5W-40", "Full synthetic 5W-40 engine oil", 26.00m),
-    ("AUTO-004", "62830004", "Engine Oil 10W-40", "Semi-synthetic 10W-40 engine oil", 21.00m),
-    ("AUTO-005", "62830005", "Engine Oil 15W-40", "Heavy-duty 15W-40 engine oil", 19.00m),
-    ("AUTO-006", "62830006", "Automatic Transmission Fluid", "ATF automatic transmission fluid", 18.00m),
-    ("AUTO-007", "62830007", "Gear Oil 75W-90", "Synthetic 75W-90 gear oil", 22.00m),
-    ("AUTO-008", "62830008", "Brake Fluid DOT3", "DOT3 hydraulic brake fluid", 8.00m),
-    ("AUTO-009", "62830009", "Brake Fluid DOT4", "DOT4 hydraulic brake fluid", 10.00m),
-    ("AUTO-010", "62830010", "Coolant 1L", "Ready-to-use engine coolant", 6.50m),
-
-    ("AUTO-011", "62830011", "Coolant 5L", "Five-liter engine coolant", 21.00m),
-    ("AUTO-012", "62830012", "Radiator Flush", "Cooling system radiator flush", 9.50m),
-    ("AUTO-013", "62830013", "Windshield Washer Fluid", "Ready-to-use washer fluid", 5.00m),
-    ("AUTO-014", "62830014", "Power Steering Fluid", "Hydraulic power steering fluid", 9.00m),
-    ("AUTO-015", "62830015", "Engine Oil Filter", "Spin-on engine oil filter", 6.50m),
-    ("AUTO-016", "62830016", "Air Filter", "Replacement engine air filter", 12.00m),
-    ("AUTO-017", "62830017", "Cabin Air Filter", "Vehicle cabin air filter", 13.00m),
-    ("AUTO-018", "62830018", "Fuel Filter", "Inline automotive fuel filter", 14.00m),
-    ("AUTO-019", "62830019", "Transmission Filter", "Automatic transmission filter", 24.00m),
-    ("AUTO-020", "62830020", "Performance Air Filter", "High-flow reusable air filter", 35.00m),
-
-    ("AUTO-021", "62830021", "Front Brake Pads", "Front disc brake pad set", 55.00m),
-    ("AUTO-022", "62830022", "Rear Brake Pads", "Rear disc brake pad set", 48.00m),
-    ("AUTO-023", "62830023", "Brake Shoes", "Rear drum brake shoe set", 42.00m),
-    ("AUTO-024", "62830024", "Brake Disc Front", "Front ventilated brake disc", 65.00m),
-    ("AUTO-025", "62830025", "Brake Disc Rear", "Rear solid brake disc", 52.00m),
-    ("AUTO-026", "62830026", "Brake Drum", "Rear brake drum", 48.00m),
-    ("AUTO-027", "62830027", "Brake Caliper", "Front brake caliper assembly", 95.00m),
-    ("AUTO-028", "62830028", "Brake Caliper Repair Kit", "Brake caliper seal repair kit", 18.00m),
-    ("AUTO-029", "62830029", "Brake Hose", "Flexible hydraulic brake hose", 15.00m),
-    ("AUTO-030", "62830030", "Brake Pad Wear Sensor", "Electronic brake pad wear sensor", 12.00m),
-
-    ("AUTO-031", "62830031", "Car Battery 45Ah", "12V 45Ah automotive battery", 85.00m),
-    ("AUTO-032", "62830032", "Car Battery 60Ah", "12V 60Ah automotive battery", 105.00m),
-    ("AUTO-033", "62830033", "Car Battery 70Ah", "12V 70Ah automotive battery", 125.00m),
-    ("AUTO-034", "62830034", "Car Battery 90Ah", "12V 90Ah automotive battery", 155.00m),
-    ("AUTO-035", "62830035", "Battery Terminal", "Universal battery terminal pair", 7.00m),
-    ("AUTO-036", "62830036", "Battery Cable", "Heavy-duty battery cable", 14.00m),
-    ("AUTO-037", "62830037", "Battery Charger", "12V intelligent battery charger", 45.00m),
-    ("AUTO-038", "62830038", "Jump Starter", "Portable automotive jump starter", 85.00m),
-    ("AUTO-039", "62830039", "Alternator", "Replacement automotive alternator", 185.00m),
-    ("AUTO-040", "62830040", "Starter Motor", "Replacement engine starter motor", 165.00m),
-
-    ("AUTO-041", "62830041", "Spark Plug", "Standard automotive spark plug", 5.50m),
-    ("AUTO-042", "62830042", "Iridium Spark Plug", "Long-life iridium spark plug", 14.00m),
-    ("AUTO-043", "62830043", "Glow Plug", "Diesel engine glow plug", 12.00m),
-    ("AUTO-044", "62830044", "Ignition Coil", "Automotive ignition coil", 38.00m),
-    ("AUTO-045", "62830045", "Spark Plug Wire Set", "Engine ignition wire set", 32.00m),
-    ("AUTO-046", "62830046", "Distributor Cap", "Ignition distributor cap", 18.00m),
-    ("AUTO-047", "62830047", "Crankshaft Sensor", "Engine crankshaft position sensor", 28.00m),
-    ("AUTO-048", "62830048", "Camshaft Sensor", "Engine camshaft position sensor", 26.00m),
-    ("AUTO-049", "62830049", "Oxygen Sensor", "Universal oxygen sensor", 45.00m),
-    ("AUTO-050", "62830050", "Mass Air Flow Sensor", "Mass airflow engine sensor", 65.00m),
-
-    ("AUTO-051", "62830051", "Radiator", "Aluminum automotive radiator", 125.00m),
-    ("AUTO-052", "62830052", "Radiator Fan", "Electric radiator cooling fan", 75.00m),
-    ("AUTO-053", "62830053", "Radiator Hose Upper", "Upper radiator coolant hose", 14.00m),
-    ("AUTO-054", "62830054", "Radiator Hose Lower", "Lower radiator coolant hose", 15.00m),
-    ("AUTO-055", "62830055", "Thermostat", "Engine cooling thermostat", 18.00m),
-    ("AUTO-056", "62830056", "Water Pump", "Engine water pump assembly", 55.00m),
-    ("AUTO-057", "62830057", "Coolant Expansion Tank", "Engine coolant expansion reservoir", 28.00m),
-    ("AUTO-058", "62830058", "Radiator Cap", "Pressurized radiator cap", 7.50m),
-    ("AUTO-059", "62830059", "Cooling Fan Relay", "Cooling system fan relay", 11.00m),
-    ("AUTO-060", "62830060", "Temperature Sensor", "Engine coolant temperature sensor", 16.00m),
-
-    ("AUTO-061", "62830061", "Shock Absorber Front", "Front suspension shock absorber", 65.00m),
-    ("AUTO-062", "62830062", "Shock Absorber Rear", "Rear suspension shock absorber", 58.00m),
-    ("AUTO-063", "62830063", "Coil Spring Front", "Front suspension coil spring", 45.00m),
-    ("AUTO-064", "62830064", "Coil Spring Rear", "Rear suspension coil spring", 42.00m),
-    ("AUTO-065", "62830065", "Control Arm", "Front suspension control arm", 55.00m),
-    ("AUTO-066", "62830066", "Ball Joint", "Lower suspension ball joint", 22.00m),
-    ("AUTO-067", "62830067", "Tie Rod End", "Steering tie rod end", 18.00m),
-    ("AUTO-068", "62830068", "Stabilizer Link", "Front stabilizer link", 15.00m),
-    ("AUTO-069", "62830069", "Wheel Bearing", "Automotive wheel bearing", 32.00m),
-    ("AUTO-070", "62830070", "CV Joint", "Constant velocity joint assembly", 65.00m),
-
-    ("AUTO-071", "62830071", "Serpentine Belt", "Engine auxiliary drive belt", 18.00m),
-    ("AUTO-072", "62830072", "Timing Belt", "Engine timing belt", 32.00m),
-    ("AUTO-073", "62830073", "Timing Belt Kit", "Complete timing belt service kit", 85.00m),
-    ("AUTO-074", "62830074", "Tensioner Pulley", "Drive belt tensioner pulley", 35.00m),
-    ("AUTO-075", "62830075", "Idler Pulley", "Engine belt idler pulley", 28.00m),
-    ("AUTO-076", "62830076", "Clutch Kit", "Complete manual transmission clutch kit", 185.00m),
-    ("AUTO-077", "62830077", "Clutch Disc", "Manual transmission clutch disc", 75.00m),
-    ("AUTO-078", "62830078", "Clutch Pressure Plate", "Clutch pressure plate assembly", 95.00m),
-    ("AUTO-079", "62830079", "Clutch Release Bearing", "Clutch release bearing", 28.00m),
-    ("AUTO-080", "62830080", "CV Axle", "Complete front CV axle assembly", 85.00m),
-
-    ("AUTO-081", "62830081", "Headlight Bulb H4", "Halogen H4 headlight bulb", 8.00m),
-    ("AUTO-082", "62830082", "Headlight Bulb H7", "Halogen H7 headlight bulb", 8.50m),
-    ("AUTO-083", "62830083", "LED Headlight Bulb", "LED automotive headlight bulb pair", 32.00m),
-    ("AUTO-084", "62830084", "Fog Light Bulb", "Automotive fog light bulb", 9.00m),
-    ("AUTO-085", "62830085", "Tail Light Bulb", "Automotive tail light bulb", 5.00m),
-    ("AUTO-086", "62830086", "Turn Signal Bulb", "Automotive indicator bulb", 4.50m),
-    ("AUTO-087", "62830087", "LED Interior Light", "LED vehicle interior light kit", 15.00m),
-    ("AUTO-088", "62830088", "Headlight Assembly", "Complete front headlight assembly", 145.00m),
-    ("AUTO-089", "62830089", "Tail Light Assembly", "Complete rear tail light assembly", 95.00m),
-    ("AUTO-090", "62830090", "LED Light Bar", "12V automotive LED light bar", 75.00m),
-
-    ("AUTO-091", "62830091", "Windshield Wiper 16", "16-inch replacement wiper blade", 8.00m),
-    ("AUTO-092", "62830092", "Windshield Wiper 18", "18-inch replacement wiper blade", 9.00m),
-    ("AUTO-093", "62830093", "Windshield Wiper 20", "20-inch replacement wiper blade", 10.00m),
-    ("AUTO-094", "62830094", "Windshield Wiper 22", "22-inch replacement wiper blade", 11.00m),
-    ("AUTO-095", "62830095", "Wiper Blade Set", "Universal front wiper blade pair", 22.00m),
-    ("AUTO-096", "62830096", "Windshield Washer Pump", "Electric washer fluid pump", 18.00m),
-    ("AUTO-097", "62830097", "Wiper Motor", "Automotive windshield wiper motor", 65.00m),
-    ("AUTO-098", "62830098", "Wiper Arm", "Replacement windshield wiper arm", 22.00m),
-    ("AUTO-099", "62830099", "Windshield Repair Kit", "DIY windshield chip repair kit", 18.00m),
-    ("AUTO-100", "62830100", "Glass Cleaner", "Automotive windshield glass cleaner", 7.00m)
-};
-
-        var automotiveCollection = automotiveProducts
-            .Select(product =>
-                Product.Create(
-                    Guid.NewGuid(),
-                    product.Item1,
-                    product.Item2,
-                    product.Item3,
-                    product.Item4,
-                    automotive.Id,
-                    product.Item5,
-                    true,
-                    Unit.Piece).Value)
-            .ToArray();
-
-         
-var toolsProducts = new[]
-{
-    ("TOOL-001", "62820001", "Drill Set", "Cordless professional drill set", 145.00m),
-    ("TOOL-002", "62820002", "Socket Set", "Metric socket and ratchet set", 72.50m),
-    ("TOOL-003", "62820003", "Cordless Drill", "18V cordless power drill", 95.00m),
-    ("TOOL-004", "62820004", "Impact Driver", "18V cordless impact driver", 115.00m),
-    ("TOOL-005", "62820005", "Impact Wrench", "Heavy-duty cordless impact wrench", 165.00m),
-    ("TOOL-006", "62820006", "Hammer Drill", "Corded hammer drill", 85.00m),
-    ("TOOL-007", "62820007", "Rotary Hammer", "Professional rotary hammer drill", 145.00m),
-    ("TOOL-008", "62820008", "Angle Grinder", "115mm electric angle grinder", 65.00m),
-    ("TOOL-009", "62820009", "Bench Grinder", "Double-wheel bench grinder", 95.00m),
-    ("TOOL-010", "62820010", "Circular Saw", "Professional electric circular saw", 125.00m),
-
-    ("TOOL-011", "62820011", "Jigsaw", "Variable-speed electric jigsaw", 75.00m),
-    ("TOOL-012", "62820012", "Reciprocating Saw", "Cordless reciprocating saw", 135.00m),
-    ("TOOL-013", "62820013", "Cut-Off Saw", "Metal cutting electric saw", 155.00m),
-    ("TOOL-014", "62820014", "Heat Gun", "Two-speed electric heat gun", 35.00m),
-    ("TOOL-015", "62820015", "Electric Sander", "Orbital electric sander", 58.00m),
-    ("TOOL-016", "62820016", "Belt Sander", "Heavy-duty belt sander", 95.00m),
-    ("TOOL-017", "62820017", "Polisher", "Variable-speed electric polisher", 85.00m),
-    ("TOOL-018", "62820018", "Router", "Variable-speed wood router", 125.00m),
-    ("TOOL-019", "62820019", "Planer", "Electric hand planer", 105.00m),
-    ("TOOL-020", "62820020", "Electric Stapler", "Heavy-duty electric stapler", 45.00m),
-
-    ("TOOL-021", "62820021", "Combination Wrench Set", "Metric combination wrench set", 48.00m),
-    ("TOOL-022", "62820022", "Adjustable Wrench", "Chrome adjustable wrench", 12.00m),
-    ("TOOL-023", "62820023", "Pipe Wrench", "Heavy-duty pipe wrench", 18.00m),
-    ("TOOL-024", "62820024", "Torque Wrench", "Professional adjustable torque wrench", 65.00m),
-    ("TOOL-025", "62820025", "Allen Key Set", "Metric hex key set", 15.00m),
-    ("TOOL-026", "62820026", "Torx Key Set", "Torx wrench key set", 17.00m),
-    ("TOOL-027", "62820027", "Screwdriver Set", "Professional screwdriver set", 28.00m),
-    ("TOOL-028", "62820028", "Precision Screwdriver Set", "Precision electronics screwdriver set", 22.00m),
-    ("TOOL-029", "62820029", "Ratchet Handle", "1/2-inch professional ratchet", 25.00m),
-    ("TOOL-030", "62820030", "Socket Extension Set", "Metric socket extension set", 32.00m),
-
-    ("TOOL-031", "62820031", "Combination Pliers", "Professional combination pliers", 16.00m),
-    ("TOOL-032", "62820032", "Long Nose Pliers", "Long nose precision pliers", 14.00m),
-    ("TOOL-033", "62820033", "Side Cutter", "Heavy-duty diagonal cutters", 18.00m),
-    ("TOOL-034", "62820034", "Locking Pliers", "Adjustable locking pliers", 19.00m),
-    ("TOOL-035", "62820035", "Water Pump Pliers", "Adjustable groove joint pliers", 17.00m),
-    ("TOOL-036", "62820036", "Wire Stripper", "Automatic wire stripping tool", 21.00m),
-    ("TOOL-037", "62820037", "Crimping Tool", "Electrical terminal crimping tool", 24.00m),
-    ("TOOL-038", "62820038", "Cable Cutter", "Heavy-duty cable cutter", 29.00m),
-    ("TOOL-039", "62820039", "Bolt Cutter", "Large heavy-duty bolt cutter", 35.00m),
-    ("TOOL-040", "62820040", "Tin Snips", "Professional metal cutting snips", 18.00m),
-
-    ("TOOL-041", "62820041", "Claw Hammer", "Professional claw hammer", 18.00m),
-    ("TOOL-042", "62820042", "Sledge Hammer", "Heavy-duty sledge hammer", 35.00m),
-    ("TOOL-043", "62820043", "Rubber Mallet", "Non-marking rubber mallet", 14.00m),
-    ("TOOL-044", "62820044", "Dead Blow Hammer", "Professional dead blow hammer", 25.00m),
-    ("TOOL-045", "62820045", "Hand Saw", "General-purpose hand saw", 16.00m),
-    ("TOOL-046", "62820046", "Hacksaw", "Adjustable metal hacksaw", 12.00m),
-    ("TOOL-047", "62820047", "Hacksaw Blade Pack", "Replacement hacksaw blades", 9.00m),
-    ("TOOL-048", "62820048", "Wood Chisel Set", "Professional wood chisel set", 32.00m),
-    ("TOOL-049", "62820049", "Cold Chisel Set", "Metalworking cold chisel set", 24.00m),
-    ("TOOL-050", "62820050", "Punch Set", "Steel center punch set", 22.00m),
-
-    ("TOOL-051", "62820051", "Tape Measure 5m", "5 meter professional tape measure", 10.00m),
-    ("TOOL-052", "62820052", "Tape Measure 10m", "10 meter heavy-duty tape measure", 18.00m),
-    ("TOOL-053", "62820053", "Spirit Level 40cm", "40cm aluminum spirit level", 14.00m),
-    ("TOOL-054", "62820054", "Spirit Level 80cm", "80cm professional spirit level", 24.00m),
-    ("TOOL-055", "62820055", "Laser Level", "Self-leveling laser level", 75.00m),
-    ("TOOL-056", "62820056", "Digital Caliper", "150mm digital caliper", 32.00m),
-    ("TOOL-057", "62820057", "Vernier Caliper", "150mm stainless steel caliper", 28.00m),
-    ("TOOL-058", "62820058", "Measuring Wheel", "Professional distance measuring wheel", 35.00m),
-    ("TOOL-059", "62820059", "Combination Square", "Adjustable combination square", 15.00m),
-    ("TOOL-060", "62820060", "Plumb Bob", "Professional plumb bob", 8.00m),
-
-    ("TOOL-061", "62820061", "Tool Box", "Medium professional toolbox", 45.00m),
-    ("TOOL-062", "62820062", "Tool Chest", "Multi-drawer metal tool chest", 185.00m),
-    ("TOOL-063", "62820063", "Tool Bag", "Heavy-duty technician tool bag", 38.00m),
-    ("TOOL-064", "62820064", "Tool Organizer", "Portable tool organizer case", 28.00m),
-    ("TOOL-065", "62820065", "Parts Organizer", "Multi-compartment parts organizer", 25.00m),
-    ("TOOL-066", "62820066", "Workbench", "Heavy-duty workshop workbench", 285.00m),
-    ("TOOL-067", "62820067", "Bench Vise", "Heavy-duty 4-inch bench vise", 85.00m),
-    ("TOOL-068", "62820068", "Pipe Vise", "Workshop pipe vise", 75.00m),
-    ("TOOL-069", "62820069", "Clamp Set", "Assorted woodworking clamp set", 35.00m),
-    ("TOOL-070", "62820070", "Quick Grip Clamp", "Quick-release grip clamp", 15.00m),
-
-    ("TOOL-071", "62820071", "Drill Bit Set", "High-speed steel drill bit set", 28.00m),
-    ("TOOL-072", "62820072", "Masonry Drill Set", "Concrete and masonry drill set", 25.00m),
-    ("TOOL-073", "62820073", "Wood Drill Set", "Wood drilling bit set", 22.00m),
-    ("TOOL-074", "62820074", "Hole Saw Set", "Bi-metal hole saw set", 42.00m),
-    ("TOOL-075", "62820075", "Screwdriver Bit Set", "Impact screwdriver bit set", 25.00m),
-    ("TOOL-076", "62820076", "Impact Socket Set", "Heavy-duty impact socket set", 65.00m),
-    ("TOOL-077", "62820077", "Spark Plug Socket Set", "Automotive spark plug socket set", 32.00m),
-    ("TOOL-078", "62820078", "Hex Bit Set", "Professional hex bit set", 28.00m),
-    ("TOOL-079", "62820079", "Grinding Disc", "115mm metal grinding discs", 12.00m),
-    ("TOOL-080", "62820080", "Cutting Disc", "115mm metal cutting discs", 10.00m),
-
-    ("TOOL-081", "62820081", "Jack Stand", "Heavy-duty vehicle jack stand", 35.00m),
-    ("TOOL-082", "62820082", "Hydraulic Jack", "2-ton hydraulic floor jack", 95.00m),
-    ("TOOL-083", "62820083", "Bottle Jack", "5-ton hydraulic bottle jack", 48.00m),
-    ("TOOL-084", "62820084", "Workshop Creeper", "Low-profile mechanic creeper", 55.00m),
-    ("TOOL-085", "62820085", "Mechanic Stool", "Adjustable workshop stool", 45.00m),
-    ("TOOL-086", "62820086", "Inspection Mirror", "Telescopic inspection mirror", 12.00m),
-    ("TOOL-087", "62820087", "Magnetic Pickup Tool", "Telescopic magnetic pickup tool", 9.00m),
-    ("TOOL-088", "62820088", "LED Work Light", "Rechargeable LED work light", 28.00m),
-    ("TOOL-089", "62820089", "Work Light Tripod", "Adjustable work light stand", 42.00m),
-    ("TOOL-090", "62820090", "Extension Reel", "20-meter workshop extension reel", 55.00m),
-
-    ("TOOL-091", "62820091", "Air Compressor", "50-liter workshop air compressor", 325.00m),
-    ("TOOL-092", "62820092", "Air Hose", "10-meter compressed air hose", 25.00m),
-    ("TOOL-093", "62820093", "Air Blow Gun", "Compressed air blow gun", 12.00m),
-    ("TOOL-094", "62820094", "Air Impact Wrench", "Pneumatic impact wrench", 125.00m),
-    ("TOOL-095", "62820095", "Air Ratchet", "Pneumatic ratchet wrench", 85.00m),
-    ("TOOL-096", "62820096", "Grease Gun", "Manual workshop grease gun", 35.00m),
-    ("TOOL-097", "62820097", "Caulking Gun", "Heavy-duty caulking gun", 14.00m),
-    ("TOOL-098", "62820098", "Utility Knife", "Professional retractable utility knife", 8.00m),
-    ("TOOL-099", "62820099", "Utility Blade Pack", "Replacement utility knife blades", 6.00m),
-    ("TOOL-100", "62820100", "Tool Sharpening Stone", "Professional sharpening stone", 15.00m)
-};
-         
-        var safetyProducts = new[]
-        {
-    ("SAFE-001", "62840001", "Safety Gloves", "Industrial protective gloves", 6.75m),
-    ("SAFE-002", "62840002", "Cut Resistant Gloves", "Level 5 cut resistant work gloves", 12.00m),
-    ("SAFE-003", "62840003", "Nitrile Gloves", "Disposable nitrile protective gloves", 9.00m),
-    ("SAFE-004", "62840004", "Latex Gloves", "Disposable latex protective gloves", 7.50m),
-    ("SAFE-005", "62840005", "Chemical Resistant Gloves", "Chemical-resistant protective gloves", 15.00m),
-    ("SAFE-006", "62840006", "Welding Gloves", "Heat-resistant welding gloves", 18.00m),
-    ("SAFE-007", "62840007", "Heat Resistant Gloves", "High-temperature work gloves", 16.00m),
-    ("SAFE-008", "62840008", "Electrical Gloves", "Insulated electrical safety gloves", 28.00m),
-    ("SAFE-009", "62840009", "Safety Helmet", "Industrial protective safety helmet", 14.00m),
-    ("SAFE-010", "62840010", "Ventilated Safety Helmet", "Ventilated industrial safety helmet", 18.00m),
-
-    ("SAFE-011", "62840011", "Safety Goggles", "Clear industrial safety goggles", 8.00m),
-    ("SAFE-012", "62840012", "Chemical Goggles", "Chemical splash protective goggles", 12.00m),
-    ("SAFE-013", "62840013", "Welding Goggles", "Welding protection goggles", 15.00m),
-    ("SAFE-014", "62840014", "Face Shield", "Full-face protective shield", 18.00m),
-    ("SAFE-015", "62840015", "Welding Helmet", "Auto-darkening welding helmet", 65.00m),
-    ("SAFE-016", "62840016", "Dust Mask", "Disposable dust protection mask", 5.00m),
-    ("SAFE-017", "62840017", "Respirator Mask", "Reusable industrial respirator", 28.00m),
-    ("SAFE-018", "62840018", "Respirator Filter", "Replacement respirator filter", 9.00m),
-    ("SAFE-019", "62840019", "Ear Plugs", "Disposable hearing protection ear plugs", 4.00m),
-    ("SAFE-020", "62840020", "Ear Muffs", "Industrial hearing protection earmuffs", 18.00m),
-
-    ("SAFE-021", "62840021", "Safety Vest", "High-visibility reflective safety vest", 9.00m),
-    ("SAFE-022", "62840022", "Reflective Jacket", "High-visibility reflective jacket", 25.00m),
-    ("SAFE-023", "62840023", "Work Jacket", "Industrial protective work jacket", 35.00m),
-    ("SAFE-024", "62840024", "Work Coveralls", "Industrial protective coveralls", 42.00m),
-    ("SAFE-025", "62840025", "Disposable Coveralls", "Disposable protective coveralls", 18.00m),
-    ("SAFE-026", "62840026", "Chemical Suit", "Chemical-resistant protective suit", 55.00m),
-    ("SAFE-027", "62840027", "Rain Safety Suit", "Industrial waterproof safety suit", 38.00m),
-    ("SAFE-028", "62840028", "Work Apron", "Heavy-duty protective work apron", 16.00m),
-    ("SAFE-029", "62840029", "Welding Apron", "Leather welding apron", 28.00m),
-    ("SAFE-030", "62840030", "Heat Resistant Sleeve", "Protective heat-resistant arm sleeve", 15.00m),
-
-    ("SAFE-031", "62840031", "Safety Boots", "Steel toe industrial safety boots", 55.00m),
-    ("SAFE-032", "62840032", "Steel Toe Shoes", "Steel toe protective work shoes", 48.00m),
-    ("SAFE-033", "62840033", "Slip Resistant Shoes", "Industrial slip-resistant shoes", 52.00m),
-    ("SAFE-034", "62840034", "Chemical Resistant Boots", "Chemical-resistant safety boots", 65.00m),
-    ("SAFE-035", "62840035", "Rubber Safety Boots", "Waterproof industrial rubber boots", 35.00m),
-    ("SAFE-036", "62840036", "Knee Pads", "Heavy-duty industrial knee pads", 18.00m),
-    ("SAFE-037", "62840037", "Elbow Pads", "Industrial protective elbow pads", 15.00m),
-    ("SAFE-038", "62840038", "Back Support Belt", "Adjustable industrial back support belt", 22.00m),
-    ("SAFE-039", "62840039", "Wrist Support", "Industrial wrist support brace", 12.00m),
-    ("SAFE-040", "62840040", "Safety Harness", "Full-body fall protection harness", 75.00m),
-
-    ("SAFE-041", "62840041", "Fall Arrest Lanyard", "Double-leg fall arrest lanyard", 45.00m),
-    ("SAFE-042", "62840042", "Shock Absorbing Lanyard", "Energy absorbing safety lanyard", 55.00m),
-    ("SAFE-043", "62840043", "Rope Lifeline", "Industrial safety rope lifeline", 65.00m),
-    ("SAFE-044", "62840044", "Anchor Point", "Temporary fall protection anchor", 35.00m),
-    ("SAFE-045", "62840045", "Safety Cone", "Heavy-duty traffic safety cone", 8.00m),
-    ("SAFE-046", "62840046", "Warning Tape", "High-visibility hazard warning tape", 6.00m),
-    ("SAFE-047", "62840047", "Barrier Tape", "Red and white safety barrier tape", 7.00m),
-    ("SAFE-048", "62840048", "Warning Sign", "Industrial warning sign", 9.00m),
-    ("SAFE-049", "62840049", "Caution Sign", "Industrial caution sign", 9.00m),
-    ("SAFE-050", "62840050", "Floor Warning Sign", "Wet floor warning sign", 12.00m),
-
-    ("SAFE-051", "62840051", "Fire Extinguisher 2kg", "Dry chemical fire extinguisher", 35.00m),
-    ("SAFE-052", "62840052", "Fire Extinguisher 5kg", "Heavy-duty dry chemical extinguisher", 55.00m),
-    ("SAFE-053", "62840053", "Fire Blanket", "Fire-resistant emergency blanket", 18.00m),
-    ("SAFE-054", "62840054", "Fire Hose", "Industrial fire hose", 65.00m),
-    ("SAFE-055", "62840055", "Fire Hose Reel", "Wall-mounted fire hose reel", 125.00m),
-    ("SAFE-056", "62840056", "Emergency Exit Sign", "LED emergency exit sign", 28.00m),
-    ("SAFE-057", "62840057", "Emergency Light", "Rechargeable emergency lighting unit", 35.00m),
-    ("SAFE-058", "62840058", "First Aid Kit", "Industrial first aid kit", 32.00m),
-    ("SAFE-059", "62840059", "Eye Wash Station", "Portable emergency eyewash station", 45.00m),
-    ("SAFE-060", "62840060", "Emergency Shower", "Industrial emergency safety shower", 185.00m),
-
-    ("SAFE-061", "62840061", "Spill Absorbent Pads", "Industrial oil absorbent pads", 25.00m),
-    ("SAFE-062", "62840062", "Spill Absorbent Granules", "Industrial liquid absorbent granules", 18.00m),
-    ("SAFE-063", "62840063", "Chemical Spill Kit", "Complete chemical spill response kit", 85.00m),
-    ("SAFE-064", "62840064", "Oil Spill Kit", "Oil and fuel spill response kit", 65.00m),
-    ("SAFE-065", "62840065", "Safety Barrier", "Portable industrial safety barrier", 55.00m),
-    ("SAFE-066", "62840066", "Safety Chain", "Industrial plastic safety chain", 15.00m),
-    ("SAFE-067", "62840067", "Reflective Traffic Cone", "Reflective road safety cone", 12.00m),
-    ("SAFE-068", "62840068", "Portable Warning Light", "Battery-powered warning beacon", 25.00m),
-    ("SAFE-069", "62840069", "Safety Lockout Kit", "Industrial lockout tagout kit", 45.00m),
-    ("SAFE-070", "62840070", "Lockout Padlock", "Safety lockout padlock", 8.00m),
-    ("SAFE-071", "62840071", "Danger Tag", "Industrial danger identification tag", 4.00m),
-    ("SAFE-072", "62840072", "Safety Inspection Mirror", "Large industrial inspection mirror", 38.00m),
-    ("SAFE-073", "62840073", "Safety Torch", "Industrial rechargeable safety flashlight", 28.00m),
-    ("SAFE-074", "62840074", "Emergency Radio", "Battery-powered emergency radio", 45.00m),
-    ("SAFE-075", "62840075", "Emergency Whistle", "High-volume emergency safety whistle", 5.00m)
-        };
-         
-        var officeProducts = new[]
-        {
-    ("OFF-001", "62850001", "Printer Paper", "A4 80gsm copy paper", 5.25m),
-    ("OFF-002", "62850002", "Printer Paper A4 Premium", "A4 premium 90gsm copy paper", 7.50m),
-    ("OFF-003", "62850003", "Printer Paper A3", "A3 80gsm copy paper", 9.50m),
-    ("OFF-004", "62850004", "Colored Paper", "Assorted colored office paper", 8.00m),
-    ("OFF-005", "62850005", "Cardstock", "A4 heavyweight cardstock", 12.00m),
-    ("OFF-006", "62850006", "Photo Paper", "Glossy A4 photo paper", 14.00m),
-    ("OFF-007", "62850007", "Sticky Notes Small", "Small adhesive sticky notes", 3.50m),
-    ("OFF-008", "62850008", "Sticky Notes Large", "Large adhesive sticky notes", 5.00m),
-    ("OFF-009", "62850009", "Index Cards", "Ruled office index cards", 4.50m),
-    ("OFF-010", "62850010", "Notepad A5", "A5 lined office notepad", 4.00m),
-
-    ("OFF-011", "62850011", "Notebook A4", "A4 ruled office notebook", 6.50m),
-    ("OFF-012", "62850012", "Notebook A5", "A5 hardcover notebook", 8.00m),
-    ("OFF-013", "62850013", "Spiral Notebook", "Spiral-bound office notebook", 7.00m),
-    ("OFF-014", "62850014", "Meeting Notebook", "Professional meeting notebook", 12.00m),
-    ("OFF-015", "62850015", "Planner", "Annual office planner", 15.00m),
-    ("OFF-016", "62850016", "Desk Calendar", "Desktop office calendar", 8.00m),
-    ("OFF-017", "62850017", "Wall Calendar", "Large wall calendar", 10.00m),
-    ("OFF-018", "62850018", "Clipboard", "A4 plastic clipboard", 5.00m),
-    ("OFF-019", "62850019", "Clipboard Metal", "Heavy-duty metal clipboard", 9.00m),
-    ("OFF-020", "62850020", "Document Folder", "A4 document folder", 2.50m),
-
-    ("OFF-021", "62850021", "Lever Arch File", "A4 lever arch file", 5.50m),
-    ("OFF-022", "62850022", "Ring Binder", "A4 two-ring binder", 4.50m),
-    ("OFF-023", "62850023", "Expanding File", "Multi-section expanding document file", 9.00m),
-    ("OFF-024", "62850024", "Document Wallet", "A4 plastic document wallet", 3.50m),
-    ("OFF-025", "62850025", "Envelope Pack", "A4 office envelopes", 5.00m),
-    ("OFF-026", "62850026", "Bubble Envelope", "Protective bubble envelopes", 8.00m),
-    ("OFF-027", "62850027", "Shipping Labels", "Self-adhesive shipping labels", 7.50m),
-    ("OFF-028", "62850028", "Address Labels", "Self-adhesive address labels", 5.50m),
-    ("OFF-029", "62850029", "File Dividers", "A4 colored file dividers", 4.00m),
-    ("OFF-030", "62850030", "Plastic Sleeves", "A4 transparent document sleeves", 6.00m),
-
-    ("OFF-031", "62850031", "Ballpoint Pens", "Blue ballpoint pen pack", 3.00m),
-    ("OFF-032", "62850032", "Gel Pens", "Assorted gel pen pack", 5.50m),
-    ("OFF-033", "62850033", "Rollerball Pens", "Premium rollerball pen set", 8.00m),
-    ("OFF-034", "62850034", "Permanent Markers", "Permanent marker pack", 5.00m),
-    ("OFF-035", "62850035", "Whiteboard Markers", "Assorted whiteboard markers", 6.00m),
-    ("OFF-036", "62850036", "Highlighter Set", "Assorted office highlighters", 5.00m),
-    ("OFF-037", "62850037", "Pencils", "HB graphite pencil pack", 2.50m),
-    ("OFF-038", "62850038", "Mechanical Pencils", "Mechanical pencil set", 5.00m),
-    ("OFF-039", "62850039", "Pencil Leads", "Replacement mechanical pencil leads", 2.50m),
-    ("OFF-040", "62850040", "Erasers", "White eraser pack", 2.00m),
-
-    ("OFF-041", "62850041", "Stapler", "Desktop office stapler", 6.00m),
-    ("OFF-042", "62850042", "Heavy Duty Stapler", "Heavy-duty office stapler", 18.00m),
-    ("OFF-043", "62850043", "Staples Standard", "Standard office staples", 2.50m),
-    ("OFF-044", "62850044", "Staples Heavy Duty", "Heavy-duty stapler staples", 4.50m),
-    ("OFF-045", "62850045", "Paper Clips", "Standard metal paper clips", 2.00m),
-    ("OFF-046", "62850046", "Binder Clips Small", "Small black binder clips", 3.00m),
-    ("OFF-047", "62850047", "Binder Clips Large", "Large black binder clips", 4.50m),
-    ("OFF-048", "62850048", "Push Pins", "Colored office push pins", 2.50m),
-    ("OFF-049", "62850049", "Rubber Bands", "Assorted office rubber bands", 3.00m),
-    ("OFF-050", "62850050", "Paper Punch", "Two-hole office paper punch", 7.00m),
-
-    ("OFF-051", "62850051", "Scissors", "Office scissors", 5.00m),
-    ("OFF-052", "62850052", "Heavy Duty Scissors", "Heavy-duty office scissors", 9.00m),
-    ("OFF-053", "62850053", "Utility Cutter", "Office utility paper cutter", 8.00m),
-    ("OFF-054", "62850054", "Paper Trimmer", "A4 office paper trimmer", 25.00m),
-    ("OFF-055", "62850055", "Ruler 30cm", "30cm transparent ruler", 2.00m),
-    ("OFF-056", "62850056", "Ruler 50cm", "50cm office ruler", 4.00m),
-    ("OFF-057", "62850057", "Glue Stick", "Office glue stick pack", 3.50m),
-    ("OFF-058", "62850058", "Liquid Glue", "General-purpose office adhesive", 3.00m),
-    ("OFF-059", "62850059", "Correction Tape", "Office correction tape", 4.00m),
-    ("OFF-060", "62850060", "Correction Fluid", "White correction fluid", 2.50m),
-
-    ("OFF-061", "62850061", "Desk Organizer", "Multi-compartment desk organizer", 12.00m),
-    ("OFF-062", "62850062", "Pen Holder", "Desktop pen holder", 5.00m),
-    ("OFF-063", "62850063", "Letter Tray", "Stackable document letter tray", 8.00m),
-    ("OFF-064", "62850064", "Desk File Organizer", "Desktop vertical file organizer", 14.00m),
-    ("OFF-065", "62850065", "Cable Organizer", "Desktop cable management kit", 7.00m),
-    ("OFF-066", "62850066", "Desk Mat", "Large office desk mat", 15.00m),
-    ("OFF-067", "62850067", "Monitor Stand Office", "Adjustable office monitor stand", 25.00m),
-    ("OFF-068", "62850068", "Keyboard Wrist Rest", "Ergonomic keyboard wrist rest", 12.00m),
-    ("OFF-069", "62850069", "Mouse Pad", "Large office mouse pad", 7.00m),
-    ("OFF-070", "62850070", "Ergonomic Footrest", "Adjustable under-desk footrest", 25.00m),
-
-    ("OFF-071", "62850071", "Whiteboard", "Medium magnetic office whiteboard", 45.00m),
-    ("OFF-072", "62850072", "Whiteboard Eraser", "Magnetic whiteboard eraser", 4.00m),
-    ("OFF-073", "62850073", "Flip Chart Stand", "Adjustable office flip chart stand", 65.00m),
-    ("OFF-074", "62850074", "Flip Chart Pad", "Large flip chart paper pad", 12.00m),
-    ("OFF-075", "62850075", "Presentation Pointer", "Wireless presentation pointer", 25.00m)
         };
 
-        
-var toolsCollection = toolsProducts
-    .Select(product =>
-        Product.Create(
-            Guid.NewGuid(),
-            product.Item1,
-            product.Item2,
-            product.Item3,
-            product.Item4,
-            tools.Id,
-            product.Item5,
-            true,
-            Unit.Piece).Value)
-    .ToArray();
+        var toolsProducts = new ProductDefinition[]
+        {
+        ("TOOL-001", "62820001", "Drill Set", "Cordless professional drill set", 145.00m),
+        ("TOOL-002", "62820002", "Socket Set", "Metric socket and ratchet set", 72.50m),
+        ("TOOL-003", "62820003", "Cordless Drill", "18V cordless power drill", 95.00m),
+        ("TOOL-004", "62820004", "Impact Driver", "18V cordless impact driver", 115.00m),
+        ("TOOL-005", "62820005", "Impact Wrench", "Heavy-duty cordless impact wrench", 165.00m),
+        ("TOOL-006", "62820006", "Hammer Drill", "Corded hammer drill", 85.00m),
+        ("TOOL-007", "62820007", "Rotary Hammer", "Professional rotary hammer drill", 145.00m),
+        ("TOOL-008", "62820008", "Angle Grinder", "115mm electric angle grinder", 65.00m),
+        ("TOOL-009", "62820009", "Bench Grinder", "Double-wheel bench grinder", 95.00m),
+        ("TOOL-010", "62820010", "Circular Saw", "Professional electric circular saw", 125.00m),
 
-        var safetyCollection = safetyProducts
-            .Select(product =>
-                Product.Create(
-                    Guid.NewGuid(),
-                    product.Item1,
-                    product.Item2,
-                    product.Item3,
-                    product.Item4,
-                    safety.Id,
-                    product.Item5,
-                    true,
-                    Unit.Piece).Value)
+        ("TOOL-011", "62820011", "Jigsaw", "Variable-speed electric jigsaw", 75.00m),
+        ("TOOL-012", "62820012", "Reciprocating Saw", "Cordless reciprocating saw", 135.00m),
+        ("TOOL-013", "62820013", "Cut-Off Saw", "Metal cutting electric saw", 155.00m),
+        ("TOOL-014", "62820014", "Heat Gun", "Two-speed electric heat gun", 35.00m),
+        ("TOOL-015", "62820015", "Electric Sander", "Orbital electric sander", 58.00m),
+        ("TOOL-016", "62820016", "Belt Sander", "Heavy-duty belt sander", 95.00m),
+        ("TOOL-017", "62820017", "Polisher", "Variable-speed electric polisher", 85.00m),
+        ("TOOL-018", "62820018", "Router", "Variable-speed wood router", 125.00m),
+        ("TOOL-019", "62820019", "Planer", "Electric hand planer", 105.00m),
+        ("TOOL-020", "62820020", "Electric Stapler", "Heavy-duty electric stapler", 45.00m),
+
+        ("TOOL-021", "62820021", "Combination Wrench Set", "Metric combination wrench set", 48.00m),
+        ("TOOL-022", "62820022", "Adjustable Wrench", "Chrome adjustable wrench", 12.00m),
+        ("TOOL-023", "62820023", "Pipe Wrench", "Heavy-duty pipe wrench", 18.00m),
+        ("TOOL-024", "62820024", "Torque Wrench", "Professional adjustable torque wrench", 65.00m),
+        ("TOOL-025", "62820025", "Allen Key Set", "Metric hex key set", 15.00m),
+        ("TOOL-026", "62820026", "Torx Key Set", "Torx wrench key set", 17.00m),
+        ("TOOL-027", "62820027", "Screwdriver Set", "Professional screwdriver set", 28.00m),
+        ("TOOL-028", "62820028", "Precision Screwdriver Set", "Precision electronics screwdriver set", 22.00m),
+        ("TOOL-029", "62820029", "Ratchet Handle", "1/2-inch professional ratchet", 25.00m),
+        ("TOOL-030", "62820030", "Socket Extension Set", "Metric socket extension set", 32.00m),
+
+        ("TOOL-031", "62820031", "Combination Pliers", "Professional combination pliers", 16.00m),
+        ("TOOL-032", "62820032", "Long Nose Pliers", "Long nose precision pliers", 14.00m),
+        ("TOOL-033", "62820033", "Side Cutter", "Heavy-duty diagonal cutters", 18.00m),
+        ("TOOL-034", "62820034", "Locking Pliers", "Adjustable locking pliers", 19.00m),
+        ("TOOL-035", "62820035", "Water Pump Pliers", "Adjustable groove joint pliers", 17.00m),
+        ("TOOL-036", "62820036", "Wire Stripper", "Automatic wire stripping tool", 21.00m),
+        ("TOOL-037", "62820037", "Crimping Tool", "Electrical terminal crimping tool", 24.00m),
+        ("TOOL-038", "62820038", "Cable Cutter", "Heavy-duty cable cutter", 29.00m),
+        ("TOOL-039", "62820039", "Bolt Cutter", "Large heavy-duty bolt cutter", 35.00m),
+        ("TOOL-040", "62820040", "Tin Snips", "Professional metal cutting snips", 18.00m),
+
+        ("TOOL-041", "62820041", "Claw Hammer", "Professional claw hammer", 18.00m),
+        ("TOOL-042", "62820042", "Sledge Hammer", "Heavy-duty sledge hammer", 35.00m),
+        ("TOOL-043", "62820043", "Rubber Mallet", "Non-marking rubber mallet", 14.00m),
+        ("TOOL-044", "62820044", "Dead Blow Hammer", "Professional dead blow hammer", 25.00m),
+        ("TOOL-045", "62820045", "Hand Saw", "General-purpose hand saw", 16.00m),
+        ("TOOL-046", "62820046", "Hacksaw", "Adjustable metal hacksaw", 12.00m),
+        ("TOOL-047", "62820047", "Hacksaw Blade Pack", "Replacement hacksaw blades", 9.00m),
+        ("TOOL-048", "62820048", "Wood Chisel Set", "Professional wood chisel set", 32.00m),
+        ("TOOL-049", "62820049", "Cold Chisel Set", "Metalworking cold chisel set", 24.00m),
+        ("TOOL-050", "62820050", "Punch Set", "Steel center punch set", 22.00m),
+
+        ("TOOL-051", "62820051", "Tape Measure 5m", "5 meter professional tape measure", 10.00m),
+        ("TOOL-052", "62820052", "Tape Measure 10m", "10 meter heavy-duty tape measure", 18.00m),
+        ("TOOL-053", "62820053", "Spirit Level 40cm", "40cm aluminum spirit level", 14.00m),
+        ("TOOL-054", "62820054", "Spirit Level 80cm", "80cm professional spirit level", 24.00m),
+        ("TOOL-055", "62820055", "Laser Level", "Self-leveling laser level", 75.00m),
+        ("TOOL-056", "62820056", "Digital Caliper", "150mm digital caliper", 32.00m),
+        ("TOOL-057", "62820057", "Vernier Caliper", "150mm stainless steel caliper", 28.00m),
+        ("TOOL-058", "62820058", "Measuring Wheel", "Professional distance measuring wheel", 35.00m),
+        ("TOOL-059", "62820059", "Combination Square", "Adjustable combination square", 15.00m),
+        ("TOOL-060", "62820060", "Plumb Bob", "Professional plumb bob", 8.00m),
+
+        ("TOOL-061", "62820061", "Tool Box", "Medium professional toolbox", 45.00m),
+        ("TOOL-062", "62820062", "Tool Chest", "Multi-drawer metal tool chest", 185.00m),
+        ("TOOL-063", "62820063", "Tool Bag", "Heavy-duty technician tool bag", 38.00m),
+        ("TOOL-064", "62820064", "Tool Organizer", "Portable tool organizer case", 28.00m),
+        ("TOOL-065", "62820065", "Parts Organizer", "Multi-compartment parts organizer", 25.00m),
+        ("TOOL-066", "62820066", "Workbench", "Heavy-duty workshop workbench", 285.00m),
+        ("TOOL-067", "62820067", "Bench Vise", "Heavy-duty 4-inch bench vise", 85.00m),
+        ("TOOL-068", "62820068", "Pipe Vise", "Workshop pipe vise", 75.00m),
+        ("TOOL-069", "62820069", "Clamp Set", "Assorted woodworking clamp set", 35.00m),
+        ("TOOL-070", "62820070", "Quick Grip Clamp", "Quick-release grip clamp", 15.00m),
+
+        ("TOOL-071", "62820071", "Drill Bit Set", "High-speed steel drill bit set", 28.00m),
+        ("TOOL-072", "62820072", "Masonry Drill Set", "Concrete and masonry drill set", 25.00m),
+        ("TOOL-073", "62820073", "Wood Drill Set", "Wood drilling bit set", 22.00m),
+        ("TOOL-074", "62820074", "Hole Saw Set", "Bi-metal hole saw set", 42.00m),
+        ("TOOL-075", "62820075", "Screwdriver Bit Set", "Impact screwdriver bit set", 25.00m),
+        ("TOOL-076", "62820076", "Impact Socket Set", "Heavy-duty impact socket set", 65.00m),
+        ("TOOL-077", "62820077", "Spark Plug Socket Set", "Automotive spark plug socket set", 32.00m),
+        ("TOOL-078", "62820078", "Hex Bit Set", "Professional hex bit set", 28.00m),
+        ("TOOL-079", "62820079", "Grinding Disc", "115mm metal grinding discs", 12.00m),
+        ("TOOL-080", "62820080", "Cutting Disc", "115mm metal cutting discs", 10.00m),
+
+        ("TOOL-081", "62820081", "Jack Stand", "Heavy-duty vehicle jack stand", 35.00m),
+        ("TOOL-082", "62820082", "Hydraulic Jack", "2-ton hydraulic floor jack", 95.00m),
+        ("TOOL-083", "62820083", "Bottle Jack", "5-ton hydraulic bottle jack", 48.00m),
+        ("TOOL-084", "62820084", "Workshop Creeper", "Low-profile mechanic creeper", 55.00m),
+        ("TOOL-085", "62820085", "Mechanic Stool", "Adjustable workshop stool", 45.00m),
+        ("TOOL-086", "62820086", "Inspection Mirror", "Telescopic inspection mirror", 12.00m),
+        ("TOOL-087", "62820087", "Magnetic Pickup Tool", "Telescopic magnetic pickup tool", 9.00m),
+        ("TOOL-088", "62820088", "LED Work Light", "Rechargeable LED work light", 28.00m),
+        ("TOOL-089", "62820089", "Work Light Tripod", "Adjustable work light stand", 42.00m),
+        ("TOOL-090", "62820090", "Extension Reel", "20-meter workshop extension reel", 55.00m),
+
+        ("TOOL-091", "62820091", "Air Compressor", "50-liter workshop air compressor", 325.00m),
+        ("TOOL-092", "62820092", "Air Hose", "10-meter compressed air hose", 25.00m),
+        ("TOOL-093", "62820093", "Air Blow Gun", "Compressed air blow gun", 12.00m),
+        ("TOOL-094", "62820094", "Air Impact Wrench", "Pneumatic impact wrench", 125.00m),
+        ("TOOL-095", "62820095", "Air Ratchet", "Pneumatic ratchet wrench", 85.00m),
+        ("TOOL-096", "62820096", "Grease Gun", "Manual workshop grease gun", 35.00m),
+        ("TOOL-097", "62820097", "Caulking Gun", "Heavy-duty caulking gun", 14.00m),
+        ("TOOL-098", "62820098", "Utility Knife", "Professional retractable utility knife", 8.00m),
+        ("TOOL-099", "62820099", "Utility Blade Pack", "Replacement utility knife blades", 6.00m),
+        ("TOOL-100", "62820100", "Tool Sharpening Stone", "Professional sharpening stone", 15.00m)
+        };
+
+        var automotiveProducts = new ProductDefinition[]
+        {
+        ("AUTO-001", "62830001", "Engine Oil 5W-30", "Full synthetic 5W-30 engine oil", 24.00m),
+        ("AUTO-002", "62830002", "Brake Pads", "Front ceramic brake pad set", 55.00m),
+        ("AUTO-003", "62830003", "Engine Oil 5W-40", "Full synthetic 5W-40 engine oil", 26.00m),
+        ("AUTO-004", "62830004", "Engine Oil 10W-40", "Semi-synthetic 10W-40 engine oil", 21.00m),
+        ("AUTO-005", "62830005", "Engine Oil 15W-40", "Heavy-duty 15W-40 engine oil", 19.00m),
+        ("AUTO-006", "62830006", "Automatic Transmission Fluid", "ATF automatic transmission fluid", 18.00m),
+        ("AUTO-007", "62830007", "Gear Oil 75W-90", "Synthetic 75W-90 gear oil", 22.00m),
+        ("AUTO-008", "62830008", "Brake Fluid DOT3", "DOT3 hydraulic brake fluid", 8.00m),
+        ("AUTO-009", "62830009", "Brake Fluid DOT4", "DOT4 hydraulic brake fluid", 10.00m),
+        ("AUTO-010", "62830010", "Coolant 1L", "Ready-to-use engine coolant", 6.50m),
+
+        ("AUTO-011", "62830011", "Coolant 5L", "Five-liter engine coolant", 21.00m),
+        ("AUTO-012", "62830012", "Radiator Flush", "Cooling system radiator flush", 9.50m),
+        ("AUTO-013", "62830013", "Windshield Washer Fluid", "Ready-to-use washer fluid", 5.00m),
+        ("AUTO-014", "62830014", "Power Steering Fluid", "Hydraulic power steering fluid", 9.00m),
+        ("AUTO-015", "62830015", "Engine Oil Filter", "Spin-on engine oil filter", 6.50m),
+        ("AUTO-016", "62830016", "Air Filter", "Replacement engine air filter", 12.00m),
+        ("AUTO-017", "62830017", "Cabin Air Filter", "Vehicle cabin air filter", 13.00m),
+        ("AUTO-018", "62830018", "Fuel Filter", "Inline automotive fuel filter", 14.00m),
+        ("AUTO-019", "62830019", "Transmission Filter", "Automatic transmission filter", 24.00m),
+        ("AUTO-020", "62830020", "Performance Air Filter", "High-flow reusable air filter", 35.00m),
+
+        ("AUTO-021", "62830021", "Front Brake Pads", "Front disc brake pad set", 55.00m),
+        ("AUTO-022", "62830022", "Rear Brake Pads", "Rear disc brake pad set", 48.00m),
+        ("AUTO-023", "62830023", "Brake Shoes", "Rear drum brake shoe set", 42.00m),
+        ("AUTO-024", "62830024", "Brake Disc Front", "Front ventilated brake disc", 65.00m),
+        ("AUTO-025", "62830025", "Brake Disc Rear", "Rear solid brake disc", 52.00m),
+        ("AUTO-026", "62830026", "Brake Drum", "Rear brake drum", 48.00m),
+        ("AUTO-027", "62830027", "Brake Caliper", "Front brake caliper assembly", 95.00m),
+        ("AUTO-028", "62830028", "Brake Caliper Repair Kit", "Brake caliper seal repair kit", 18.00m),
+        ("AUTO-029", "62830029", "Brake Hose", "Flexible hydraulic brake hose", 15.00m),
+        ("AUTO-030", "62830030", "Brake Pad Wear Sensor", "Electronic brake pad wear sensor", 12.00m),
+
+        ("AUTO-031", "62830031", "Car Battery 45Ah", "12V 45Ah automotive battery", 85.00m),
+        ("AUTO-032", "62830032", "Car Battery 60Ah", "12V 60Ah automotive battery", 105.00m),
+        ("AUTO-033", "62830033", "Car Battery 70Ah", "12V 70Ah automotive battery", 125.00m),
+        ("AUTO-034", "62830034", "Car Battery 90Ah", "12V 90Ah automotive battery", 155.00m),
+        ("AUTO-035", "62830035", "Battery Terminal", "Universal battery terminal pair", 7.00m),
+        ("AUTO-036", "62830036", "Battery Cable", "Heavy-duty battery cable", 14.00m),
+        ("AUTO-037", "62830037", "Battery Charger", "12V intelligent battery charger", 45.00m),
+        ("AUTO-038", "62830038", "Jump Starter", "Portable automotive jump starter", 85.00m),
+        ("AUTO-039", "62830039", "Alternator", "Replacement automotive alternator", 185.00m),
+        ("AUTO-040", "62830040", "Starter Motor", "Replacement engine starter motor", 165.00m),
+
+        ("AUTO-041", "62830041", "Spark Plug", "Standard automotive spark plug", 5.50m),
+        ("AUTO-042", "62830042", "Iridium Spark Plug", "Long-life iridium spark plug", 14.00m),
+        ("AUTO-043", "62830043", "Glow Plug", "Diesel engine glow plug", 12.00m),
+        ("AUTO-044", "62830044", "Ignition Coil", "Automotive ignition coil", 38.00m),
+        ("AUTO-045", "62830045", "Spark Plug Wire Set", "Engine ignition wire set", 32.00m),
+        ("AUTO-046", "62830046", "Distributor Cap", "Ignition distributor cap", 18.00m),
+        ("AUTO-047", "62830047", "Crankshaft Sensor", "Engine crankshaft position sensor", 28.00m),
+        ("AUTO-048", "62830048", "Camshaft Sensor", "Engine camshaft position sensor", 26.00m),
+        ("AUTO-049", "62830049", "Oxygen Sensor", "Universal oxygen sensor", 45.00m),
+        ("AUTO-050", "62830050", "Mass Air Flow Sensor", "Mass airflow engine sensor", 65.00m),
+
+        ("AUTO-051", "62830051", "Radiator", "Aluminum automotive radiator", 125.00m),
+        ("AUTO-052", "62830052", "Radiator Fan", "Electric radiator cooling fan", 75.00m),
+        ("AUTO-053", "62830053", "Radiator Hose Upper", "Upper radiator coolant hose", 14.00m),
+        ("AUTO-054", "62830054", "Radiator Hose Lower", "Lower radiator coolant hose", 15.00m),
+        ("AUTO-055", "62830055", "Thermostat", "Engine cooling thermostat", 18.00m),
+        ("AUTO-056", "62830056", "Water Pump", "Engine water pump assembly", 55.00m),
+        ("AUTO-057", "62830057", "Coolant Expansion Tank", "Engine coolant expansion reservoir", 28.00m),
+        ("AUTO-058", "62830058", "Radiator Cap", "Pressurized radiator cap", 7.50m),
+        ("AUTO-059", "62830059", "Cooling Fan Relay", "Cooling system fan relay", 11.00m),
+        ("AUTO-060", "62830060", "Temperature Sensor", "Engine coolant temperature sensor", 16.00m),
+
+        ("AUTO-061", "62830061", "Shock Absorber Front", "Front suspension shock absorber", 65.00m),
+        ("AUTO-062", "62830062", "Shock Absorber Rear", "Rear suspension shock absorber", 58.00m),
+        ("AUTO-063", "62830063", "Coil Spring Front", "Front suspension coil spring", 45.00m),
+        ("AUTO-064", "62830064", "Coil Spring Rear", "Rear suspension coil spring", 42.00m),
+        ("AUTO-065", "62830065", "Control Arm", "Front suspension control arm", 55.00m),
+        ("AUTO-066", "62830066", "Ball Joint", "Lower suspension ball joint", 22.00m),
+        ("AUTO-067", "62830067", "Tie Rod End", "Steering tie rod end", 18.00m),
+        ("AUTO-068", "62830068", "Stabilizer Link", "Front stabilizer link", 15.00m),
+        ("AUTO-069", "62830069", "Wheel Bearing", "Automotive wheel bearing", 32.00m),
+        ("AUTO-070", "62830070", "CV Joint", "Constant velocity joint assembly", 65.00m),
+
+        ("AUTO-071", "62830071", "Serpentine Belt", "Engine auxiliary drive belt", 18.00m),
+        ("AUTO-072", "62830072", "Timing Belt", "Engine timing belt", 32.00m),
+        ("AUTO-073", "62830073", "Timing Belt Kit", "Complete timing belt service kit", 85.00m),
+        ("AUTO-074", "62830074", "Tensioner Pulley", "Drive belt tensioner pulley", 35.00m),
+        ("AUTO-075", "62830075", "Idler Pulley", "Engine belt idler pulley", 28.00m),
+        ("AUTO-076", "62830076", "Clutch Kit", "Complete manual transmission clutch kit", 185.00m),
+        ("AUTO-077", "62830077", "Clutch Disc", "Manual transmission clutch disc", 75.00m),
+        ("AUTO-078", "62830078", "Clutch Pressure Plate", "Clutch pressure plate assembly", 95.00m),
+        ("AUTO-079", "62830079", "Clutch Release Bearing", "Clutch release bearing", 28.00m),
+        ("AUTO-080", "62830080", "CV Axle", "Complete front CV axle assembly", 85.00m),
+
+        ("AUTO-081", "62830081", "Headlight Bulb H4", "Halogen H4 headlight bulb", 8.00m),
+        ("AUTO-082", "62830082", "Headlight Bulb H7", "Halogen H7 headlight bulb", 8.50m),
+        ("AUTO-083", "62830083", "LED Headlight Bulb", "LED automotive headlight bulb pair", 32.00m),
+        ("AUTO-084", "62830084", "Fog Light Bulb", "Automotive fog light bulb", 9.00m),
+        ("AUTO-085", "62830085", "Tail Light Bulb", "Automotive tail light bulb", 5.00m),
+        ("AUTO-086", "62830086", "Turn Signal Bulb", "Automotive indicator bulb", 4.50m),
+        ("AUTO-087", "62830087", "LED Interior Light", "LED vehicle interior light kit", 15.00m),
+        ("AUTO-088", "62830088", "Headlight Assembly", "Complete front headlight assembly", 145.00m),
+        ("AUTO-089", "62830089", "Tail Light Assembly", "Complete rear tail light assembly", 95.00m),
+        ("AUTO-090", "62830090", "LED Light Bar", "12V automotive LED light bar", 75.00m),
+
+        ("AUTO-091", "62830091", "Windshield Wiper 16", "16-inch replacement wiper blade", 8.00m),
+        ("AUTO-092", "62830092", "Windshield Wiper 18", "18-inch replacement wiper blade", 9.00m),
+        ("AUTO-093", "62830093", "Windshield Wiper 20", "20-inch replacement wiper blade", 10.00m),
+        ("AUTO-094", "62830094", "Windshield Wiper 22", "22-inch replacement wiper blade", 11.00m),
+        ("AUTO-095", "62830095", "Wiper Blade Set", "Universal front wiper blade pair", 22.00m),
+        ("AUTO-096", "62830096", "Windshield Washer Pump", "Electric washer fluid pump", 18.00m),
+        ("AUTO-097", "62830097", "Wiper Motor", "Automotive windshield wiper motor", 65.00m),
+        ("AUTO-098", "62830098", "Wiper Arm", "Replacement windshield wiper arm", 22.00m),
+        ("AUTO-099", "62830099", "Windshield Repair Kit", "DIY windshield chip repair kit", 18.00m),
+        ("AUTO-100", "62830100", "Glass Cleaner", "Automotive windshield glass cleaner", 7.00m)
+        };
+
+        var safetyProducts = new ProductDefinition[]
+        {
+        ("SAFE-001", "62840001", "Safety Gloves", "Industrial protective gloves", 6.75m),
+        ("SAFE-002", "62840002", "Cut Resistant Gloves", "Level 5 cut resistant work gloves", 12.00m),
+        ("SAFE-003", "62840003", "Nitrile Gloves", "Disposable nitrile protective gloves", 9.00m),
+        ("SAFE-004", "62840004", "Latex Gloves", "Disposable latex protective gloves", 7.50m),
+        ("SAFE-005", "62840005", "Chemical Resistant Gloves", "Chemical-resistant protective gloves", 15.00m),
+        ("SAFE-006", "62840006", "Welding Gloves", "Heat-resistant welding gloves", 18.00m),
+        ("SAFE-007", "62840007", "Heat Resistant Gloves", "High-temperature work gloves", 16.00m),
+        ("SAFE-008", "62840008", "Electrical Gloves", "Insulated electrical safety gloves", 28.00m),
+        ("SAFE-009", "62840009", "Safety Helmet", "Industrial protective safety helmet", 14.00m),
+        ("SAFE-010", "62840010", "Ventilated Safety Helmet", "Ventilated industrial safety helmet", 18.00m),
+
+        ("SAFE-011", "62840011", "Safety Goggles", "Clear industrial safety goggles", 8.00m),
+        ("SAFE-012", "62840012", "Chemical Goggles", "Chemical splash protective goggles", 12.00m),
+        ("SAFE-013", "62840013", "Welding Goggles", "Welding protection goggles", 15.00m),
+        ("SAFE-014", "62840014", "Face Shield", "Full-face protective shield", 18.00m),
+        ("SAFE-015", "62840015", "Welding Helmet", "Auto-darkening welding helmet", 65.00m),
+        ("SAFE-016", "62840016", "Dust Mask", "Disposable dust protection mask", 5.00m),
+        ("SAFE-017", "62840017", "Respirator Mask", "Reusable industrial respirator", 28.00m),
+        ("SAFE-018", "62840018", "Respirator Filter", "Replacement respirator filter", 9.00m),
+        ("SAFE-019", "62840019", "Ear Plugs", "Disposable hearing protection ear plugs", 4.00m),
+        ("SAFE-020", "62840020", "Ear Muffs", "Industrial hearing protection earmuffs", 18.00m),
+
+        ("SAFE-021", "62840021", "Safety Vest", "High-visibility reflective safety vest", 9.00m),
+        ("SAFE-022", "62840022", "Reflective Jacket", "High-visibility reflective jacket", 25.00m),
+        ("SAFE-023", "62840023", "Work Jacket", "Industrial protective work jacket", 35.00m),
+        ("SAFE-024", "62840024", "Work Coveralls", "Industrial protective coveralls", 42.00m),
+        ("SAFE-025", "62840025", "Disposable Coveralls", "Disposable protective coveralls", 18.00m),
+        ("SAFE-026", "62840026", "Chemical Suit", "Chemical-resistant protective suit", 55.00m),
+        ("SAFE-027", "62840027", "Rain Safety Suit", "Industrial waterproof safety suit", 38.00m),
+        ("SAFE-028", "62840028", "Work Apron", "Heavy-duty protective work apron", 16.00m),
+        ("SAFE-029", "62840029", "Welding Apron", "Leather welding apron", 28.00m),
+        ("SAFE-030", "62840030", "Heat Resistant Sleeve", "Protective heat-resistant arm sleeve", 15.00m),
+
+        ("SAFE-031", "62840031", "Safety Boots", "Steel toe industrial safety boots", 55.00m),
+        ("SAFE-032", "62840032", "Steel Toe Shoes", "Steel toe protective work shoes", 48.00m),
+        ("SAFE-033", "62840033", "Slip Resistant Shoes", "Industrial slip-resistant shoes", 52.00m),
+        ("SAFE-034", "62840034", "Chemical Resistant Boots", "Chemical-resistant safety boots", 65.00m),
+        ("SAFE-035", "62840035", "Rubber Safety Boots", "Waterproof industrial rubber boots", 35.00m),
+        ("SAFE-036", "62840036", "Knee Pads", "Heavy-duty industrial knee pads", 18.00m),
+        ("SAFE-037", "62840037", "Elbow Pads", "Industrial protective elbow pads", 15.00m),
+        ("SAFE-038", "62840038", "Back Support Belt", "Adjustable industrial back support belt", 22.00m),
+        ("SAFE-039", "62840039", "Wrist Support", "Industrial wrist support brace", 12.00m),
+        ("SAFE-040", "62840040", "Safety Harness", "Full-body fall protection harness", 75.00m),
+
+        ("SAFE-041", "62840041", "Fall Arrest Lanyard", "Double-leg fall arrest lanyard", 45.00m),
+        ("SAFE-042", "62840042", "Shock Absorbing Lanyard", "Energy absorbing safety lanyard", 55.00m),
+        ("SAFE-043", "62840043", "Rope Lifeline", "Industrial safety rope lifeline", 65.00m),
+        ("SAFE-044", "62840044", "Anchor Point", "Temporary fall protection anchor", 35.00m),
+        ("SAFE-045", "62840045", "Safety Cone", "Heavy-duty traffic safety cone", 8.00m),
+        ("SAFE-046", "62840046", "Warning Tape", "High-visibility hazard warning tape", 6.00m),
+        ("SAFE-047", "62840047", "Barrier Tape", "Red and white safety barrier tape", 7.00m),
+        ("SAFE-048", "62840048", "Warning Sign", "Industrial warning sign", 9.00m),
+        ("SAFE-049", "62840049", "Caution Sign", "Industrial caution sign", 9.00m),
+        ("SAFE-050", "62840050", "Floor Warning Sign", "Wet floor warning sign", 12.00m),
+
+        ("SAFE-051", "62840051", "Fire Extinguisher 2kg", "Dry chemical fire extinguisher", 35.00m),
+        ("SAFE-052", "62840052", "Fire Extinguisher 5kg", "Heavy-duty dry chemical extinguisher", 55.00m),
+        ("SAFE-053", "62840053", "Fire Blanket", "Fire-resistant emergency blanket", 18.00m),
+        ("SAFE-054", "62840054", "Fire Hose", "Industrial fire hose", 65.00m),
+        ("SAFE-055", "62840055", "Fire Hose Reel", "Wall-mounted fire hose reel", 125.00m),
+        ("SAFE-056", "62840056", "Emergency Exit Sign", "LED emergency exit sign", 28.00m),
+        ("SAFE-057", "62840057", "Emergency Light", "Rechargeable emergency lighting unit", 35.00m),
+        ("SAFE-058", "62840058", "First Aid Kit", "Industrial first aid kit", 32.00m),
+        ("SAFE-059", "62840059", "Eye Wash Station", "Portable emergency eyewash station", 45.00m),
+        ("SAFE-060", "62840060", "Emergency Shower", "Industrial emergency safety shower", 185.00m),
+
+        ("SAFE-061", "62840061", "Spill Absorbent Pads", "Industrial oil absorbent pads", 25.00m),
+        ("SAFE-062", "62840062", "Spill Absorbent Granules", "Industrial liquid absorbent granules", 18.00m),
+        ("SAFE-063", "62840063", "Chemical Spill Kit", "Complete chemical spill response kit", 85.00m),
+        ("SAFE-064", "62840064", "Oil Spill Kit", "Oil and fuel spill response kit", 65.00m),
+        ("SAFE-065", "62840065", "Safety Barrier", "Portable industrial safety barrier", 55.00m),
+        ("SAFE-066", "62840066", "Safety Chain", "Industrial plastic safety chain", 15.00m),
+        ("SAFE-067", "62840067", "Reflective Traffic Cone", "Reflective road safety cone", 12.00m),
+        ("SAFE-068", "62840068", "Portable Warning Light", "Battery-powered warning beacon", 25.00m),
+        ("SAFE-069", "62840069", "Safety Lockout Kit", "Industrial lockout tagout kit", 45.00m),
+        ("SAFE-070", "62840070", "Lockout Padlock", "Safety lockout padlock", 8.00m),
+        ("SAFE-071", "62840071", "Danger Tag", "Industrial danger identification tag", 4.00m),
+        ("SAFE-072", "62840072", "Safety Inspection Mirror", "Large industrial inspection mirror", 38.00m),
+        ("SAFE-073", "62840073", "Safety Torch", "Industrial rechargeable safety flashlight", 28.00m),
+        ("SAFE-074", "62840074", "Emergency Radio", "Battery-powered emergency radio", 45.00m),
+        ("SAFE-075", "62840075", "Emergency Whistle", "High-volume emergency safety whistle", 5.00m)
+        };
+
+        var officeProducts = new ProductDefinition[]
+        {
+        ("OFF-001", "62850001", "Printer Paper", "A4 80gsm copy paper", 5.25m),
+        ("OFF-002", "62850002", "Printer Paper A4 Premium", "A4 premium 90gsm copy paper", 7.50m),
+        ("OFF-003", "62850003", "Printer Paper A3", "A3 80gsm copy paper", 9.50m),
+        ("OFF-004", "62850004", "Colored Paper", "Assorted colored office paper", 8.00m),
+        ("OFF-005", "62850005", "Cardstock", "A4 heavyweight cardstock", 12.00m),
+        ("OFF-006", "62850006", "Photo Paper", "Glossy A4 photo paper", 14.00m),
+        ("OFF-007", "62850007", "Sticky Notes Small", "Small adhesive sticky notes", 3.50m),
+        ("OFF-008", "62850008", "Sticky Notes Large", "Large adhesive sticky notes", 5.00m),
+        ("OFF-009", "62850009", "Index Cards", "Ruled office index cards", 4.50m),
+        ("OFF-010", "62850010", "Notepad A5", "A5 lined office notepad", 4.00m),
+
+        ("OFF-011", "62850011", "Notebook A4", "A4 ruled office notebook", 6.50m),
+        ("OFF-012", "62850012", "Notebook A5", "A5 hardcover notebook", 8.00m),
+        ("OFF-013", "62850013", "Spiral Notebook", "Spiral-bound office notebook", 7.00m),
+        ("OFF-014", "62850014", "Meeting Notebook", "Professional meeting notebook", 12.00m),
+        ("OFF-015", "62850015", "Planner", "Annual office planner", 15.00m),
+        ("OFF-016", "62850016", "Desk Calendar", "Desktop office calendar", 8.00m),
+        ("OFF-017", "62850017", "Wall Calendar", "Large wall calendar", 10.00m),
+        ("OFF-018", "62850018", "Clipboard", "A4 plastic clipboard", 5.00m),
+        ("OFF-019", "62850019", "Clipboard Metal", "Heavy-duty metal clipboard", 9.00m),
+        ("OFF-020", "62850020", "Document Folder", "A4 document folder", 2.50m),
+
+        ("OFF-021", "62850021", "Lever Arch File", "A4 lever arch file", 5.50m),
+        ("OFF-022", "62850022", "Ring Binder", "A4 two-ring binder", 4.50m),
+        ("OFF-023", "62850023", "Expanding File", "Multi-section expanding document file", 9.00m),
+        ("OFF-024", "62850024", "Document Wallet", "A4 plastic document wallet", 3.50m),
+        ("OFF-025", "62850025", "Envelope Pack", "A4 office envelopes", 5.00m),
+        ("OFF-026", "62850026", "Bubble Envelope", "Protective bubble envelopes", 8.00m),
+        ("OFF-027", "62850027", "Shipping Labels", "Self-adhesive shipping labels", 7.50m),
+        ("OFF-028", "62850028", "Address Labels", "Self-adhesive address labels", 5.50m),
+        ("OFF-029", "62850029", "File Dividers", "A4 colored file dividers", 4.00m),
+        ("OFF-030", "62850030", "Plastic Sleeves", "A4 transparent document sleeves", 6.00m),
+
+        ("OFF-031", "62850031", "Ballpoint Pens", "Blue ballpoint pen pack", 3.00m),
+        ("OFF-032", "62850032", "Gel Pens", "Assorted gel pen pack", 5.50m),
+        ("OFF-033", "62850033", "Rollerball Pens", "Premium rollerball pen set", 8.00m),
+        ("OFF-034", "62850034", "Permanent Markers", "Permanent marker pack", 5.00m),
+        ("OFF-035", "62850035", "Whiteboard Markers", "Assorted whiteboard markers", 6.00m),
+        ("OFF-036", "62850036", "Highlighter Set", "Assorted office highlighters", 5.00m),
+        ("OFF-037", "62850037", "Pencils", "HB graphite pencil pack", 2.50m),
+        ("OFF-038", "62850038", "Mechanical Pencils", "Mechanical pencil set", 5.00m),
+        ("OFF-039", "62850039", "Pencil Leads", "Replacement mechanical pencil leads", 2.50m),
+        ("OFF-040", "62850040", "Erasers", "White eraser pack", 2.00m),
+
+        ("OFF-041", "62850041", "Stapler", "Desktop office stapler", 6.00m),
+        ("OFF-042", "62850042", "Heavy Duty Stapler", "Heavy-duty office stapler", 18.00m),
+        ("OFF-043", "62850043", "Staples Standard", "Standard office staples", 2.50m),
+        ("OFF-044", "62850044", "Staples Heavy Duty", "Heavy-duty stapler staples", 4.50m),
+        ("OFF-045", "62850045", "Paper Clips", "Standard metal paper clips", 2.00m),
+        ("OFF-046", "62850046", "Binder Clips Small", "Small black binder clips", 3.00m),
+        ("OFF-047", "62850047", "Binder Clips Large", "Large black binder clips", 4.50m),
+        ("OFF-048", "62850048", "Push Pins", "Colored office push pins", 2.50m),
+        ("OFF-049", "62850049", "Rubber Bands", "Assorted office rubber bands", 3.00m),
+        ("OFF-050", "62850050", "Paper Punch", "Two-hole office paper punch", 7.00m),
+
+        ("OFF-051", "62850051", "Scissors", "Office scissors", 5.00m),
+        ("OFF-052", "62850052", "Heavy Duty Scissors", "Heavy-duty office scissors", 9.00m),
+        ("OFF-053", "62850053", "Utility Cutter", "Office utility paper cutter", 8.00m),
+        ("OFF-054", "62850054", "Paper Trimmer", "A4 office paper trimmer", 25.00m),
+        ("OFF-055", "62850055", "Ruler 30cm", "30cm transparent ruler", 2.00m),
+        ("OFF-056", "62850056", "Ruler 50cm", "50cm office ruler", 4.00m),
+        ("OFF-057", "62850057", "Glue Stick", "Office glue stick pack", 3.50m),
+        ("OFF-058", "62850058", "Liquid Glue", "General-purpose office adhesive", 3.00m),
+        ("OFF-059", "62850059", "Correction Tape", "Office correction tape", 4.00m),
+        ("OFF-060", "62850060", "Correction Fluid", "White correction fluid", 2.50m),
+
+        ("OFF-061", "62850061", "Desk Organizer", "Multi-compartment desk organizer", 12.00m),
+        ("OFF-062", "62850062", "Pen Holder", "Desktop pen holder", 5.00m),
+        ("OFF-063", "62850063", "Letter Tray", "Stackable document letter tray", 8.00m),
+        ("OFF-064", "62850064", "Desk File Organizer", "Desktop vertical file organizer", 14.00m),
+        ("OFF-065", "62850065", "Cable Organizer", "Desktop cable management kit", 7.00m),
+        ("OFF-066", "62850066", "Desk Mat", "Large office desk mat", 15.00m),
+        ("OFF-067", "62850067", "Monitor Stand Office", "Adjustable office monitor stand", 25.00m),
+        ("OFF-068", "62850068", "Keyboard Wrist Rest", "Ergonomic keyboard wrist rest", 12.00m),
+        ("OFF-069", "62850069", "Mouse Pad", "Large office mouse pad", 7.00m),
+        ("OFF-070", "62850070", "Ergonomic Footrest", "Adjustable under-desk footrest", 25.00m),
+
+        ("OFF-071", "62850071", "Whiteboard", "Medium magnetic office whiteboard", 45.00m),
+        ("OFF-072", "62850072", "Whiteboard Eraser", "Magnetic whiteboard eraser", 4.00m),
+        ("OFF-073", "62850073", "Flip Chart Stand", "Adjustable office flip chart stand", 65.00m),
+        ("OFF-074", "62850074", "Flip Chart Pad", "Large flip chart paper pad", 12.00m),
+        ("OFF-075", "62850075", "Presentation Pointer", "Wireless presentation pointer", 25.00m)
+        };
+
+        var electronicsEntries = BuildProducts(electronicsProducts, electronics.Id, CategoryKind.Electronics);
+        var toolsEntries = BuildProducts(toolsProducts, tools.Id, CategoryKind.Tools);
+        var automotiveEntries = BuildProducts(automotiveProducts, automotive.Id, CategoryKind.Automotive);
+        var safetyEntries = BuildProducts(safetyProducts, safety.Id, CategoryKind.Safety);
+        var officeEntries = BuildProducts(officeProducts, office.Id, CategoryKind.Office);
+
+        var all = electronicsEntries
+            .Concat(toolsEntries)
+            .Concat(automotiveEntries)
+            .Concat(safetyEntries)
+            .Concat(officeEntries)
             .ToArray();
 
-        var officeCollection = officeProducts
-            .Select(product =>
-                Product.Create(
-                    Guid.NewGuid(),
-                    product.Item1,
-                    product.Item2,
-                    product.Item3,
-                    product.Item4,
-                    office.Id,
-                    product.Item5,
-                    true,
-                    Unit.Piece).Value)
-            .ToArray();
-
-        context.Categories.AddRange(
-            electronics,
-            tools,
-            automotive,
-            safety,
-            office);
-
-        context.Products.AddRange(products);
-        context.Products.AddRange(automotiveCollection);
-        context.Products.AddRange(officeCollection);
-        context.Products.AddRange(safetyCollection);
-        context.Products.AddRange(toolsCollection);
+        context.Categories.AddRange(electronics, tools, automotive, safety, office);
+        context.Products.AddRange(all.Select(entry => entry.Product));
 
         _catalog = new SeedCatalog(
             electronics,
@@ -891,632 +945,1075 @@ var toolsCollection = toolsProducts
             automotive,
             safety,
             office,
-            products.ToArray());
-
-        await Task.CompletedTask;
-    }
-    private async Task SeedBusinessPartnersAsync(
-        CancellationToken cancellationToken)
-    {
-        var nablus = _locations.Nablus;
-        var ramallah = _locations.Ramallah;
-        var amman = _locations.Amman;
-        var cairo = _locations.Cairo;
-
-        var supplier1 = CreateSupplier(
-            "Al Quds Tech",
-            "SUP-001",
-            "sup.tech@example.test",
-            "+970599100001",
-            _locations.Palestine.Id,
-            nablus.Id,
-            "Industrial Zone",
-            "14",
-            "Najah St",
-            true,
-            "Electronics and computer accessories supplier.");
-
-        var supplier2 = CreateSupplier(
-            "Jordan Tools",
-            "SUP-002",
-            "sup.tools@example.test",
-            "+962790100002",
-            _locations.Jordan.Id,
-            amman.Id,
-            "11931",
-            "22",
-            "King Hussein St",
-            true,
-            "Professional tools and workshop equipment.");
-
-        var supplier3 = CreateSupplier(
-            "Nile Automotive",
-            "SUP-003",
-            "sup.auto@example.test",
-            "+201001000003",
-            _locations.Egypt.Id,
-            cairo.Id,
-            "11511",
-            "8",
-            "Nasr St",
-            true,
-            "Automotive consumables and spare parts.");
-
-        var supplier4 = CreateSupplier(
-            "Palestine Safety",
-            "SUP-004",
-            "sup.safety@example.test",
-            "+970599100004",
-            _locations.Palestine.Id,
-            ramallah.Id,
-            "440",
-            "31",
-            "Al Irsal St",
-            true,
-            "Safety and industrial protection products.");
-
-        var customer1 = CreateCustomer(
-            "Nablus Auto Care",
-            "CUS-001",
-            "customer.auto@example.test",
-            "+970599200001",
-            _locations.Palestine.Id,
-            nablus.Id,
-            "12",
-            "Al Makhfia St",
-            "Fleet maintenance customer.");
-
-        var customer2 = CreateCustomer(
-            "Ramallah Office Hub",
-            "CUS-002",
-            "customer.office@example.test",
-            "+970599200002",
-            _locations.Palestine.Id,
-            ramallah.Id,
-            "7",
-            "Rukab St",
-            "Office supplies customer.");
-
-        var customer3 = CreateCustomer(
-            "Gaza Workshop",
-            "CUS-003",
-            "customer.workshop@example.test",
-            "+970599200003",
-            _locations.Palestine.Id,
-            _locations.Gaza.Id,
-            "18",
-            "Omar Al Mukhtar St",
-            "Independent repair workshop.");
-
-        var customer4 = CreateCustomer(
-            "Jordan Service Center",
-            "CUS-004",
-            "customer.jordan@example.test",
-            "+962790200004",
-            _locations.Jordan.Id,
-            amman.Id,
-            "25",
-            "Al Madina St",
-            "Regional service center.");
-
-        var customer5 = CreateCustomer(
-            "Cairo Parts Retail",
-            "CUS-005",
-            "customer.cairo@example.test",
-            "+201002000005",
-            _locations.Egypt.Id,
-            cairo.Id,
-            "11",
-            "Tahrir St",
-            "Automotive parts retailer.");
-
-        context.Suppliers.AddRange(
-            supplier1,
-            supplier2,
-            supplier3,
-            supplier4);
-
-        context.Customers.AddRange(
-            customer1,
-            customer2,
-            customer3,
-            customer4,
-            customer5);
-
-        var supplierProducts = new[]
-        {
-            SupplierProduct.Create(
-                Guid.NewGuid(),
-                supplier1.Id,
-                _catalog.Products[0].Id,
-                4.25m).Value,
-
-            SupplierProduct.Create(
-                Guid.NewGuid(),
-                supplier1.Id,
-                _catalog.Products[1].Id,
-                17.50m).Value,
-
-            SupplierProduct.Create(
-                Guid.NewGuid(),
-                supplier2.Id,
-                _catalog.Products[2].Id,
-                105.00m).Value,
-
-            SupplierProduct.Create(
-                Guid.NewGuid(),
-                supplier2.Id,
-                _catalog.Products[3].Id,
-                51.00m).Value,
-
-            SupplierProduct.Create(
-                Guid.NewGuid(),
-                supplier3.Id,
-                _catalog.Products[4].Id,
-                15.50m).Value,
-
-            SupplierProduct.Create(
-                Guid.NewGuid(),
-                supplier3.Id,
-                _catalog.Products[5].Id,
-                36.00m).Value,
-
-            SupplierProduct.Create(
-                Guid.NewGuid(),
-                supplier4.Id,
-                _catalog.Products[6].Id,
-                3.25m).Value,
-
-            SupplierProduct.Create(
-                Guid.NewGuid(),
-                supplier4.Id,
-                _catalog.Products[7].Id,
-                3.10m).Value
-        };
-
-        context.SupplierProducts.AddRange(supplierProducts);
-
-        _partners = new SeedPartners(
-            new[]
+            all,
+            new Dictionary<CategoryKind, CatalogEntry[]>
             {
-                supplier1,
-                supplier2,
-                supplier3,
-                supplier4
+                [CategoryKind.Electronics] = electronicsEntries,
+                [CategoryKind.Tools] = toolsEntries,
+                [CategoryKind.Automotive] = automotiveEntries,
+                [CategoryKind.Safety] = safetyEntries,
+                [CategoryKind.Office] = officeEntries
             },
-            new[]
-            {
-                customer1,
-                customer2,
-                customer3,
-                customer4,
-                customer5
-            });
-
-        await Task.CompletedTask;
+            all.ToDictionary(entry => entry.Sku, StringComparer.Ordinal));
     }
 
-    private async Task SeedEmployeesAndUsersAsync(
-        CancellationToken cancellationToken)
+    private static CatalogEntry[] BuildProducts(
+        ProductDefinition[] definitions,
+        Guid categoryId,
+        CategoryKind kind)
     {
-        var employee1 = CreateEmployee(
-            "General Manager",
-            "Salah",
-            "Mohd",
-            "Ali",
-            "Ahmad",
-            "EMP-EMAIL-1",
-            "+970599300001",
-            _warehouses.Nablus.Id,
-            new DateOnly(2022, 3, 10));
+        return definitions
+            .Select(definition => new CatalogEntry(
+                Require(
+                    Product.Create(
+                        Guid.NewGuid(),
+                        definition.Sku,
+                        definition.Barcode,
+                        definition.Name,
+                        definition.Description,
+                        categoryId,
+                        definition.SellingPrice,
+                        true,
+                        Unit.Piece),
+                    $"product {definition.Sku} ({definition.Name})"),
+                definition.Sku,
+                definition.Name,
+                definition.SellingPrice,
+                kind))
+            .ToArray();
+    }
 
-        var employee2 = CreateEmployee(
-            "Sales Officer",
-            "Omar",
-            "Khaled",
-            null,
-            "Saleh",
-            "EMP-EMAIL-2",
-            "+970599300002",
-            _warehouses.Ramallah.Id,
-            new DateOnly(2023, 1, 15));
-
-        var employee3 = CreateEmployee(
-            "Purchasing Officer",
-            "Rami",
-            "Tareq",
-            null,
-            "Hassan",
-            "EMP-EMAIL-3",
-            "+970599300003",
-            _warehouses.Nablus.Id,
-            new DateOnly(2023, 5, 20));
-
-        var employee4 = CreateEmployee(
-            "Warehouse Supervisor",
-            "Yousef",
-            "Adel",
-            null,
-            "Nasser",
-            "EMP-EMAIL-4",
-            "+970599300004",
-            _warehouses.Gaza.Id,
-            new DateOnly(2021, 9, 1));
-
-        var employee5 = CreateEmployee(
-            "Sales Officer",
-            "Kareem",
-            "Sami",
-            null,
-            "Odeh",
-            "EMP-EMAIL-5",
-            "+970599300005",
-            _warehouses.Ramallah.Id,
-            new DateOnly(2024, 2, 12));
-
-        var employee6 = CreateEmployee(
-            "Inventory Clerk",
-            "Fadi",
-            "Nabil",
-            null,
-            "Kamal",
-            "EMP-EMAIL-6",
-            "+970599300006",
-            _warehouses.Nablus.Id,
-            new DateOnly(2024, 7, 5));
-
-        context.Employees.AddRange(
-            employee1,
-            employee2,
-            employee3,
-            employee4,
-            employee5,
-            employee6);
-
-        var passwordHash = hashingHelper.Hash<User>(SeedPassword);
-
-        var users = new[]
+    private void SeedWarehouses()
+    {
+        var definitions = new WarehouseDefinition[]
         {
-            CreateUser(
-                SeedAdminUsername,
-                passwordHash,
-                "admin@example.test",
-                Role.Admin,
-                employee1.Id,
-                -1),
+            new("Ramallah Central Distribution Center", "WH-RAM-01", "Al-Bireh", "P600", "12", "Al-Balou St",
+                "Head office warehouse and national distribution hub."),
 
-            CreateUser(
-                "omar_sales",
-                passwordHash,
-                "omar_sales@example.test",
-                Role.SalesUser,
-                employee2.Id,
-                -2),
+            new("Nablus Industrial Depot", "WH-NBL-01", "Nablus", "P400", "44", "Al-Quds St",
+                "Main northern depot serving the Nablus governorate."),
 
-            CreateUser(
-                "rami_buy",
-                passwordHash,
-                "rami_buy@example.test",
-                Role.PurchasesUser,
-                employee3.Id,
-                -3),
+            new("Rafidia Secondary Store", "WH-NBL-02", "Nablus", "P401", "7", "Rafidia St",
+                "Overflow and fast moving retail store in western Nablus."),
 
-            CreateUser(
-                "yousef_wh",
-                passwordHash,
-                "yousef_wh@example.test",
-                Role.WarehouseUser,
-                employee4.Id,
-                -4),
+            new("Hebron Southern Hub", "WH-HBN-01", "Hebron", "P760", "23", "Ain Sara St",
+                "Southern hub covering Hebron and the surrounding villages."),
 
-            CreateUser(
-                "kareem_sale",
-                passwordHash,
-                "kareem_sale@example.test",
-                Role.SalesUser,
-                employee5.Id,
-                -5),
+            new("Gaza Coastal Depot", "WH-GZA-01", "Gaza", "P800", "5", "Al-Rasheed St",
+                "Primary Gaza strip depot next to the coastal road."),
 
-            CreateUser(
-                "fadi_stock",
-                passwordHash,
-                "fadi_stock@example.test",
-                Role.Viewer,
-                employee6.Id,
-                -6)
+            new("Khan Younis Relay Store", "WH-KHY-01", "Khan Younis", "P820", "18", "Jalal St",
+                "Relay store for southern Gaza deliveries."),
+
+            new("Jenin Northern Depot", "WH-JEN-01", "Jenin", "P210", "31", "Haifa St",
+                "Northern depot serving Jenin and Tubas customers."),
+
+            new("Tulkarm Crossing Warehouse", "WH-TLK-01", "Tulkarm", "P300", "9", "Nablus St",
+                "Warehouse close to the crossing, used for inbound goods."),
+
+            new("Qalqilya Distribution Point", "WH-QLQ-01", "Qalqilya", "P310", "16", "Al-Andalus St",
+                "Small distribution point for the Qalqilya area."),
+
+            new("Bethlehem Retail Depot", "WH-BTL-01", "Bethlehem", "P650", "27", "Manger St",
+                "Retail focused depot serving Bethlehem and Beit Jala."),
+
+            new("Jericho Valley Transit Store", "WH-JRC-01", "Jericho", "P670", "3", "Ein Sultan St",
+                "Transit store used for Jordan valley movements."),
+
+            new("Salfit Regional Store", "WH-SLF-01", "Salfit", "P340", "11", "Al-Sahel St",
+                "Regional store covering Salfit and nearby villages."),
+
+            new("Tubas Highland Store", "WH-TBS-01", "Tubas", "P250", "6", "Al-Alimi St",
+                "Highland store supporting agricultural customers."),
+
+            new("Amman Sahab Logistics Center", "WH-AMM-01", "Amman", "11512", "88", "Sahab Ind. Rd",
+                "Jordanian logistics centre and regional consolidation point."),
+
+            new("Aqaba Port Bonded Warehouse", "WH-AQB-01", "Aqaba", "77110", "2", "Port Access Rd",
+                "Bonded warehouse at Aqaba port for imported containers.")
         };
 
-        context.Users.AddRange(users);
+        var warehouses = new List<SeedWarehouse>(definitions.Length);
 
-        await Task.CompletedTask;
+        for (var index = 0; index < definitions.Length; index++)
+        {
+            var definition = definitions[index];
+            var city = _locations.City(definition.City);
+
+            var address = Require(
+                Address.Create(
+                    Guid.NewGuid(),
+                    city.Country.Id,
+                    city.City.Id,
+                    definition.PostalCode,
+                    definition.BuildingNumber,
+                    definition.Street,
+                    definition.Description),
+                $"address for warehouse {definition.Code}");
+
+            var warehouse = Require(
+                Warehouse.Create(
+                    Guid.NewGuid(),
+                    definition.Name,
+                    definition.Code,
+                    address),
+                $"warehouse {definition.Code}");
+
+            warehouses.Add(new SeedWarehouse(warehouse, definition, city, index));
+        }
+
+        context.Warehouses.AddRange(warehouses.Select(warehouse => warehouse.Warehouse));
+
+        _warehouses = warehouses.ToArray();
     }
 
-    private async Task SeedInventoryAsync(
-        CancellationToken cancellationToken)
+    private void SeedOpeningStock()
     {
-        var warehouse1 = CreateWarehouse(
-            "Nablus Central",
-            "WH-NBL",
-            _locations.Palestine.Id,
-            _locations.Nablus.Id,
-            "10",
-            "Najah St");
+        var stocks = new List<WarehouseStock>(_catalog.All.Length * _warehouses.Length);
 
-        var warehouse2 = CreateWarehouse(
-            "Ramallah Branch",
-            "WH-RAM",
-            _locations.Palestine.Id,
-            _locations.Ramallah.Id,
-            "5",
-            "Al Irsal St");
-
-        var warehouse3 = CreateWarehouse(
-            "Gaza Branch",
-            "WH-GZA",
-            _locations.Palestine.Id,
-            _locations.Gaza.Id,
-            "21",
-            "Omar Al Mukhtar St");
-
-        context.Warehouses.AddRange(
-            warehouse1,
-            warehouse2,
-            warehouse3);
-
-        var stocks = new List<WarehouseStock>();
-
-        foreach (var product in _catalog.Products)
+        foreach (var warehouse in _warehouses)
         {
-            stocks.Add(
-                WarehouseStock.Create(
-                    Guid.NewGuid(),
-                    warehouse1.Id,
-                    product.Id,
-                    5,
-                    InitialStock(product.SKU, 1)).Value);
+             var scale = warehouse.Index switch
+            {
+                0 => 1.00m,            
+                1 => 0.85m,            
+                4 => 0.80m,            
+                13 => 0.75m,           
+                _ => 0.45m
+            };
 
-            stocks.Add(
-                WarehouseStock.Create(
-                    Guid.NewGuid(),
-                    warehouse2.Id,
-                    product.Id,
-                    3,
-                    InitialStock(product.SKU, 2)).Value);
+            foreach (var entry in _catalog.All)
+            {
+                var minimumLevel = decimal.Round(
+                    Between(150m, 900m) * scale, 0);
 
-            stocks.Add(
-                WarehouseStock.Create(
-                    Guid.NewGuid(),
-                    warehouse3.Id,
-                    product.Id,
-                    2,
-                    InitialStock(product.SKU, 3)).Value);
+                var quantity = decimal.Round(
+                    (MinimumOpeningStock + Between(0m, OpeningStockSpread)) * scale, 0);
+
+                 if (_random.Next(0, 20) == 0)
+                {
+                    quantity = decimal.Round(minimumLevel * Between(0.10m, 0.80m), 0);
+                }
+
+                stocks.Add(
+                    Require(
+                        WarehouseStock.Create(
+                            Guid.NewGuid(),
+                            warehouse.Warehouse.Id,
+                            entry.Product.Id,
+                            minimumLevel,
+                            quantity),
+                        $"stock row {entry.Sku} @ {warehouse.Definition.Code}"));
+            }
         }
 
         context.WarehouseStocks.AddRange(stocks);
 
-        _warehouses = new SeedWarehouses(
-            warehouse1,
-            warehouse2,
-            warehouse3,
-            stocks);
-
-        await Task.CompletedTask;
+        _stockRowCount = stocks.Count;
     }
 
-    private async Task SeedOrdersAndInvoicesAsync(
-        CancellationToken cancellationToken)
+    private void SeedSuppliers()
     {
-        var now = DateTimeOffset.UtcNow;
-        var p = _catalog.Products;
-        var suppliers = _partners.Suppliers;
-        var customers = _partners.Customers;
+        var definitions = new SupplierDefinition[]
+        {
+             new("Al-Quds Electronics Trading Co.", "SUP-0001", "alquds-electronics", "Nablus", "P400", "14", "Al-Quds St", true,
+                "Primary supplier of cables, peripherals and networking hardware.", new[] { CategoryKind.Electronics }),
 
-        var purchase = CreateCompletedOrder(
-            OrderType.Purchase,
-            suppliers[0].Id,
-            null,
-            _warehouses.Nablus.Id,
-            null,
-            "Monthly electronics replenishment",
-            10m,
-            new[]
+            new("Sinokrot Tech Import House", "SUP-0002", "sinokrot-tech", "Ramallah", "P600", "3", "Rukab St", true,
+                "Laptops, monitors and docking stations. Thirty day credit terms.", new[] { CategoryKind.Electronics }),
+
+            new("Bawabet Al-Sharq Computers", "SUP-0003", "bawabet-computers", "Hebron", "P760", "40", "Ras Al-Jura St", true,
+                "Storage, memory and desktop components wholesaler.", new[] { CategoryKind.Electronics }),
+
+            new("Shenzhen Hualing Electronics", "SUP-0004", "hualing-electronics", "Shenzhen", "518000", "9", "Bao'an Rd", true,
+                "Container imports of accessories. Sixty day lead time by sea.", new[] { CategoryKind.Electronics }),
+
+            new("Guangzhou Yulong Digital Co.", "SUP-0005", "yulong-digital", "Guangzhou", "510000", "17", "Tianhe Rd", true,
+                "Smart home devices, cameras and streaming hardware.", new[] { CategoryKind.Electronics }),
+
+            new("Emirates Digital Distribution", "SUP-0006", "emirates-digital", "Dubai", "00000", "5", "Al Quoz Rd", true,
+                "Regional distributor for phones, tablets and wearables.", new[] { CategoryKind.Electronics }),
+
+            new("Istanbul Teknoloji Ithalat", "SUP-0007", "istanbul-teknoloji", "Istanbul", "34000", "22", "Perpa Ticaret", true,
+                "Printers, scanners and point of sale hardware.", new[] { CategoryKind.Electronics, CategoryKind.Office }),
+
+            new("Levant Computer Supplies", "SUP-0008", "levant-computers", "Amman", "11118", "61", "Mecca St", true,
+                "UPS units, stabilisers and power protection equipment.", new[] { CategoryKind.Electronics }),
+
+             new("Al-Hadaf Tools and Machinery", "SUP-0009", "alhadaf-tools", "Nablus", "P402", "8", "Amman St", true,
+                "Power tools, hand tools and workshop consumables.", new[] { CategoryKind.Tools }),
+
+            new("Zarqa Industrial Tools Co.", "SUP-0010", "zarqa-tools", "Zarqa", "13110", "33", "Industrial St", true,
+                "Pneumatic tools, compressors and air line accessories.", new[] { CategoryKind.Tools }),
+
+            new("Giza Tool Works", "SUP-0011", "giza-toolworks", "Giza", "12511", "24", "Pyramids St", true,
+                "Cutting, grinding and abrasive product manufacturer.", new[] { CategoryKind.Tools }),
+
+            new("Izmir Makina Sanayi", "SUP-0012", "izmir-makina", "Izmir", "35000", "12", "Ataturk Cd", true,
+                "Bench machinery, vices and workshop furniture.", new[] { CategoryKind.Tools }),
+
+            new("Al-Wafa Hardware Trading", "SUP-0013", "alwafa-hardware", "Hebron", "P761", "19", "Wadi Al-Tuffah", true,
+                "General hardware, fasteners and measuring instruments.", new[] { CategoryKind.Tools }),
+
+            new("Jenin Power Tools Center", "SUP-0014", "jenin-powertools", "Jenin", "P210", "6", "Nazareth St", true,
+                "Cordless platforms and spare batteries.", new[] { CategoryKind.Tools }),
+
+            new("Dammam Industrial Equipment", "SUP-0015", "dammam-industrial", "Dammam", "31411", "77", "King Fahd Rd", true,
+                "Heavy workshop equipment, jacks and lifting gear.", new[] { CategoryKind.Tools, CategoryKind.Safety }),
+
+            new("Sharjah Toolmart FZE", "SUP-0016", "sharjah-toolmart", "Sharjah", "00000", "4", "Industrial 15", false,
+                "Free zone tool trader. Contract suspended pending renewal.", new[] { CategoryKind.Tools }),
+
+             new("Nile Automotive Parts Co.", "SUP-0017", "nile-automotive", "Cairo", "11511", "8", "Nasr St", true,
+                "Filters, belts, brake components and engine spares.", new[] { CategoryKind.Automotive }),
+
+            new("Al-Sayarat Spare Parts House", "SUP-0018", "alsayarat-parts", "Nablus", "P403", "51", "Askar St", true,
+                "Suspension, steering and transmission parts.", new[] { CategoryKind.Automotive }),
+
+            new("Amman Auto Supply Company", "SUP-0019", "amman-autosupply", "Amman", "11953", "18", "Madina St", true,
+                "Batteries, alternators and starter motors.", new[] { CategoryKind.Automotive }),
+
+            new("Delta Motor Components", "SUP-0020", "delta-motor", "Port Said", "42511", "9", "Gomhoria St", true,
+                "Lighting, wipers and vehicle electrical parts.", new[] { CategoryKind.Automotive }),
+
+            new("Hebron Motor Parts Trading", "SUP-0021", "hebron-motorparts", "Hebron", "P762", "35", "Halhul Rd", true,
+                "Clutch kits, CV joints and drivetrain components.", new[] { CategoryKind.Automotive }),
+
+            new("Jeddah Auto Components Co.", "SUP-0022", "jeddah-autoparts", "Jeddah", "21442", "14", "Madinah Rd", true,
+                "Cooling systems, radiators and water pumps.", new[] { CategoryKind.Automotive }),
+
+            new("Al-Motor Lubricants Company", "SUP-0023", "almotor-lubricants", "Ramallah", "P601", "2", "Industrial Rd", true,
+                "Engine oils, gear oils, coolants and brake fluids.", new[] { CategoryKind.Automotive }),
+
+            new("Alexandria Filters and Belts", "SUP-0024", "alexandria-filters", "Alexandria", "21500", "10", "Corniche St", false,
+                "Filter manufacturer. Supply paused after a quality hold.", new[] { CategoryKind.Automotive }),
+
+             new("Palestine Safety Equipment Co.", "SUP-0025", "palestine-safety", "Ramallah", "P602", "31", "Al-Irsal St", true,
+                "Personal protective equipment and site safety products.", new[] { CategoryKind.Safety }),
+
+            new("Al-Amaan Protective Gear", "SUP-0026", "alamaan-safety", "Gaza", "P800", "12", "Omar Mukhtar St", true,
+                "Gloves, helmets, goggles and high visibility clothing.", new[] { CategoryKind.Safety }),
+
+            new("Aqaba Fire and Safety Systems", "SUP-0027", "aqaba-firesafety", "Aqaba", "77110", "5", "Port Access Rd", true,
+                "Extinguishers, hose reels and emergency lighting.", new[] { CategoryKind.Safety }),
+
+            new("Riyadh Safety Solutions Co.", "SUP-0028", "riyadh-safety", "Riyadh", "11564", "45", "Olaya St", true,
+                "Fall arrest systems, harnesses and anchor points.", new[] { CategoryKind.Safety }),
+
+            new("Cairo Industrial Safety Center", "SUP-0029", "cairo-safety", "Cairo", "11512", "16", "Ramses St", true,
+                "Spill control, lockout tagout and first aid supplies.", new[] { CategoryKind.Safety }),
+
+            new("Bethlehem Workwear Trading", "SUP-0030", "bethlehem-workwear", "Bethlehem", "P650", "8", "Star St", true,
+                "Coveralls, boots and industrial workwear.", new[] { CategoryKind.Safety }),
+
+            new("Dubai Protective Supplies LLC", "SUP-0031", "dubai-protective", "Dubai", "00000", "21", "Deira Rd", true,
+                "Respiratory protection and chemical resistant products.", new[] { CategoryKind.Safety }),
+
+            new("Irbid Safety Systems Company", "SUP-0032", "irbid-safety", "Irbid", "21110", "7", "University St", true,
+                "Signage, barriers and traffic management equipment.", new[] { CategoryKind.Safety }),
+
+             new("Al-Manara Stationery House", "SUP-0033", "almanara-stationery", "Ramallah", "P603", "9", "Al-Manara Sq", true,
+                "Paper, filing and general office stationery.", new[] { CategoryKind.Office }),
+
+            new("Nablus Paper and Print Supplies", "SUP-0034", "nablus-paper", "Nablus", "P404", "27", "Faisal St", true,
+                "Copy paper, photo paper and printing consumables.", new[] { CategoryKind.Office }),
+
+            new("Jordan Paper Trading Company", "SUP-0035", "jordan-paper", "Amman", "11118", "41", "Wasfi Al-Tal St", true,
+                "Bulk paper importer with monthly contract pricing.", new[] { CategoryKind.Office }),
+
+            new("Nile Office World", "SUP-0036", "nile-office", "Cairo", "11513", "28", "Tahrir St", true,
+                "Desk accessories, organisers and presentation products.", new[] { CategoryKind.Office }),
+
+            new("Tulkarm Office Supplies Center", "SUP-0037", "tulkarm-office", "Tulkarm", "P300", "13", "Jamal St", true,
+                "Writing instruments, binders and small office equipment.", new[] { CategoryKind.Office }),
+
+            new("Al-Quds Books and Stationery", "SUP-0038", "alquds-stationery", "Jerusalem", "91000", "6", "Salah Al-Din St", true,
+                "Notebooks, planners and school stationery.", new[] { CategoryKind.Office }),
+
+            new("Istanbul Kirtasiye Ticaret", "SUP-0039", "istanbul-kirtasiye", "Istanbul", "34010", "18", "Bayrampasa Cd", true,
+                "Whiteboards, flip charts and meeting room supplies.", new[] { CategoryKind.Office }),
+
+            new("Gaza Office Solutions Trading", "SUP-0040", "gaza-office", "Gaza", "P801", "4", "Al-Wehda St", true,
+                "Office consumables for the Gaza governorates.", new[] { CategoryKind.Office })
+        };
+
+        var suppliers = new List<SeedSupplier>(definitions.Length);
+        var supplierProducts = new List<SupplierProduct>(definitions.Length * ProductsPerSupplier);
+
+        for (var index = 0; index < definitions.Length; index++)
+        {
+            var definition = definitions[index];
+            var city = _locations.City(definition.City);
+
+            var contact = Require(
+                ContactInfo.Create(
+                    Guid.NewGuid(),
+                    $"sales@{definition.Slug}.com",
+                    BuildPhone(city, SupplierPhoneBase + index),
+                    BuildPhone(city, SupplierAltPhoneBase + index),
+                    null,
+                    $"https://www.{definition.Slug}.com"),
+                $"contact for supplier {definition.Code}");
+
+            var address = Require(
+                Address.Create(
+                    Guid.NewGuid(),
+                    city.Country.Id,
+                    city.City.Id,
+                    definition.PostalCode,
+                    definition.BuildingNumber,
+                    definition.Street,
+                    $"{definition.Name} premises in {city.Name}."),
+                $"address for supplier {definition.Code}");
+
+            var supplier = Require(
+                Supplier.Create(
+                    Guid.NewGuid(),
+                    definition.Name,
+                    definition.Code,
+                    contact,
+                    address,
+                    definition.Active,
+                    definition.Notes),
+                $"supplier {definition.Code}");
+             
+            var pool = definition.Focus
+                .SelectMany(kind => _catalog.ByCategory[kind])
+                .ToArray();
+
+            var offset = index * 13 % pool.Length;
+            var stride = CoprimeStride(pool.Length, 3 + (index % 7));
+            var margin = 0.55m + (index % 8 * 0.03m);
+            var lines = new List<SupplierLine>(ProductsPerSupplier);
+            var used = new HashSet<string>(StringComparer.Ordinal); 
+            for (var step = 0;
+                 step < pool.Length && lines.Count < ProductsPerSupplier;
+                 step++)
             {
-                Detail(p[0], 40, 4.25m),
-                Detail(p[1], 20, 17.50m)
-            },
-            now.AddDays(1));
+                var entry = pool[(offset + (step * stride)) % pool.Length];
 
-        AddInvoice(
-            purchase,
-            InvoiceType.Purchase,
-            10m,
-            new[]
-            {
-                ("USB-C Cable", 40m, 4.25m, 17m),
-                ("Power Adapter", 20m, 17.50m, 35m)
-            });
+                if (!used.Add(entry.Sku))
+                {
+                    continue;
+                } 
+                var purchasePrice = decimal.Round(
+                    entry.SellingPrice * (margin + Between(-0.04m, 0.04m)), 2);
 
-        var purchase2 = CreateCompletedOrder(
-            OrderType.Purchase,
-            suppliers[1].Id,
-            null,
-            _warehouses.Ramallah.Id,
-            null,
-            "Workshop tools replenishment",
-            0m,
-            new[]
-            {
-                Detail(p[2], 12, 105m),
-                Detail(p[3], 15, 51m)
-            },
-            now.AddDays(2));
+                if (purchasePrice <= 0m)
+                {
+                    purchasePrice = decimal.Round(entry.SellingPrice * 0.5m, 2);
+                }
 
-        AddInvoice(
-            purchase2,
-            InvoiceType.Purchase,
-            0m,
-            new[]
-            {
-                ("Drill Set", 12m, 105m, 126m),
-                ("Socket Set", 15m, 51m, 76.50m)
-            });
+                supplierProducts.Add(
+                    Require(
+                        SupplierProduct.Create(
+                            Guid.NewGuid(),
+                            supplier.Id,
+                            entry.Product.Id,
+                            purchasePrice),
+                        $"price list row {entry.Sku} for {definition.Code}"));
 
-        var sale = CreateCompletedOrder(
-            OrderType.Sale,
-            null,
-            customers[0].Id,
-            _warehouses.Nablus.Id,
-            null,
-            "Fleet maintenance order",
-            12m,
-            new[]
-            {
-                Detail(p[4], 18, 24m),
-                Detail(p[5], 6, 55m)
-            },
-            now.AddDays(3));
+                lines.Add(new SupplierLine(entry, purchasePrice));
+            }
 
-        AddInvoice(
-            sale,
-            InvoiceType.Sale,
-            12m,
-            new[]
-            {
-                ("Engine Oil", 18m, 24m, 43.20m),
-                ("Brake Pads", 6m, 55m, 33m)
-            });
+            suppliers.Add(new SeedSupplier(supplier, definition, lines.ToArray()));
+        }
 
-        var sale2 = CreateCompletedOrder(
-            OrderType.Sale,
-            null,
-            customers[1].Id,
-            _warehouses.Ramallah.Id,
-            null,
-            "Office supply order",
-            5m,
-            new[]
-            {
-                Detail(p[7], 30, 5.25m),
-                Detail(p[1], 4, 29m)
-            },
-            now.AddDays(4));
+        context.Suppliers.AddRange(suppliers.Select(supplier => supplier.Supplier));
+        context.SupplierProducts.AddRange(supplierProducts);
 
-        AddInvoice(
-            sale2,
-            InvoiceType.Sale,
-            5m,
-            new[]
-            {
-                ("Printer Paper", 30m, 5.25m, 4.73m),
-                ("Power Adapter", 4m, 29m, 11.60m)
-            });
-
-        CreateCompletedOrder(
-            OrderType.Transfer,
-            null,
-            null,
-            _warehouses.Nablus.Id,
-            _warehouses.Gaza.Id,
-            "Inter-branch stock balancing",
-            null,
-            new[]
-            {
-                Detail(p[0], 10, 4.25m),
-                Detail(p[4], 8, 15.50m)
-            },
-            now.AddDays(5));
-
-        var returnIn = CreateCompletedOrder(
-            OrderType.ReturnIn,
-            null,
-            customers[0].Id,
-            _warehouses.Nablus.Id,
-            null,
-            "Customer returned unopened brake pads",
-            0m,
-            new[]
-            {
-                Detail(p[5], 1, 55m)
-            },
-            now.AddDays(6));
-
-        AddInvoice(
-            returnIn,
-            InvoiceType.ReturnIn,
-            0m,
-            new[]
-            {
-                ("Brake Pads", 1m, 55m, 0m)
-            });
-
-        var returnOut = CreateCompletedOrder(
-            OrderType.ReturnOut,
-            suppliers[0].Id,
-            null,
-            _warehouses.Nablus.Id,
-            null,
-            "Damaged power adapters returned to supplier",
-            0m,
-            new[]
-            {
-                Detail(p[1], 2, 17.50m)
-            },
-            now.AddDays(7));
-
-        AddInvoice(
-            returnOut,
-            InvoiceType.ReturnOut,
-            0m,
-            new[]
-            {
-                ("Power Adapter", 2m, 17.50m, 0m)
-            });
-
-        CreatePendingOrder(
-            OrderType.Purchase,
-            suppliers[2].Id,
-            null,
-            _warehouses.Gaza.Id,
-            null,
-            "Upcoming automotive replenishment",
-            0m,
-            new[]
-            {
-                Detail(p[4], 50, 15.50m),
-                Detail(p[5], 10, 36m)
-            },
-            now.AddDays(10));
-
-        CreateCompletedOrder(
-            OrderType.Transfer,
-            null,
-            null,
-            _warehouses.Ramallah.Id,
-            _warehouses.Gaza.Id,
-            "Planned safety stock transfer",
-            null,
-            new[]
-            {
-                Detail(p[6], 20, 3.25m)
-            },
-            now.AddDays(12));
-
-        await Task.CompletedTask;
+        _suppliers = suppliers.ToArray();
+        _supplierProductCount = supplierProducts.Count;
     }
 
-    private static OrderDetail Detail(
-        Product product,
-        decimal quantity,
-        decimal unitPrice)
+    private void SeedCustomers()
     {
-        return OrderDetail.Create(
-            Guid.NewGuid(),
-            product.Id,
-            quantity,
-            unitPrice).Value;
+        var definitions = new CustomerDefinition[]
+        {
+            new("Nablus Auto Care Center", "CUS-0001", "nablus-autocare", "Nablus", "12", "Al-Makhfia St",
+                "Vehicle service centre. Weekly parts and lubricants account."),
+            new("Al-Sharq Vehicle Workshop", "CUS-0002", "alsharq-workshop", "Nablus", "39", "Askar St",
+                "Independent workshop specialising in commercial vehicles."),
+            new("Rafidia Medical Center", "CUS-0003", "rafidia-medical", "Nablus", "8", "Rafidia St",
+                "Private clinic. Buys office, safety and electrical items."),
+            new("An-Najah Campus Services", "CUS-0004", "najah-campus", "Nablus", "1", "Academic St",
+                "University facilities department. Quarterly tenders."),
+            new("Nablus Municipality Stores", "CUS-0005", "nablus-municipality", "Nablus", "5", "Al-Hussein St",
+                "Municipal central stores. Public sector payment terms."),
+            new("Al-Waha Restaurants Group", "CUS-0006", "alwaha-restaurants", "Nablus", "62", "Rafidia St",
+                "Restaurant chain buying safety and office consumables."),
+            new("Nablus Bakery Group", "CUS-0007", "nablus-bakery", "Nablus", "17", "Al-Quds St",
+                "Industrial bakery. Maintenance tools and PPE."),
+
+            new("Ramallah Office Hub", "CUS-0008", "ramallah-officehub", "Ramallah", "7", "Rukab St",
+                "Serviced office provider. Large stationery account."),
+            new("Palestine Telecom Services", "CUS-0009", "palestine-telecom", "Ramallah", "23", "Al-Irsal St",
+                "Telecom operator. Networking hardware and safety gear."),
+            new("Al-Manara Retail Group", "CUS-0010", "almanara-retail", "Ramallah", "4", "Al-Manara Sq",
+                "Retail chain reselling electronics and office lines."),
+            new("Birzeit Facilities Office", "CUS-0011", "birzeit-facilities", "Ramallah", "9", "Birzeit Rd",
+                "Campus facilities team. Annual framework agreement."),
+            new("Modern Print House", "CUS-0012", "modern-printhouse", "Ramallah", "34", "Industrial Rd",
+                "Commercial printer. Paper and printing consumables."),
+            new("Red Crescent Central Depot", "CUS-0013", "redcrescent-depot", "Ramallah", "11", "Al-Balou St",
+                "Humanitarian depot. First aid and protective equipment."),
+            new("Al-Bireh Municipality", "CUS-0014", "albireh-municipality", "Al-Bireh", "2", "Al-Nahda St",
+                "Municipal buyer for street works and offices."),
+
+            new("Hebron Industrial Group", "CUS-0015", "hebron-industrial", "Hebron", "44", "Ain Sara St",
+                "Manufacturing group. Tools, safety and maintenance items."),
+            new("Al-Khalil Stone Works", "CUS-0016", "alkhalil-stone", "Hebron", "58", "Halhul Rd",
+                "Stone cutting factory. Heavy abrasives and PPE."),
+            new("Hebron Transport Company", "CUS-0017", "hebron-transport", "Hebron", "12", "Wadi Al-Tuffah",
+                "Bus and truck fleet. Monthly automotive account."),
+            new("Dura Building Contractors", "CUS-0018", "dura-contractors", "Hebron", "3", "Dura Rd",
+                "Construction contractor. Site safety and power tools."),
+            new("Al-Ahliya Private School", "CUS-0019", "alahliya-school", "Hebron", "26", "Ras Al-Jura St",
+                "Private school. Stationery and IT equipment."),
+
+            new("Gaza Workshop Supplies", "CUS-0020", "gaza-workshop", "Gaza", "18", "Omar Mukhtar St",
+                "Repair workshop and small parts reseller."),
+            new("Al-Shifa Facility Services", "CUS-0021", "alshifa-facility", "Gaza", "6", "Al-Wehda St",
+                "Hospital facilities unit. Safety and electrical items."),
+            new("Gaza Power Maintenance", "CUS-0022", "gaza-power", "Gaza", "30", "Al-Rasheed St",
+                "Electrical maintenance contractor."),
+            new("Gaza Fishermen Cooperative", "CUS-0023", "gaza-fishermen", "Gaza", "2", "Port St",
+                "Cooperative buying safety, lighting and batteries."),
+            new("Khan Younis School District", "CUS-0024", "khanyounis-schools", "Khan Younis", "1", "Jalal St",
+                "Education district. Bulk stationery tenders."),
+            new("Rafah Border Logistics", "CUS-0025", "rafah-logistics", "Rafah", "14", "Salah Al-Din Rd",
+                "Freight handler. Forklift, tools and safety supplies."),
+
+            new("Jenin Transport Company", "CUS-0026", "jenin-transport", "Jenin", "9", "Haifa St",
+                "Regional transport fleet. Filters, oils and brakes."),
+            new("Al-Yarmouk Garage", "CUS-0027", "alyarmouk-garage", "Jenin", "21", "Nazareth St",
+                "Garage account with weekly parts collection."),
+            new("Jenin Agricultural Coop", "CUS-0028", "jenin-agricoop", "Jenin", "5", "Arraba Rd",
+                "Farming cooperative. Tools, safety and power items."),
+            new("Tubas Municipality", "CUS-0029", "tubas-municipality", "Tubas", "1", "Al-Alimi St",
+                "Municipal stores for road and office supplies."),
+            new("Tubas Poultry Farms", "CUS-0030", "tubas-poultry", "Tubas", "7", "Tayasir Rd",
+                "Poultry operation. Electrical and safety consumables."),
+
+            new("Tulkarm School District", "CUS-0031", "tulkarm-schools", "Tulkarm", "2", "Nablus St",
+                "Public sector stationery and furniture account."),
+            new("Tulkarm Textile Factory", "CUS-0032", "tulkarm-textile", "Tulkarm", "48", "Industrial St",
+                "Textile plant. Maintenance tools and protective gear."),
+            new("Qalqilya Builders Group", "CUS-0033", "qalqilya-builders", "Qalqilya", "16", "Al-Andalus St",
+                "Contractor buying site tools and safety equipment."),
+            new("Qalqilya Water Authority", "CUS-0034", "qalqilya-water", "Qalqilya", "3", "Al-Baten St",
+                "Utility buyer. Pumps, fittings and safety signage."),
+            new("Salfit Tech Store", "CUS-0035", "salfit-tech", "Salfit", "23", "Al-Sahel St",
+                "Retail electronics store. Weekly replenishment."),
+            new("Salfit Municipality Depot", "CUS-0036", "salfit-municipality", "Salfit", "1", "Municipal St",
+                "Municipal depot account."),
+
+            new("Bethlehem Hotel Group", "CUS-0037", "bethlehem-hotels", "Bethlehem", "31", "Manger St",
+                "Hotel group. Maintenance, safety and office supplies."),
+            new("Star Street Retailers", "CUS-0038", "starstreet-retail", "Bethlehem", "12", "Star St",
+                "Retail association buying mixed consumer lines."),
+            new("Beit Jala Auto Service", "CUS-0039", "beitjala-auto", "Bethlehem", "40", "Beit Jala Rd",
+                "Vehicle service centre with a monthly parts account."),
+            new("Jericho Farms Company", "CUS-0040", "jericho-farms", "Jericho", "5", "Ein Sultan St",
+                "Agricultural producer. Tools, safety and electrical."),
+            new("Dead Sea Resorts Supply", "CUS-0041", "deadsea-resorts", "Jericho", "18", "Dead Sea Rd",
+                "Resort group purchasing office and safety products."),
+
+            new("Jerusalem Heritage Hotels", "CUS-0042", "jerusalem-hotels", "Jerusalem", "9", "Salah Al-Din St",
+                "Hotel operator. Facilities and office supplies."),
+            new("Al-Quds Printing House", "CUS-0043", "alquds-printing", "Jerusalem", "27", "Nablus Rd",
+                "Printing house buying paper and consumables."),
+
+            new("Amman Service Center", "CUS-0044", "amman-servicecenter", "Amman", "25", "Madina St",
+                "Regional service centre. Automotive and tools."),
+            new("Jordan Fleet Maintenance", "CUS-0045", "jordan-fleet", "Amman", "63", "Sahab Ind. Rd",
+                "Fleet operator with a standing monthly order."),
+            new("Zarqa Logistics Company", "CUS-0046", "zarqa-logistics", "Zarqa", "37", "Industrial St",
+                "Warehousing operator. Handling and safety equipment."),
+            new("Irbid Engineering Office", "CUS-0047", "irbid-engineering", "Irbid", "8", "University St",
+                "Engineering consultancy. Instruments and office items."),
+            new("Aqaba Marine Services", "CUS-0048", "aqaba-marine", "Aqaba", "4", "Port Access Rd",
+                "Port maintenance contractor. Heavy tools and PPE."),
+
+            new("Cairo Parts Retail", "CUS-0049", "cairo-partsretail", "Cairo", "11", "Tahrir St",
+                "Automotive parts retailer. Container quantities."),
+            new("Obour Industrial Works", "CUS-0050", "obour-industrial", "Cairo", "52", "Ramses St",
+                "Industrial workshop. Tools and safety equipment."),
+            new("Alexandria Retail Group", "CUS-0051", "alexandria-retail", "Alexandria", "14", "Corniche St",
+                "Multi branch retail chain."),
+            new("Giza Auto Workshop", "CUS-0052", "giza-autoworkshop", "Giza", "29", "Pyramids St",
+                "Vehicle repair workshop."),
+            new("Port Said Traders", "CUS-0053", "portsaid-traders", "Port Said", "6", "Gomhoria St",
+                "General trading company reselling mixed lines."),
+
+            new("Riyadh Facilities Company", "CUS-0054", "riyadh-facilities", "Riyadh", "45", "Olaya St",
+                "Facilities management contractor."),
+            new("Jeddah Marine Workshop", "CUS-0055", "jeddah-marine", "Jeddah", "14", "Madinah Rd",
+                "Marine engineering workshop."),
+            new("Dammam Fleet Services", "CUS-0056", "dammam-fleet", "Dammam", "77", "King Fahd Rd",
+                "Fleet servicing operation. Automotive consumables."),
+            new("Dubai Retail Partners", "CUS-0057", "dubai-retailpartners", "Dubai", "21", "Deira Rd",
+                "Regional reseller for electronics and office lines."),
+            new("Sharjah Trading House", "CUS-0058", "sharjah-trading", "Sharjah", "4", "Industrial 15",
+                "Trading house buying mixed export cartons."),
+            new("Istanbul Supply Partners", "CUS-0059", "istanbul-supply", "Istanbul", "18", "Bayrampasa Cd",
+                "Distribution partner for the Turkish market."),
+            new("Izmir Machine Works", "CUS-0060", "izmir-machine", "Izmir", "12", "Ataturk Cd",
+                "Machine shop buying tools and safety equipment.")
+        };
+
+        var customers = new List<SeedCustomer>(definitions.Length);
+
+        for (var index = 0; index < definitions.Length; index++)
+        {
+            var definition = definitions[index];
+            var city = _locations.City(definition.City);
+
+            var contact = Require(
+                ContactInfo.Create(
+                    Guid.NewGuid(),
+                    $"purchasing@{definition.Slug}.com",
+                    BuildPhone(city, CustomerPhoneBase + index),
+                    string.Empty,
+                    null,
+                    $"https://www.{definition.Slug}.com"),
+                $"contact for customer {definition.Code}");
+
+            var address = Require(
+                Address.Create(
+                    Guid.NewGuid(),
+                    city.Country.Id,
+                    city.City.Id,
+                    "00000",
+                    definition.BuildingNumber,
+                    definition.Street,
+                    $"{definition.Name} delivery address in {city.Name}."),
+                $"address for customer {definition.Code}");
+
+            var customer = Require(
+                Customer.Create(
+                    Guid.NewGuid(),
+                    definition.Name,
+                    definition.Code,
+                    contact,
+                    address,
+                    definition.Notes),
+                $"customer {definition.Code}");
+
+            customers.Add(new SeedCustomer(customer, definition));
+        }
+
+        context.Customers.AddRange(customers.Select(customer => customer.Customer));
+
+        _customers = customers.ToArray();
     }
 
-    private Order CreateCompletedOrder(
+    private void SeedEmployeesAndUsers()
+    {
+        var homeStreets = new[]
+        {
+            "Main St", "Al-Quds St", "Al-Nahda St", "Al-Salam St",
+            "Al-Jamea St", "Al-Zahra St", "Al-Amal St", "Al-Sahel St"
+        };
+
+        var employees = new List<SeedEmployee>(_warehouses.Length * EmployeesPerWarehouse);
+        var employeeNumber = 0;
+
+        foreach (var warehouse in _warehouses)
+        {
+            var titleOffset = warehouse.Index * 3 % JobTitles.Length;
+
+            for (var slot = 0; slot < EmployeesPerWarehouse; slot++)
+            {
+                employeeNumber++;
+
+                var jobTitle = warehouse.Index == 0 && slot == 0
+                    ? "General Manager"
+                    : JobTitles[(titleOffset + slot) % JobTitles.Length];
+
+                 var isMale = _random.Next(0, 3) != 0;
+
+                var firstName = isMale ? Pick(MaleFirstNames) : Pick(FemaleFirstNames);
+                var secondName = Pick(FatherNames);
+                var thirdName = Pick(GrandfatherNames);
+                var lastName = Pick(FamilyNames);
+
+                var contact = Require(
+                    ContactInfo.Create(
+                        Guid.NewGuid(),
+                        $"{firstName.ToLowerInvariant()}.{lastName.ToLowerInvariant()}.{employeeNumber:D3}@{CompanyMailDomain}",
+                        BuildPhone(warehouse.City, EmployeePhoneBase + employeeNumber),
+                        string.Empty,
+                        null,
+                        null),
+                    $"contact for employee #{employeeNumber}");
+
+                var address = Require(
+                    Address.Create(
+                        Guid.NewGuid(),
+                        warehouse.City.Country.Id,
+                        warehouse.City.City.Id,
+                        "00000",
+                        Between(1, 180).ToString(),
+                        Pick(homeStreets),
+                        $"Home address in {warehouse.City.Name}."),
+                    $"address for employee #{employeeNumber}");
+
+                var person = Require(
+                    Person.Create(
+                        Guid.NewGuid(),
+                        NextNationalNo(),
+                        firstName,
+                        secondName,
+                        thirdName,
+                        lastName,
+                        isMale,
+                        new DateOnly(
+                            Between(1972, 2003),
+                            Between(1, 13),
+                            Between(1, 28)),
+                        contact,
+                        address),
+                    $"person for employee #{employeeNumber} ({firstName} {lastName})");
+
+                var employee = Require(
+                    Employee.Create(
+                        jobTitle,
+                        person,
+                        new DateOnly(
+                            Between(2015, 2026),
+                            Between(1, 13),
+                            Between(1, 28)),
+                        warehouse.Warehouse.Id),
+                    $"employee #{employeeNumber} ({jobTitle} @ {warehouse.Definition.Code})");
+
+                employees.Add(
+                    new SeedEmployee(
+                        employee,
+                        person,
+                        firstName,
+                        lastName,
+                        jobTitle,
+                        warehouse.Index,
+                        slot));
+            }
+        }
+
+        context.Employees.AddRange(employees.Select(employee => employee.Employee));
+
+        _employees = employees.ToArray();
+
+        SeedUsers();
+    }
+
+    private void SeedUsers()
+    {
+        var passwordHash = hashingHelper.Hash<User>(SeedPassword);
+
+        var taken = new HashSet<Guid>();
+        var usernames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var emails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var users = new List<User>(UserCount);
+
+         var generalManager = _employees.First(employee => employee.JobTitle == "General Manager");
+
+        taken.Add(generalManager.Employee.Id);
+        usernames.Add(SeedAdminUsername);
+        emails.Add($"admin@{CompanyMailDomain}");
+
+        users.Add(
+            Require(
+                User.Create(
+                    SeedAdminUsername,
+                    passwordHash,
+                    $"admin@{CompanyMailDomain}",
+                    Role.Admin,
+                    true,
+                    generalManager.Employee.Id),
+                "admin user"));
+
+         var plan = new (Role Role, int Count, Func<SeedEmployee, bool> Matches)[]
+        {
+            (Role.Admin, 1, employee =>
+                employee.JobTitle is "IT Support Officer"),
+
+            (Role.PurchasesUser, 5, employee =>
+                employee.JobTitle is "Purchasing Officer" or "Procurement Assistant"),
+
+            (Role.SalesUser, 7, employee =>
+                employee.JobTitle is "Sales Officer" or "Senior Sales Officer"
+                    or "Sales Representative" or "Customer Service Officer"),
+
+            (Role.WarehouseUser, 8, employee =>
+                employee.JobTitle is "Warehouse Supervisor" or "Shift Supervisor"
+                    or "Inventory Controller" or "Receiving Clerk"
+                    or "Dispatch Coordinator" or "Branch Manager"),
+
+            (Role.Viewer, 3, employee =>
+                employee.JobTitle is "Warehouse Accountant" or "Quality Inspector"
+                    or "Stock Auditor" or "Assistant Branch Manager")
+        };
+
+        foreach (var (role, count, matches) in plan)
+        {
+            var candidates = _employees
+                .Where(employee => !taken.Contains(employee.Employee.Id) && matches(employee))
+                .OrderBy(employee => employee.WarehouseIndex)
+                .ThenBy(employee => employee.Slot)
+                .Take(count)
+                .ToArray();
+
+            foreach (var candidate in candidates)
+            {
+                if (users.Count >= UserCount)
+                {
+                    break;
+                }
+
+                taken.Add(candidate.Employee.Id);
+
+                var username = UniqueUsername(candidate, usernames);
+                var email = UniqueEmail(candidate, emails);
+
+                users.Add(
+                    Require(
+                        User.Create(
+                            username,
+                            passwordHash,
+                            email,
+                            role,
+                         
+                            candidate.Slot != 7,
+                            candidate.Employee.Id),
+                        $"user {username} ({role})"));
+            }
+        }
+
+         for (var index = 0; index < users.Count; index++)
+        {
+            users[index].LastLoginAt = DateTimeOffset.UtcNow
+                .AddDays(-Between(1, 45))
+                .AddHours(-Between(0, 23));
+        }
+
+        context.Users.AddRange(users);
+
+        _userCount = users.Count;
+    }
+
+    private static string UniqueUsername(SeedEmployee employee, HashSet<string> taken)
+    {
+        var candidate = $"{employee.FirstName}_{employee.LastName}"
+            .ToLowerInvariant()
+            .Replace("-", string.Empty, StringComparison.Ordinal)
+            .Replace(" ", string.Empty, StringComparison.Ordinal);
+
+        if (candidate.Length > 20)
+        {
+            candidate = candidate[..20];
+        }
+
+        while (candidate.Length < 5)
+        {
+            candidate += "x";
+        }
+
+        if (taken.Add(candidate))
+        {
+            return candidate;
+        }
+
+        for (var suffix = 2; suffix < 100; suffix++)
+        {
+            var stem = candidate.Length > 17 ? candidate[..17] : candidate;
+            var attempt = $"{stem}{suffix}";
+
+            if (taken.Add(attempt))
+            {
+                return attempt;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"Could not build a unique username for {employee.FirstName} {employee.LastName}.");
+    }
+
+    private static string UniqueEmail(SeedEmployee employee, HashSet<string> taken)
+    {
+        var stem = $"{employee.FirstName}.{employee.LastName}".ToLowerInvariant();
+        var candidate = $"{stem}@{CompanyMailDomain}";
+
+        for (var suffix = 2; !taken.Add(candidate); suffix++)
+        {
+            candidate = $"{stem}{suffix}@{CompanyMailDomain}";
+        }
+
+        return candidate;
+    }
+
+    private void SeedOrdersAndInvoices()
+    {
+        var activeSuppliers = _suppliers
+            .Where(supplier => supplier.Definition.Active)
+            .ToArray();
+
+        SeedPurchaseOrders(activeSuppliers);
+        SeedSalesOrders();
+        SeedReturnInOrders();
+        SeedReturnOutOrders(activeSuppliers);
+        SeedTransferOrders();
+    }
+
+    private void SeedPurchaseOrders(SeedSupplier[] suppliers)
+    {
+        for (var index = 0; index < PurchaseOrderCount; index++)
+        {
+            var supplier = suppliers[index % suppliers.Length];
+            var warehouse = _warehouses[index * 7 % _warehouses.Length];
+
+            var lines = TakeSupplierLines(supplier, Between(2, 7), 40m, 600m);
+            var subtotal = Subtotal(lines);
+            var discount = decimal.Round(subtotal * (Between(0, 6) / 100m), 2);
+            var completed = index % 20 != 0;
+
+            var reference = $"PO-{DateTime.UtcNow.Year}-{index + 1:D5}";
+
+            var order = CreateOrder(
+                OrderType.Purchase,
+                supplier.Supplier.Id,
+                null,
+                warehouse.Warehouse.Id,
+                null,
+                $"{reference} - replenishment for {warehouse.Definition.Name} " +
+                $"from {supplier.Definition.Name}.",
+                discount,
+                lines,
+                FutureDate(2, 150),
+                completed);
+
+            if (completed)
+            {
+                AddInvoice(order, InvoiceType.Purchase, discount, lines, $"INV-{reference}");
+            }
+        }
+    }
+
+    private void SeedSalesOrders()
+    {
+        for (var index = 0; index < SaleOrderCount; index++)
+        {
+            var customer = _customers[index % _customers.Length];
+            var warehouse = _warehouses[index * 11 % _warehouses.Length];
+
+            var lines = TakeCatalogLines(Between(1, 7), 2m, 90m);
+            var subtotal = Subtotal(lines);
+            var discount = decimal.Round(subtotal * (Between(0, 5) / 100m), 2);
+            var completed = index % 12 != 0;
+
+            var reference = $"SO-{DateTime.UtcNow.Year}-{index + 1:D5}";
+
+            var order = CreateOrder(
+                OrderType.Sale,
+                null,
+                customer.Customer.Id,
+                warehouse.Warehouse.Id,
+                null,
+                $"{reference} - sales order for {customer.Definition.Name} " +
+                $"picked at {warehouse.Definition.Name}.",
+                discount,
+                lines,
+                FutureDate(1, 120),
+                completed);
+
+            if (completed)
+            {
+                AddInvoice(order, InvoiceType.Sale, discount, lines, $"INV-{reference}");
+            }
+        }
+    }
+
+    private void SeedReturnInOrders()
+    {
+        var reasons = new[]
+        {
+            "wrong item delivered",
+            "damaged in transit",
+            "over supplied against the order",
+            "customer cancelled the project",
+            "unit failed on installation",
+            "packaging opened and rejected",
+            "duplicate delivery"
+        };
+
+        for (var index = 0; index < ReturnInOrderCount; index++)
+        {
+            var customer = _customers[index * 3 % _customers.Length];
+            var warehouse = _warehouses[index * 5 % _warehouses.Length];
+
+            var lines = TakeCatalogLines(Between(1, 4), 1m, 18m);
+            var completed = index % 15 != 0;
+
+            var reference = $"RI-{DateTime.UtcNow.Year}-{index + 1:D5}";
+
+            var order = CreateOrder(
+                OrderType.ReturnIn,
+                null,
+                customer.Customer.Id,
+                warehouse.Warehouse.Id,
+                null,
+                $"{reference} - return from {customer.Definition.Name} " +
+                $"into {warehouse.Definition.Name}: {Pick(reasons)}.",
+                0m,
+                lines,
+                FutureDate(1, 90),
+                completed);
+
+            if (completed)
+            {
+                 AddInvoice(order, InvoiceType.ReturnIn, 0m, lines, $"CRN-{reference}");
+            }
+        }
+    }
+
+    private void SeedReturnOutOrders(SeedSupplier[] suppliers)
+    {
+        var reasons = new[]
+        {
+            "batch failed goods in inspection",
+            "short shelf life on arrival",
+            "incorrect specification supplied",
+            "visible transit damage",
+            "surplus against the agreed quantity"
+        };
+
+        for (var index = 0; index < ReturnOutOrderCount; index++)
+        {
+            var supplier = suppliers[index * 3 % suppliers.Length];
+            var warehouse = _warehouses[index * 2 % _warehouses.Length];
+
+            var lines = TakeSupplierLines(supplier, Between(1, 4), 1m, 30m);
+            var completed = index % 10 != 0;
+
+            var reference = $"RO-{DateTime.UtcNow.Year}-{index + 1:D5}";
+
+            var order = CreateOrder(
+                OrderType.ReturnOut,
+                supplier.Supplier.Id,
+                null,
+                warehouse.Warehouse.Id,
+                null,
+                $"{reference} - returned to {supplier.Definition.Name} " +
+                $"from {warehouse.Definition.Name}: {Pick(reasons)}.",
+                0m,
+                lines,
+                FutureDate(1, 90),
+                completed);
+
+            if (completed)
+            {
+                AddInvoice(order, InvoiceType.ReturnOut, 0m, lines, $"DBN-{reference}");
+            }
+        }
+    }
+
+    private void SeedTransferOrders()
+    {
+        for (var index = 0; index < TransferOrderCount; index++)
+        {
+            var source = _warehouses[index * 4 % _warehouses.Length];
+
+            var destination = _warehouses[
+                (source.Index + 1 + (index % (_warehouses.Length - 1))) % _warehouses.Length];
+
+            var lines = TakeCatalogLines(Between(2, 6), 20m, 400m);
+            var completed = index % 8 != 0;
+
+            var reference = $"TR-{DateTime.UtcNow.Year}-{index + 1:D5}";
+
+              CreateOrder(
+                OrderType.Transfer,
+                null,
+                null,
+                source.Warehouse.Id,
+                destination.Warehouse.Id,
+                $"{reference} - stock balancing from {source.Definition.Name} " +
+                $"to {destination.Definition.Name}.",
+                null,
+                lines,
+                FutureDate(1, 60),
+                completed);
+        }
+    }
+
+    private OrderLine[] TakeSupplierLines(
+        SeedSupplier supplier,
+        int lineCount,
+        decimal minimumQuantity,
+        decimal maximumQuantity)
+    {
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        var lines = new List<OrderLine>(lineCount);
+
+        while (lines.Count < lineCount && used.Count < supplier.Lines.Length)
+        {
+            var supplierLine = Pick(supplier.Lines);
+
+            if (!used.Add(supplierLine.Entry.Sku))
+            {
+                continue;
+            }
+
+            lines.Add(
+                new OrderLine(
+                    supplierLine.Entry,
+                    decimal.Round(Between(minimumQuantity, maximumQuantity), 0),
+                    supplierLine.PurchasePrice));
+        }
+
+        return lines.ToArray();
+    }
+
+    private OrderLine[] TakeCatalogLines(
+        int lineCount,
+        decimal minimumQuantity,
+        decimal maximumQuantity)
+    {
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        var lines = new List<OrderLine>(lineCount);
+
+        while (lines.Count < lineCount)
+        {
+            var entry = Pick(_catalog.All);
+
+            if (!used.Add(entry.Sku))
+            {
+                continue;
+            }
+
+            lines.Add(
+                new OrderLine(
+                    entry,
+                    decimal.Round(Between(minimumQuantity, maximumQuantity), 0),
+                    entry.SellingPrice));
+        }
+
+        return lines.ToArray();
+    }
+
+    private static decimal Subtotal(IEnumerable<OrderLine> lines)
+    {
+        return lines.Sum(line => line.Quantity * line.UnitPrice);
+    }
+
+    private DateTimeOffset FutureDate(int minimumDays, int maximumDays)
+    {
+        return DateTimeOffset.UtcNow
+            .AddDays(Between(minimumDays, maximumDays))
+            .AddHours(Between(1, 23))
+            .AddMinutes(Between(0, 60));
+    }
+
+    private Order CreateOrder(
         OrderType type,
         Guid? supplierId,
         Guid? customerId,
@@ -1524,58 +2021,45 @@ var toolsCollection = toolsProducts
         Guid? destinationWarehouseId,
         string notes,
         decimal? discount,
-        IEnumerable<OrderDetail> details,
-        DateTimeOffset dueDate)
+        IReadOnlyList<OrderLine> lines,
+        DateTimeOffset dueDate,
+        bool complete)
     {
-        var order = Order.Create(
-            Guid.NewGuid(),
-            type,
-            supplierId,
-            customerId,
-            sourceWarehouseId,
-            destinationWarehouseId,
-            notes,
-            discount,
-            details.ToList(),
-            dueDate).Value;
+        var details = lines
+            .Select(line =>
+                Require(
+                    OrderDetail.Create(
+                        Guid.NewGuid(),
+                        line.Entry.Product.Id,
+                        line.Quantity,
+                        line.UnitPrice),
+                    $"order detail for {line.Entry.Sku}"))
+            .ToList();
 
-        var statusResult = order.UpdateStatus(OrderStatus.Completed);
+        var order = Require(
+            Order.Create(
+                Guid.NewGuid(),
+                type,
+                supplierId,
+                customerId,
+                sourceWarehouseId,
+                destinationWarehouseId,
+                Truncate(notes, 500),
+                discount,
+                details,
+                dueDate),
+            $"{type} order");
 
-        if (statusResult.IsError)
+        if (complete)
         {
-            throw new InvalidOperationException(
-                statusResult.TopError.Description);
+            Require(
+                order.UpdateStatus(OrderStatus.Completed),
+                $"completion of {type} order");
         }
 
         context.Orders.Add(order);
 
-        return order;
-    }
-
-    private Order CreatePendingOrder(
-        OrderType type,
-        Guid? supplierId,
-        Guid? customerId,
-        Guid sourceWarehouseId,
-        Guid? destinationWarehouseId,
-        string notes,
-        decimal? discount,
-        IEnumerable<OrderDetail> details,
-        DateTimeOffset dueDate)
-    {
-        var order = Order.Create(
-            Guid.NewGuid(),
-            type,
-            supplierId,
-            customerId,
-            sourceWarehouseId,
-            destinationWarehouseId,
-            notes,
-            discount,
-            details.ToList(),
-            dueDate).Value;
-
-        context.Orders.Add(order);
+        _orderCount++;
 
         return order;
     }
@@ -1584,280 +2068,157 @@ var toolsCollection = toolsProducts
         Order order,
         InvoiceType invoiceType,
         decimal discount,
-        IEnumerable<(string Description, decimal Quantity, decimal UnitPrice, decimal Tax)> lines)
+        IReadOnlyList<OrderLine> lines,
+        string reference)
     {
         var invoiceId = Guid.NewGuid();
 
         var lineItems = lines
             .Select((line, index) =>
-                InvoiceLineItem.Create(
-                    index,
-                    invoiceId,
-                    line.Description,
-                    line.Tax,
-                    line.Quantity,
-                    line.UnitPrice).Value)
+                Require(
+                    InvoiceLineItem.Create(
+                        index + 1,
+                        invoiceId,
+                        Truncate(line.Entry.Name, 100),
+                        decimal.Round(
+                            line.Quantity * line.UnitPrice * InventoryManagementConstants.TaxRate,
+                            2),
+                        line.Quantity,
+                        line.UnitPrice),
+                    $"invoice line {index + 1} of {reference}"))
             .ToList();
 
-        var invoice = Invoice.Create(
-            invoiceId,
-            invoiceType,
-            discount,
-            lineItems,
-            order.Id).Value;
+        var invoice = Require(
+            Invoice.Create(
+                invoiceId,
+                invoiceType,
+                discount,
+                lineItems,
+                order.Id),
+            $"invoice {reference}");
 
-        var issueResult = order.IssueInvoice(invoice);
-
-        if (issueResult.IsError)
-        {
-            throw new InvalidOperationException(
-                issueResult.TopError.Description);
-        }
+        Require(
+            order.IssueInvoice(invoice),
+            $"issuing invoice {reference}");
 
         context.Invoices.Add(invoice);
+
+        _invoiceCount++;
     }
 
-    private Supplier CreateSupplier(
-        string name,
-        string code,
-        string email,
-        string phone,
-        Guid countryId,
-        Guid cityId,
-        string postalCode,
-        string building,
-        string street,
-        bool active,
-        string notes)
+    private static string BuildPhone(SeedCity city, int number)
     {
-        var contact = ContactInfo.Create(
-            Guid.NewGuid(),
-            email,
-            phone,
-            string.Empty,
-            null,
-            "https://example.test").Value;
-
-        var address = Address.Create(
-            Guid.NewGuid(),
-            countryId,
-            cityId,
-            postalCode,
-            building,
-            street,
-            null).Value;
-
-        return Supplier.Create(
-            Guid.NewGuid(),
-            name,
-            code,
-            contact,
-            address,
-            active,
-            notes).Value;
-    }
-
-    private Customer CreateCustomer(
-        string name,
-        string code,
-        string email,
-        string phone,
-        Guid countryId,
-        Guid cityId,
-        string building,
-        string street,
-        string notes)
-    {
-        var contact = ContactInfo.Create(
-            Guid.NewGuid(),
-            email,
-            phone,
-            string.Empty,
-            null,
-            "https://example.test").Value;
-
-        var address = Address.Create(
-            Guid.NewGuid(),
-            countryId,
-            cityId,
-            "00000",
-            building,
-            street,
-            null).Value;
-
-        return Customer.Create(
-            Guid.NewGuid(),
-            name,
-            code,
-            contact,
-            address,
-            notes).Value;
-    }
-
-    private static User CreateUser(
-        string username,
-        string passwordHash,
-        string email,
-        Role role,
-        Guid employeeId,
-        int lastLoginDaysAgo)
-    {
-        var user = User.Create(
-            username,
-            passwordHash,
-            email,
-            role,
-            true,
-            employeeId).Value;
-
-        user.LastLoginAt =
-            DateTimeOffset.UtcNow.AddDays(lastLoginDaysAgo);
-
-        return user;
-    }
-
-    private Employee CreateEmployee(
-        string jobTitle,
-        string firstName,
-        string secondName,
-        string? thirdName,
-        string lastName,
-        string emailKey,
-        string phone,
-        Guid warehouseId,
-        DateOnly hiringDate)
-    {
-        var countryId = _locations.Palestine.Id;
-
-        var cityId = warehouseId == _warehouses.Nablus.Id
-            ? _locations.Nablus.Id
-            : warehouseId == _warehouses.Ramallah.Id
-                ? _locations.Ramallah.Id
-                : _locations.Gaza.Id;
-
-        var contact = ContactInfo.Create(
-            Guid.NewGuid(),
-            emailKey.Replace("EMP-EMAIL", "employee") + "@example.test",
-            phone,
-            string.Empty,
-            null,
-            null).Value;
-
-        var address = Address.Create(
-            Guid.NewGuid(),
-            countryId,
-            cityId,
-            "00000",
-            "1",
-            "Main St",
-            null).Value;
-
-        var person = Person.Create(
-            Guid.NewGuid(),
-            UniqueNationalNo(),
-            firstName,
-            secondName,
-            thirdName,
-            lastName,
-            true,
-            new DateOnly(1990, 1, 1),
-            contact,
-            address).Value;
-
-        return Employee.Create(
-            jobTitle,
-            person,
-            hiringDate,
-            warehouseId).Value;
-    }
-
-    private Warehouse CreateWarehouse(
-        string name,
-        string code,
-        Guid countryId,
-        Guid cityId,
-        string building,
-        string street)
-    {
-        var address = Address.Create(
-            Guid.NewGuid(),
-            countryId,
-            cityId,
-            "00000",
-            building,
-            street,
-            "Warehouse address").Value;
-
-        return Warehouse.Create(
-            Guid.NewGuid(),
-            name,
-            code,
-            address).Value;
-    }
-
-    private static decimal InitialStock(
-        string sku,
-        int warehouse)
-    {
-        return (sku, warehouse) switch
+        var prefix = city.Country.Name switch
         {
-            ("ELEC-001", 1) => 75m,
-            ("ELEC-001", 2) => 25m,
-            ("ELEC-001", 3) => 18m,
-
-            ("ELEC-002", 1) => 28m,
-            ("ELEC-002", 2) => 12m,
-            ("ELEC-002", 3) => 8m,
-
-            ("TOOL-001", 1) => 7m,
-            ("TOOL-001", 2) => 18m,
-            ("TOOL-001", 3) => 4m,
-
-            ("TOOL-002", 1) => 9m,
-            ("TOOL-002", 2) => 25m,
-            ("TOOL-002", 3) => 6m,
-
-            ("AUTO-001", 1) => 46m,
-            ("AUTO-001", 2) => 22m,
-            ("AUTO-001", 3) => 15m,
-
-            ("AUTO-002", 1) => 17m,
-            ("AUTO-002", 2) => 8m,
-            ("AUTO-002", 3) => 6m,
-
-            ("SAFE-001", 1) => 35m,
-            ("SAFE-001", 2) => 15m,
-            ("SAFE-001", 3) => 8m,
-
-            ("OFF-001", 1) => 42m,
-            ("OFF-001", 2) => 28m,
-            ("OFF-001", 3) => 10m,
-
-            _ => 10m
+            "Palestine" => "+97059",
+            "Jordan" => "+96279",
+            "Egypt" => "+20100",
+            "Saudi Arabia" => "+96650",
+            "United Arab Emirates" => "+97150",
+            "Turkey" => "+90532",
+            "China" => "+86138",
+            _ => "+97059"
         };
+
+        return prefix + number.ToString("D7");
     }
 
-    private static string UniqueNationalNo()
+    private static int CoprimeStride(int length, int preferred)
     {
-        return Random.Shared
-            .NextInt64(10000000, 99999999)
-            .ToString();
+        if (length <= 1)
+        {
+            return 1;
+        }
+
+        for (var candidate = Math.Max(1, preferred); candidate < preferred + length; candidate++)
+        {
+            var stride = candidate % length;
+
+            if (stride > 0 && GreatestCommonDivisor(stride, length) == 1)
+            {
+                return stride;
+            }
+        }
+
+        return 1;
     }
+
+    private static int GreatestCommonDivisor(int left, int right)
+    {
+        while (right != 0)
+        {
+            (left, right) = (right, left % right);
+        }
+
+        return left;
+    }
+
+    private string NextNationalNo()
+    {
+        return (++_nationalNoCounter).ToString();
+    }
+
+    private static string Truncate(string value, int maximumLength)
+    {
+        return value.Length <= maximumLength
+            ? value
+            : value[..maximumLength];
+    }
+
+    
+    private const int SupplierPhoneBase = 1_000_000;
+    private const int SupplierAltPhoneBase = 1_500_000;
+    private const int CustomerPhoneBase = 2_000_000;
+    private const int EmployeePhoneBase = 3_000_000;
 
     private SeedLocations _locations = null!;
     private SeedCatalog _catalog = null!;
-    private SeedPartners _partners = null!;
-    private SeedWarehouses _warehouses = null!;
+    private SeedWarehouse[] _warehouses = [];
+    private SeedSupplier[] _suppliers = [];
+    private SeedCustomer[] _customers = [];
+    private SeedEmployee[] _employees = [];
+
+    private int _nationalNoCounter = 900_100_000;
+    private int _stockRowCount;
+    private int _supplierProductCount;
+    private int _userCount;
+    private int _orderCount;
+    private int _invoiceCount;
+
+
+    private enum CategoryKind
+    {
+        Electronics,
+        Tools,
+        Automotive,
+        Safety,
+        Office
+    }
+
+    private sealed record SeedCity(
+        string Name,
+        Country Country,
+        City City);
 
     private sealed record SeedLocations(
-        Country Palestine,
-        Country Jordan,
-        Country Egypt,
-        City Nablus,
-        City Ramallah,
-        City Gaza,
-        City Amman,
-        City Cairo);
+        Country[] Countries,
+        IReadOnlyDictionary<string, SeedCity> Cities)
+    {
+        public SeedCity City(string name)
+        {
+            return Cities.TryGetValue(name, out var city)
+                ? city
+                : throw new InvalidOperationException(
+                    $"Seed city '{name}' was never registered in SeedLocations.");
+        }
+    }
+
+    private sealed record CatalogEntry(
+        Product Product,
+        string Sku,
+        string Name,
+        decimal SellingPrice,
+        CategoryKind Kind);
 
     private sealed record SeedCatalog(
         Category Electronics,
@@ -1865,17 +2226,78 @@ var toolsCollection = toolsProducts
         Category Automotive,
         Category Safety,
         Category Office,
-        Product[] Products);
+        CatalogEntry[] All,
+        IReadOnlyDictionary<CategoryKind, CatalogEntry[]> ByCategory,
+        IReadOnlyDictionary<string, CatalogEntry> BySku)
+    {
+        public CatalogEntry Sku(string sku)
+        {
+            return BySku[sku];
+        }
+    }
 
-    private sealed record SeedPartners(
-        Supplier[] Suppliers,
-        Customer[] Customers);
+    private sealed record WarehouseDefinition(
+        string Name,
+        string Code,
+        string City,
+        string PostalCode,
+        string BuildingNumber,
+        string Street,
+        string Description);
 
-    private sealed record SeedWarehouses(
-        Warehouse Nablus,
-        Warehouse Ramallah,
-        Warehouse Gaza,
-        List<WarehouseStock> Stocks);
+    private sealed record SeedWarehouse(
+        Warehouse Warehouse,
+        WarehouseDefinition Definition,
+        SeedCity City,
+        int Index);
+
+    private sealed record SupplierDefinition(
+        string Name,
+        string Code,
+        string Slug,
+        string City,
+        string PostalCode,
+        string BuildingNumber,
+        string Street,
+        bool Active,
+        string Notes,
+        CategoryKind[] Focus);
+
+    private sealed record SupplierLine(
+        CatalogEntry Entry,
+        decimal PurchasePrice);
+
+    private sealed record SeedSupplier(
+        Supplier Supplier,
+        SupplierDefinition Definition,
+        SupplierLine[] Lines);
+
+    private sealed record CustomerDefinition(
+        string Name,
+        string Code,
+        string Slug,
+        string City,
+        string BuildingNumber,
+        string Street,
+        string Notes);
+
+    private sealed record SeedCustomer(
+        Customer Customer,
+        CustomerDefinition Definition);
+
+    private sealed record SeedEmployee(
+        Employee Employee,
+        Person Person,
+        string FirstName,
+        string LastName,
+        string JobTitle,
+        int WarehouseIndex,
+        int Slot);
+
+    private sealed record OrderLine(
+        CatalogEntry Entry,
+        decimal Quantity,
+        decimal UnitPrice);
 }
 
 public static class InitialiserExtensions
