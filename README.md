@@ -84,6 +84,7 @@ It is built as a **layered monolith** with strict dependency rules. Business rul
 - One-invoice-per-order invariant enforced in the aggregate
 
 ![Generated invoice PDF](docs/images/invoice-page.png)
+
 *Invoice generated with QuestPDF — line items, totals, and embedded Arabic font support.*
 
 ### Identity & Authorization
