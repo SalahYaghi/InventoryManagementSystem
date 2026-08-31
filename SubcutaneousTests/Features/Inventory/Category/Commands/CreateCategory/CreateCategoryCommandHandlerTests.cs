@@ -167,19 +167,5 @@ public class CreateCategoryCommandHandlerTests
         Assert.Contains(result.Value, x => x.Id == created1.Value.Id);
         Assert.Contains(result.Value, x => x.Id == created2.Value.Id);
     }
-    //[Fact]
-    //public async Task GetPaged_WithCategories_ShouldReturnList()
-    //{
-    //    var unique = Guid.NewGuid().ToString("N")[..8];
-    //    var category1 = CategoryFactory.CreateValid(name: $"P1-{unique}");
-    //    var category2 = CategoryFactory.CreateValid(name: $"P2-{unique}");
-    //    await _context.Categories.AddRangeAsync([category1, category2], CancellationToken.None);
-    //    await _context.SaveChangesAsync(CancellationToken.None);
-
-    //    var result = await _mediator.Send(new GetCategoryPagedQuery() , CancellationToken.None);
-
-    //    Assert.True(result.IsSuccess);
-    //    Assert.Contains(result.Value, x => x.Id == category1.Id);
-    //    Assert.Contains(result.Value, x => x.Id == category2.Id);
-    //}
+    
 }
