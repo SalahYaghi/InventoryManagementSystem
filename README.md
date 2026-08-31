@@ -309,6 +309,7 @@ This starts the API alongside SQL Server, Redis, Seq, Prometheus, and Grafana. T
 | Seq (logs & traces) | http://localhost:5341 |
 | Prometheus | http://localhost:9090 |
 | Grafana | http://localhost:3000 |
+| Redis | http://localhost:6379 |
 
 ### Run locally
 
