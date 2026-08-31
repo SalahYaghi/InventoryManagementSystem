@@ -37,9 +37,6 @@ This project manages the operational side of a distribution business: what stock
 
 It is built as a **layered monolith** with strict dependency rules. Business rules live in a pure domain layer with no framework dependencies. Use cases are modelled as explicit commands and queries. Infrastructure concerns — persistence, caching, PDF generation — sit behind interfaces the inner layers own.
 
-**System Overview:**
-![Dashboard](docs/images/products-main-page.png)
-
 **By the numbers:**
 
 | Metric | Value |
@@ -64,6 +61,9 @@ It is built as a **layered monolith** with strict dependency rules. Business rul
 - Stock adjustments (increase/decrease) with a draft → applied workflow
 - Product catalogue with categories, units of measure, and multi-image galleries
 
+![Product catalogue](docs/images/products-main-page.png)
+*Product catalogue with categories, units of measure, and per-warehouse stock levels.*
+
 ### Order Lifecycle
 - Five order types: **Purchase, Sale, Transfer, Return-In, Return-Out**
 - Enforced state machine (`Pending → Completed | Cancelled`) with locking once terminal
@@ -71,6 +71,12 @@ It is built as a **layered monolith** with strict dependency rules. Business rul
 - Line-item management with discounts, due dates, and computed subtotals
 - Domain event (`OrderCompletedEvent`) triggers stock movement and downstream notification
 - **Automatic cancellation** of overdue pending orders via a background service
+
+![Sales orders](docs/images/sales-order-page.png)
+*Order list with type, status, and paged server-side queries.*
+
+![Creating an order](docs/images/create-transaction-page.png)
+*Order editor — line items, discounts, and order-type-aware validation.*
 
 ### Invoicing
 - Invoices issued against completed orders only, guarded at the domain level
@@ -87,6 +93,9 @@ It is built as a **layered monolith** with strict dependency rules. Business rul
 - People, Employees, Customers, Suppliers, and supplier-product catalogues
 - Identity documents with image upload and expiry tracking
 - Normalized address hierarchy (Country → City → Address) and contact information
+
+![Employee management](docs/images/employee-management-page.png)
+*Employee records with linked person details, documents, and contact information.*
 
 ### Auditing & Compliance
 - Automatic `CreatedBy` / `CreatedAt` / `LastModifiedBy` / `LastModifiedAt` stamping via EF Core interceptors
@@ -395,6 +404,7 @@ The handler validates the request, checks **available** stock (on-hand minus res
 
 ```
 ├── .github/workflows/          CI pipeline (build + test on Linux and Windows)
+├── docs/images/                Screenshots used in this README
 ├── Domain/                     Aggregates, domain events, errors, Result<T>
 ├── Application/                CQRS handlers, behaviors, validators, mappers
 ├── Infrastructure/             EF Core, Redis, JWT, PDF, workers
