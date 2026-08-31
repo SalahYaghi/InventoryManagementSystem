@@ -54,7 +54,7 @@ public class GetContactInfoPagedQueryHandlerTests
     {
         var first = await CreateSavedContactInfoAsync();
         var second = await CreateSavedContactInfoAsync();
-        var query = new global::Contract.Features.References.ContactInfos.Queries.GetContactInfoPaged.GetContactInfoPagedQuery { PageNumber = 1, PageSize = 10 };
+        var query = new global::Contract.Features.References.ContactInfos.Queries.GetContactInfoPaged.GetContactInfoPagedQuery { PageNumber = 1, PageSize = 100 };
         var result = await _mediator.Send(query, CancellationToken.None);
         _output.WriteLine($"Result: {string.Join(", ", result.Errors.Select(e => e.Code + " " + e.Description))}");
         Assert.True(result.IsSuccess);
