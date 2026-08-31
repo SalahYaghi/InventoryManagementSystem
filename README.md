@@ -255,6 +255,61 @@ Roughly **1,342 test methods** across four projects, organized as a test pyramid
 **Integration tests run against a real SQL Server** spun up per-run with **Testcontainers**, driven through `WebApplicationFactory`. They exercise the genuine pipeline — routing, auth, validation, EF Core, interceptors — rather than mocking it away. Shared test data factories keep arrangement terse and consistent.
 
 ---
+---
+
+## Database Seeding
+
+The API applies migrations and seeds a full demo dataset on startup, so a fresh
+clone reaches a working, populated system with a single `docker compose up`.
+
+`ApplicationDbContextInitialiser` runs in two phases: `InitialiseAsync` applies
+any pending EF Core migrations, then `SeedAsync` populates the schema. Seeding is
+**idempotent** — it exits immediately if any user already exists — and runs inside a
+single explicit transaction, so a failure part-way through rolls back rather than
+leaving a half-populated database.
+
+Every seeded record is built through the **same domain factories the application
+uses at runtime**. Nothing is inserted straight into the tables. A `Require<T>`
+helper unwraps each `Result<T>` and throws with the domain's own error code and
+description if an invariant is rejected, which means the seed doubles as a
+smoke test: if a domain rule breaks, startup fails loudly with the exact reason.
+
+The dataset is generated from a **fixed random seed**, so the same data is produced
+on every run — screenshots, manual testing, and demos stay reproducible.
+
+### Logging in
+
+The seed creates an administrator account you can use immediately:
+
+| Field | Value |
+|---|---|
+| Username | `admin_salah` |
+| Password | `Admin@12345` |
+
+> These are local demo credentials for the seeded development database only.
+> They are not used in any deployed environment, and the seed does not run outside Development.
+
+Additional users are seeded across all five roles (`Admin`, `SalesUser`,
+`PurchasesUser`, `WarehouseUser`, `Viewer`) if you want to see how the
+authorization rules change what each role can reach.
+
+### What gets created
+
+| Data | Scale |
+|---|---|
+| Warehouses | 15 across real Palestinian governorates |
+| Product catalogue | 555 products over 5 categories (Electronics, Tools, Automotive, Office, Safety) |
+| Opening stock | A stock row per product per warehouse, with per-warehouse volume scaling |
+| Suppliers | 55, with category-scoped supplier-product catalogues |
+| Customers | Companies and individuals with addresses and contact info |
+| Employees & users | 20 employees per warehouse, 25 users spread across all five roles |
+| Orders | 780 — 200 purchase, 260 sale, 200 return-in, 60 return-out, 60 transfer |
+| Invoices | Issued against completed orders |
+
+Roughly 1 in 20 stock rows is deliberately seeded **below its minimum level** so the
+low-stock alerts on the dashboard have something real to report. Order dates,
+quantities, and prices are randomised within realistic bounds, and a share of orders
+is left `Pending` or `Cancelled` so every state in the lifecycle is represented.
 
 ## Continuous Integration
 
