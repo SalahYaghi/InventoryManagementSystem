@@ -2,12 +2,19 @@ name: Build and Test
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
-    branches: [main]
+    branches:
+      - main
+
+env:
+  DOTNET_VERSION: "10.0.x"
 
 jobs:
-  build-and-test:
+    
+  build-windows:
+    name: Build UI + ContractOldCompatibile (Windows)
     runs-on: windows-latest
 
     steps:
@@ -16,23 +23,88 @@ jobs:
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
+        
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v2
 
-      - name: Restore NuGet packages
-        run: nuget restore InventoryManagementSystemAPI.slnx
+      - name: Restore NuGet packages (ContractOldCompatibile)
+        run: nuget restore ContracOldCompatibile\packages.config -PackagesDirectory packages
 
-      - name: Restore dependencies (SDK-style projects)
-        run: dotnet restore InventoryManagementSystemAPI.slnx
+      - name: Restore NuGet packages (UI)
+        run: nuget restore UI\packages.config -PackagesDirectory packages
 
-      - name: Build solution
-        run: dotnet build InventoryManagementSystemAPI.slnx --configuration Release --no-restore
+      - name: Build ContractOldCompatibile
+        run: dotnet build ContracOldCompatibile\ContractOldCompatibile.csproj --configuration Release
 
+      - name: Build UI
+        run: dotnet build UI\UI.csproj --configuration Release
+
+ 
+  build-and-test-dotnet:
+    name: Build and test .NET projects (Linux)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+  
+      - name: Restore Domain
+        run: dotnet restore Domain/Domain.csproj
+
+      - name: Restore Contracts
+        run: dotnet restore Contracts/Contracts.csproj
+
+      - name: Restore Application
+        run: dotnet restore Application/Application.csproj
+
+      - name: Restore Infrastructure
+        run: dotnet restore Infrastructure/Infrastructure.csproj
+
+      - name: Restore API
+        run: dotnet restore InventoryManagementSystemAPI/InventoryManagementSystemAPI.csproj
+
+      - name: Restore CommonTesting
+        run: dotnet restore CommonTesting/InventoryManagement.CommonTesting.csproj
+
+      - name: Restore DomainTesting
+        run: dotnet restore DomainTesting/InventoryManagement.Application.DomainTesting.csproj
+
+      - name: Restore ApplicationTesting
+        run: dotnet restore ApplicationTesting/InventoryManagement.Application.UnitTests.csproj
+
+      - name: Restore SubcutaneousTests
+        run: dotnet restore SubcutaneousTests/InventoryManagement.SubcutaneousTests.csproj
+
+     
+      - name: Build Domain
+        run: dotnet build Domain/Domain.csproj --configuration Release --no-restore
+
+      - name: Build Contracts
+        run: dotnet build Contracts/Contracts.csproj --configuration Release --no-restore
+
+      - name: Build Application
+        run: dotnet build Application/Application.csproj --configuration Release --no-restore
+
+      - name: Build Infrastructure
+        run: dotnet build Infrastructure/Infrastructure.csproj --configuration Release --no-restore
+
+      - name: Build API
+        run: dotnet build InventoryManagementSystemAPI/InventoryManagementSystemAPI.csproj --configuration Release --no-restore
+
+      - name: Build CommonTesting
+        run: dotnet build CommonTesting/InventoryManagement.CommonTesting.csproj --configuration Release --no-restore
+
+      - name: Build DomainTesting
+        run: dotnet build DomainTesting/InventoryManagement.Application.DomainTesting.csproj --configuration Release --no-restore
+
+      - name: Build ApplicationTesting
+        run: dotnet build ApplicationTesting/InventoryManagement.Application.UnitTests.csproj --configuration Release --no-restore
+
+      - name: Build SubcutaneousTests
+        run: dotnet build SubcutaneousTests/InventoryManagement.SubcutaneousTests.csproj --configuration Release --no-restore
+ 
       - name: Run tests
         run: dotnet test InventoryManagementSystemAPI.slnx --configuration Release --no-build --verbosity normal
