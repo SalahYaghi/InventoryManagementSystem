@@ -37,6 +37,9 @@ This project manages the operational side of a distribution business: what stock
 
 It is built as a **layered monolith** with strict dependency rules. Business rules live in a pure domain layer with no framework dependencies. Use cases are modelled as explicit commands and queries. Infrastructure concerns — persistence, caching, PDF generation — sit behind interfaces the inner layers own.
 
+**System Overview:**
+![Dashboard](docs/images/dashboard.png)
+
 **By the numbers:**
 
 | Metric | Value |
