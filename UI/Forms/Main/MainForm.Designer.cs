@@ -244,7 +244,7 @@
             this.lblMenuTitle.Name = "lblMenuTitle";
             this.lblMenuTitle.Size = new System.Drawing.Size(194, 37);
             this.lblMenuTitle.TabIndex = 0;
-            this.lblMenuTitle.Text = "INVENTORY X";
+            this.lblMenuTitle.Text = "INVENTORY";
             // 
             // panelHeader
             // 
