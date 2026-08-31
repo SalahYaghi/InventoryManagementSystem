@@ -160,7 +160,7 @@ public class CreateCategoryCommandHandlerTests
         await _context.Categories.AddRangeAsync([category1, category2], CancellationToken.None);
         await _context.SaveChangesAsync(CancellationToken.None);
 
-        var result = await _mediator.Send(new GetCategoryPagedQuery(), CancellationToken.None);
+        var result = await _mediator.Send(new GetCategoryPagedQuery() , CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Contains(result.Value, x => x.Id == category1.Id);
