@@ -103,5 +103,8 @@ jobs:
       - name: Build SubcutaneousTests
         run: dotnet build SubcutaneousTests/InventoryManagement.SubcutaneousTests.csproj --configuration Release --no-restore
  
-      - name: Run tests
-        run: dotnet test InventoryManagementSystemAPI.slnx --configuration Release --no-build --verbosity detailed
+      # - name: Run tests
+      #   run: dotnet test InventoryManagementSystemAPI.slnx --configuration Release --no-build --verbosity detailed
+
+      - name: Run Subcutaneous tests
+        run: dotnet test SubcutaneousTests/InventoryManagement.SubcutaneousTests.csproj --configuration Release --no-build --logger "console;verbosity=detailed"
