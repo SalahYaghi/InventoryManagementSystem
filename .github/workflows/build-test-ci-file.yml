@@ -15,26 +15,26 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        
-      - name: Setup NuGet
-        uses: NuGet/setup-nuget@v2
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v3
 
-      - name: Restore NuGet packages (ContractOldCompatibile)
-        run: nuget restore ContracOldCompatibile\packages.config -PackagesDirectory packages
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v2
 
-      - name: Restore NuGet packages (UI)
-        run: nuget restore UI\packages.config -PackagesDirectory packages
+    - name: Restore NuGet packages (ContractOldCompatibile)
+      run: nuget restore ContracOldCompatibile\packages.config -PackagesDirectory packages
 
-      - name: Build ContractOldCompatibile
-        run: dotnet build ContracOldCompatibile\ContractOldCompatibile.csproj --configuration Release
+    - name: Restore NuGet packages (UI)
+      run: nuget restore UI\packages.config -PackagesDirectory packages
 
-      - name: Build UI
-        run: dotnet build UI\UI.csproj --configuration Release
+    - name: Build ContractOldCompatibile
+      run: msbuild ContracOldCompatibile\ContractOldCompatibile.csproj /p:Configuration=Release /m
+
+    - name: Build UI
+      run: msbuild UI\UI.csproj /p:Configuration=Release /m
 
  
   build-and-test-dotnet:
