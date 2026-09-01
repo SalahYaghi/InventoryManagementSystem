@@ -345,7 +345,7 @@ dotnet test SubcutaneousTests/InventoryManagement.SubcutaneousTests.csproj
 ### Run with Docker Compose
 
 ```bash
-git clone https://github.com/<your-username>/<your-repo>.git
+git clone https://github.com/SalahYaghi/InventoryManagementSystem.git
 cd <your-repo>
 
 # Provide secrets (see Configuration below) then:
